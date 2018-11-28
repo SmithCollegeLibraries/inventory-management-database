@@ -3,8 +3,8 @@
 -- https://www.phpmyadmin.net
 --
 -- Host: liblive
--- Generation Time: Sep 21, 2017 at 01:44 PM
--- Server version: 5.5.52-MariaDB
+-- Generation Time: Nov 28, 2018 at 09:30 AM
+-- Server version: 5.5.60-MariaDB
 -- PHP Version: 5.4.16
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -51,6 +51,34 @@ CREATE TABLE IF NOT EXISTS `collections` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `dewey`
+--
+
+CREATE TABLE IF NOT EXISTS `dewey` (
+  `id` int(11) NOT NULL,
+  `shelf` varchar(25) NOT NULL,
+  `call_number_begin` varchar(100) NOT NULL,
+  `call_number_end` varchar(100) NOT NULL,
+  `collection` varchar(25) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `history`
+--
+
+CREATE TABLE IF NOT EXISTS `history` (
+  `id` int(11) NOT NULL,
+  `action` varchar(200) NOT NULL,
+  `item` varchar(150) NOT NULL,
+  `status_change` varchar(100) NOT NULL,
+  `timestamp` varchar(50) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `internal_requests`
 --
 
@@ -63,8 +91,26 @@ CREATE TABLE IF NOT EXISTS `internal_requests` (
   `call_number` varchar(100) DEFAULT NULL,
   `volume_year` varchar(25) DEFAULT NULL,
   `full_run` varchar(10) DEFAULT 'false',
+  `notes` longtext,
   `collection` varchar(100) DEFAULT NULL,
-  `completed` varchar(10) DEFAULT 'false'
+  `tray` varchar(30) DEFAULT NULL,
+  `shelf` varchar(30) DEFAULT NULL,
+  `completed` varchar(10) DEFAULT 'false',
+  `timestamp` varchar(100) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `internal_requests_comments`
+--
+
+CREATE TABLE IF NOT EXISTS `internal_requests_comments` (
+  `id` int(11) NOT NULL,
+  `request_id` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `comment` longtext NOT NULL,
+  `timestamp` varchar(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -80,7 +126,7 @@ CREATE TABLE IF NOT EXISTS `tray_shelf` (
   `row` varchar(2) DEFAULT NULL,
   `side` varchar(1) DEFAULT NULL,
   `ladder` varchar(2) DEFAULT NULL,
-  `shelf_number` varchar(2) DEFAULT NULL,
+  `shelf_number` varchar(2) DEFAULT '0',
   `shelf_depth` varchar(5) DEFAULT NULL,
   `shelf_position` varchar(3) DEFAULT NULL,
   `initials` varchar(10) DEFAULT NULL,
@@ -109,9 +155,27 @@ ALTER TABLE `collections`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `dewey`
+--
+ALTER TABLE `dewey`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `history`
+--
+ALTER TABLE `history`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `internal_requests`
 --
 ALTER TABLE `internal_requests`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `internal_requests_comments`
+--
+ALTER TABLE `internal_requests_comments`
   ADD PRIMARY KEY (`id`);
 
 --
@@ -137,9 +201,24 @@ ALTER TABLE `barcode_tray`
 ALTER TABLE `collections`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 --
+-- AUTO_INCREMENT for table `dewey`
+--
+ALTER TABLE `dewey`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+--
+-- AUTO_INCREMENT for table `history`
+--
+ALTER TABLE `history`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+--
 -- AUTO_INCREMENT for table `internal_requests`
 --
 ALTER TABLE `internal_requests`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+--
+-- AUTO_INCREMENT for table `internal_requests_comments`
+--
+ALTER TABLE `internal_requests_comments`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `tray_shelf`
