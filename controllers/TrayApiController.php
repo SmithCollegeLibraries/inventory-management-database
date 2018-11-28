@@ -7,10 +7,26 @@ use yii\rest\ActiveController;
 use yii\data\ActiveDataProvider;
 use app\models\Aleph;
 use app\models\BarcodeTray;
+use yii\filters\auth\QueryParamAuth;
 
 class TrayApiController extends ActiveController
 {
 	public $modelClass = 'app\models\BarcodeTray';
+	
+	public function init()
+	{
+   		parent::init();
+   		\Yii::$app->user->enableSession = false;
+	}
+	
+	public function behaviors()
+	{
+    	$behaviors = parent::behaviors();
+		$behaviors['authenticator'] = [
+        	'class' => QueryParamAuth::className(),
+			];
+		return $behaviors;
+	}
 	
 	public function actionBarcodeInsert()
 	{
@@ -75,6 +91,7 @@ class TrayApiController extends ActiveController
 		return $aleph->processTray($barcode);		
 	}
 	
+	
 	public function actionSearchTitle()
 	{
 		$title = Yii::$app->request->get('query');
@@ -82,6 +99,26 @@ class TrayApiController extends ActiveController
 		return $aleph->processTitleSearch($title);	
 	}
 
+	public function actionSearchOclc()
+	{
+		$oclc = Yii::$app->request->get('query');
+		$aleph = new Aleph();
+		return $aleph->processByOCLC($oclc);		
+	}
+	
+	public function actionSearchCall()
+	{
+		$call = Yii::$app->request->get('query');
+		$aleph = new Aleph();
+		return $aleph->processCallNumber($call);
+	}
+	
+	public function actionSearchMultiCall()
+	{
+		$call = Yii::$app->request->get('query');
+		$aleph = new Aleph();
+		return $aleph->processMultiCallNumber($call);
+	}
 	
 	private function verify($barcodes) 
 	{	 

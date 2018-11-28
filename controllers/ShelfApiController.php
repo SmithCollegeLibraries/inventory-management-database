@@ -7,15 +7,37 @@ use yii\rest\ActiveController;
 use yii\data\ActiveDataProvider;
 use app\models\TrayShelf;
 use app\models\Aleph;
+use yii\filters\auth\QueryParamAuth;
+
 
 class ShelfApiController extends ActiveController
 {
 	public $modelClass = 'app\models\TrayShelf';
 	
+	public function init()
+	{
+   		parent::init();
+   		\Yii::$app->user->enableSession = false;
+	}
+	
+	public function behaviors()
+	{
+    	$behaviors = parent::behaviors();
+		$behaviors['authenticator'] = [
+        	'class' => QueryParamAuth::className(),
+			];
+		return $behaviors;
+	}
+	
     
     public function actionSearchShelfId()
 	{
 	  return TrayShelf::find()->where(['like', 'boxbarcode', $_GET["query"]])->one();  
+	}
+	
+	public function actionSearchAllShelf()
+	{
+		 return TrayShelf::find()->where(['like', 'shelf', $_GET["query"]])->all();  
 	}
 	
 	public function actionSearchShelf()

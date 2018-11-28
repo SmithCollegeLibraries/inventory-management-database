@@ -15,8 +15,12 @@ use Yii;
  * @property string $call_number
  * @property string $volume_year
  * @property string $full_run
+ * @property string $notes
  * @property string $collection
+ * @property string $tray
+ * @property string $shelf
  * @property string $completed
+ * @property string $timestamp
  */
 class InternalRequests extends \yii\db\ActiveRecord
 {
@@ -34,12 +38,13 @@ class InternalRequests extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['name', 'material'], 'required'],
-            [['name', 'material', 'call_number', 'collection'], 'string', 'max' => 100],
+            [['notes'], 'string'],
+            [['name', 'material', 'call_number', 'collection', 'timestamp'], 'string', 'max' => 100],
             [['barcode'], 'string', 'max' => 50],
             [['title'], 'string', 'max' => 255],
             [['volume_year'], 'string', 'max' => 25],
             [['full_run', 'completed'], 'string', 'max' => 10],
+            [['tray', 'shelf'], 'string', 'max' => 30],
         ];
     }
 
@@ -57,8 +62,17 @@ class InternalRequests extends \yii\db\ActiveRecord
             'call_number' => 'Call Number',
             'volume_year' => 'Volume Year',
             'full_run' => 'Full Run',
+            'notes' => 'Notes',
             'collection' => 'Collection',
+            'tray' => 'Tray',
+            'shelf' => 'Shelf',
             'completed' => 'Completed',
+            'timestamp' => 'Timestamp',
         ];
     }
+    
+   public function getInternalRequestsComments(){
+	    return $this->hasMany(InternalRequestsComments::className(), ['request_id' => 'id']);
+    }
+    
 }

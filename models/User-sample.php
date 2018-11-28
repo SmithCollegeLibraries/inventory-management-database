@@ -13,7 +13,7 @@ class User extends \yii\db\ActiveRecord implements \yii\web\IdentityInterface
     private static $users = [
         'sis' => [
 	        'id' => 'sis',
-	        'accessToken' => 'bhsUa3Beimd1AXtujKB2WQv6zlQ7Mxr9',
+	        'accessToken' => '',
         ]
     ];
 

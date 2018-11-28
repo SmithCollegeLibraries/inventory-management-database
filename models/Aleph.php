@@ -8,6 +8,7 @@ use yii\httpclient\XmlParser;
 use yii\httpclient\Client;
 use app\models\BarcodeTray;
 use app\models\TrayShelf;
+use app\models\Dewey;
 
 
 class Aleph extends Model
@@ -82,6 +83,7 @@ class Aleph extends Model
     
     public function processBarcode($barcode, $library)
     {
+	    $this->barcode = $barcode;
 	    \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
 	    $this->barcode = $barcode;
 	    $options = array (
@@ -92,13 +94,13 @@ class Aleph extends Model
 	    $url = http_build_query($options, '', '&');
 	    $search = $this->search($url);
 	    if(isset($search["z30"]['z30-doc-number'])) {
-	    	return $this->processRequest($search["z30"]['z30-doc-number'], $library);
+	    	return $this->processRequest($search["z30"]['z30-doc-number'], $library, $barcode);
 	    } else {
 		    return false;
 	    }	
     }
     
-    private function processRequest($request, $library)
+    private function processRequest($request, $library, $barcode='')
     {
 	   	$options = array (
 			'op' => 'find_doc',
@@ -121,7 +123,157 @@ class Aleph extends Model
 				break;
 			}	
 		}
-	    return $this->getDoc(str_replace('ADMFCL01', '', $term));
+	    return $this->getDoc(str_replace('ADMFCL01', '', $term), $barcode);
+    }
+    
+    public function processByOCLC($request)
+    {
+	    \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+	   	$options = array (
+			'op' => 'find',
+			'base' => 'FCL01SMT',
+			'request' => "OCL=$request"
+		);
+		$url = http_build_query($options, '' , '&');	
+		$search = $this->search($url);
+		$options = array (
+			'op' => 'present',
+			'set_no' => $search['set_number'],
+			'set_entry' => '1-60'
+		);
+		$url = http_build_query($options, '' , '&');
+		$data = $this->search($url);
+		$content = $data["record"];
+		if(isset($content["doc_number"])) {
+			$results = $this->getDoc($content["doc_number"]);
+			return $results;
+		} else {
+		$results = array(
+		   	'title' => 'ALEPH OCLC Search Failed : OCLC Number used ' . $request,
+		   	'call_number' => '',
+		   	'call_number_normalized' => '',
+		   	'issn' => '',
+		   	'isbn' => '',
+		   	'description' => '',
+		   	'barcode' => '',
+		   	'tray_barcode' => '',
+		   	'stream' => '',
+		   	"shelf_barcode" => '',
+		   	'shelf' => array(
+			   	'id' => '',
+			   	'boxbarcode' => '',
+			   	'shelf' => '',
+			   	'row' => '',
+			   	'side' => '',
+			   	'ladder' => '',
+			   	'shelf_number' => 0,
+			   	'shelf_depth' => '',
+			   	'shelf_position' => '',
+			   	'initials' => '',
+			   	'added' => '',
+			   	'timestamp' => ''
+		   	),
+		   	'record_barcode' => '',
+		   	'new_call' => '',
+		   	'old_location' => '',
+		   	'tray_id' => '',
+		   	'status' => '',
+		   	'timestamp' => ''
+	    );
+			return $results;
+		}	
+    }
+    
+    public function basicTemplate()
+    {
+	   $results = array(
+		   	'title' => '',
+		   	'call_number' => '',
+		   	'call_number_normalized' => '',
+		   	'issn' => '',
+		   	'isbn' => '',
+		   	'description' => '',
+		   	'barcode' => '',
+		   	'tray_barcode' => '',
+		   	'stream' => '',
+		   	"shelf_barcode" => '',
+		   	'shelf' => array(
+			   	'id' => '',
+			   	'boxbarcode' => '',
+			   	'shelf' => '',
+			   	'row' => '',
+			   	'side' => '',
+			   	'ladder' => '',
+			   	'shelf_number' => 0,
+			   	'shelf_depth' => '',
+			   	'shelf_position' => '',
+			   	'initials' => '',
+			   	'added' => '',
+			   	'timestamp' => ''
+		   	),
+		   	'record_barcode' => '',
+		   	'new_call' => '',
+		   	'old_location' => '',
+		   	'tray_id' => '',
+		   	'status' => '',
+		   	'timestamp' => ''
+	    );
+		return $results; 
+    }
+    
+    public function processCallNumber($request)
+    {
+	  	\Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+	   	$options = array (
+			'op' => 'find',
+			'base' => 'FCL01SMT',
+			'request' => "LCI2=$request" 
+		);
+		$url = http_build_query($options, '' , '&');	
+		$search = $this->search($url);
+		$options = array (
+			'op' => 'present',
+			'set_no' => $search['set_number'],
+			'set_entry' => '1-60'
+		);
+		$url = http_build_query($options, '' , '&');
+		$data = $this->search($url);
+		$content = $data["record"];
+		$results = $this->getDoc($content["doc_number"]);
+		return $results;  
+    }
+    
+    public function processMultiCallNumber($request)
+    {
+	   	  	\Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+	   	$options = array (
+			'op' => 'find',
+			'base' => 'FCL01SMT',
+			'request' => "LCI2=$request" 
+		);
+		$url = http_build_query($options, '' , '&');	
+		$search = $this->search($url);
+		if(isset($search["set_number"])){
+		$options = array (
+			'op' => 'present',
+			'set_no' => $search['set_number'],
+			'set_entry' => '1-60'
+		);
+		$url = http_build_query($options, '' , '&');
+		$data = $this->search($url);
+	    $content = $data["record"];
+	    $results = array();
+	    if(isset($content[0])) {
+		 	foreach($content as $items){
+		    	$results[] = $this->getDoc($items["doc_number"]);
+	    	}     
+	    } else {
+		   $results = $this->getDoc($content["doc_number"]);
+	    }
+		return $results;
+		} else {
+			return $this->basicTemplate();
+		}
     }
     
     public function processTitleSearch($request)
@@ -134,7 +286,11 @@ class Aleph extends Model
 		);
 		$url = http_build_query($options, '' , '&');	
 		$search = $this->search($url);
-	    return array_filter($this->getRecords($search['set_number'])); 
+		if(isset($search['set_number'])){
+	    	return array_filter($this->getRecords($search['set_number'])); 
+	    } else {
+			return false;
+	    }	
     }
     
     private function getRecords($set)
@@ -188,7 +344,7 @@ class Aleph extends Model
     }
     
     
-    private function getDoc($id)
+    private function getDoc($id, $barcode='')
     {
 	  	$options = array (
 			'op' => 'find-doc',
@@ -197,10 +353,10 @@ class Aleph extends Model
 		);
 		$url = http_build_query($options, '' , '&');	
 		$search = $this->search($url);  
-		return $this->getInfo($search["record"]["metadata"]["oai_marc"]); 
+		return $this->getInfo($search["record"]["metadata"]["oai_marc"], $barcode); 
     }
     
-    private function getInfo($set)
+    private function getInfo($set, $barcodeItem='')
     {
 		$results = array(
 		   	'title' => '',
@@ -219,6 +375,7 @@ class Aleph extends Model
 	    );
 	    
 		foreach($set["varfield"] as $items) {
+//			$this->format($items);
 			switch($items["@attributes"]["id"]){
 				case '020':
 					$results['isbn'] = $this->is($items);
@@ -244,9 +401,9 @@ class Aleph extends Model
 					$results["description"] = $this->info($items);
 				break;
 				case '852':
-					$results['barcode'] = $this->record_barcode($items);
+					$results['barcode'] = isset($this->barcode) ? $this->barcode : $this->record_barcode($items);
 					$results["call_number"] = $this->callnumbertest($items);
-					$results["call_number_normalized"] = $this->callnumbernormalized($results["call_number"]);
+// 					$results["call_number_normalized"] = $this->callnumbernormalized($results["call_number"]);
 				break;
 				case '952':
 					$results["old_location"] = $this->old_location($items);
@@ -260,13 +417,31 @@ class Aleph extends Model
 		}	
 				
 		$tray = $this->getTray($barcode);
-		$shelf = $this->getShelf($tray["boxbarcode"]);
+		$shelf = $this->getShelf($tray["boxbarcode"], $results["call_number"], isset($results["old_location"]) ? $results["old_location"] : '');
 		$results["tray_id"] = isset($tray["id"]) ? $tray["id"] : '';
 		$results["tray_barcode"] = isset($tray["boxbarcode"]) ? $tray["boxbarcode"] : '';
 		$results["stream"] = isset($tray["stream"]) ? $tray["stream"] : '';
 		$results["status"] = isset($tray["status"]) ? $tray["status"] : '';
+		$results["timestamp"] = isset($tray["timestamp"]) ? $tray["timestamp"] : '';
 		$results["shelf_barcode"] = isset($shelf["shelf"]) ? $shelf["shelf"] : '' ;
-		$results["shelf"] = isset($shelf) ? $shelf : '';
+		if(isset($shelf["id"])){
+			$results["shelf"] = $shelf;
+		} else {
+			$results["shelf"] = array(
+			   	'id' => '',
+			   	'boxbarcode' => '',
+			   	'shelf' => '',
+			   	'row' => '',
+			   	'side' => '',
+			   	'ladder' => '',
+			   	'shelf_number' => 0,
+			   	'shelf_depth' => '',
+			   	'shelf_position' => '',
+			   	'initials' => '',
+			   	'added' => '',
+			   	'timestamp' => ''
+		   	);
+		}
 		return $results;
 		
 		
@@ -295,12 +470,20 @@ class Aleph extends Model
     
     private function getTray($barcode)
     {
-		return BarcodeTray::find()->where(['barcode' => trim($barcode)])->one();		    
+		return BarcodeTray::find()->where(['like', 'barcode', trim($barcode)])->one();		    
     }
     
-    private function getShelf($tray)
+    private function getShelf($tray, $callnumber = '', $oldlocation = '')
     {
-	    return TrayShelf::find()->where(['boxbarcode' => $tray])->one();
+	    $shelf = TrayShelf::find()->where(['boxbarcode' => trim($tray)])->one();
+	    $dewey_shelf = $this->searchDewey($callnumber, $this->locationMap($oldlocation));
+	    if($shelf){
+		    return $shelf;
+	    } else if($dewey_shelf) {
+		    return array('shelf' => $dewey_shelf[0]["shelf"]);
+	    } else {
+		    return '';
+	    }
     }
     
     private function is($items)
@@ -324,8 +507,13 @@ class Aleph extends Model
     }
     
     private function record_barcode($items){
-	    if(isset($items["subfield"][4])) {
+// 	    $this->format($items);
+	    if(isset($items["subfield"][3]) && strpos($items["subfield"][3], '3101') !== false) {
+	    	return (string)$items["subfield"][3];
+	    } else if(isset($items["subfield"][4]) && strpos($items["subfield"][4], '3101') !== false) {
 	    	return (string)$items["subfield"][4];
+	    } else if(isset($items["subfield"][5]) && strpos($items["subfield"][5], '3101') !== false){
+		    return (string)$items["subfield"][5];	
 	    } else {
 		    return '';
 	    }	
@@ -363,10 +551,12 @@ class Aleph extends Model
     
 	private function callnumbertest($items)
     {
+	    
 		$base = isset($items["subfield"][2]) ? (string)$items["subfield"][2] : '';
 		$base2 = isset($items["subfield"][3]) ? (string)$items["subfield"][3] : '';
-		return $base . $base2;		    
+		return $base . " " . $base2;		    
     }
+    
     
     private function callnumbernormalized($items)
     {
@@ -399,6 +589,38 @@ class Aleph extends Model
 		if ($response->isOk) {
 			return $response->data;
 		}	  
+    }
+    
+    private function searchDewey($call_number, $location)
+    {
+	    $model = new Dewey();
+		$provider = Yii::$app->db->createCommand("
+			SELECT * FROM `dewey` WHERE '$call_number' BETWEEN `call_number_begin` and `call_number_end` AND collection = '$location'")->queryAll();		
+		return $provider;
+    }
+    
+    private function locationMap($location)
+    {
+	    switch($location){
+		    case 'SNSTK':
+		    	return 'Dewey';
+		    break;	
+		    case 'STDEW';
+		    	return "West Street Dewey";	
+		    break;
+		    case 'SNREF':
+		    	return "Neilson Reference";
+		    break;
+		    case 'SSNRE':
+		    	return "Young Reference";
+		    break;	
+		    case 'STJL':
+		    	return "Josten Periodicals";
+		    break;
+		    case 'SNPER':
+		    	return "Neilson Periodicals";
+		    break;			
+	    }
     }
     
     private function normalize($callno) {
