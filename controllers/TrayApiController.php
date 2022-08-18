@@ -8,6 +8,7 @@ use yii\data\ActiveDataProvider;
 use app\models\Aleph;
 use app\models\BarcodeTray;
 use yii\filters\auth\QueryParamAuth;
+use app\models\FOLIO;
 
 class TrayApiController extends ActiveController
 {
@@ -68,56 +69,68 @@ class TrayApiController extends ActiveController
 	public function actionSearchBarcode()
 	{
 		$barcode = Yii::$app->request->get('barcode');
-		$aleph = new Aleph();
+		// $aleph = new Aleph();
+		$folio = new FOLIO();
 		$set = array();
-		$barcodes = explode(PHP_EOL, $barcode);
+		if (strpos($barcode, ',') !== false) {
+			$barcodes = explode(',', $barcode);
+		} else {
+			$barcodes = explode(PHP_EOL, $barcode);
+		}	
 		foreach($barcodes as $items){
-			$set[] = $aleph->processBarcode($items, 'SMT50');
+			$set[] = $folio->processBarcode($items, 'SMT50');
 		}
 		return $set;
 	}
 	
 	public function actionPagingSlips()
 	{
-		$aleph = new Aleph();
-		return $aleph->processPagingSlips($_GET["day"]);
+		$folio = new FOLIO();
+		return $folio->processPagingSlips();
+		// $aleph = new Aleph();
+		// return $aleph->processPagingSlips($_GET["day"]);
 	}
 
 	
 	public function actionSearchTray()
 	{
 		$barcode = Yii::$app->request->get('query');
-		$aleph = new Aleph();
-		return $aleph->processTray($barcode);		
+		// $aleph = new Aleph();
+		$folio = new FOLIO();
+		return $folio->processTray($barcode);		
 	}
 	
-	
+	//Still needs to be updated
 	public function actionSearchTitle()
 	{
 		$title = Yii::$app->request->get('query');
-		$aleph = new Aleph();
-		return $aleph->processTitleSearch($title);	
+		$folio = new FOLIO();
+		// $aleph = new Aleph();
+		return $folio->processTitleSearch($title);	
 	}
 
 	public function actionSearchOclc()
 	{
 		$oclc = Yii::$app->request->get('query');
-		$aleph = new Aleph();
-		return $aleph->processByOCLC($oclc);		
+		// $aleph = new Aleph();
+		$folio = new FOLIO();
+		return $folio->processByOCLC($oclc);		
 	}
 	
 	public function actionSearchCall()
 	{
 		$call = Yii::$app->request->get('query');
-		$aleph = new Aleph();
-		return $aleph->processCallNumber($call);
+		$folio = new FOLIO();
+		// $aleph = new Aleph();
+		return $folio->processCallNumber($call);
 	}
 	
 	public function actionSearchMultiCall()
 	{
 		$call = Yii::$app->request->get('query');
-		$aleph = new Aleph();
-		return $aleph->processMultiCallNumber($call);
+		$folio = new FOLIO();
+		// $aleph = new Aleph();
+		return $folio->processMultiCallNumber($call);
 	}
 	
 	private function verify($barcodes) 

@@ -15,31 +15,24 @@ INSTALLATION
 ------------
 
 ### Download
-Download the project zip from git hub and extract to folder named inventory-management.
+Download the project zip from git hub and extract to folder named sis.
 
 ### Install via Composer
 
 If you do not have [Composer](http://getcomposer.org/), you may install it by following the instructions
-at [getcomposer.org](http://getcomposer.org/doc/00-intro.md#installation-nix).  Download composer directly to the inventory-management folder.
+at [getcomposer.org](http://getcomposer.org/doc/00-intro.md#installation-nix).  Download composer directly to the sis folder.
 
-cd to the inventory-management directory and install using:
+cd to the sis director and install using:
 
 ~~~
 php composer.phar install
 ~~~
 
-Change the User-sample.php file found in models/User-sample.php to User.php and add an access token.  You can create new tokens in the following format:
-
-        'TOKENNAME' => [
-	        'id' => 'TOKENID',
-	        'accessToken' => 'XXXXXXXXXXXX',
-        ]
-
-Now you should be able to access the application through the following URL, assuming `inventory-management` is the directory
+Now you should be able to access the application through the following URL, assuming `sis` is the directory
 directly under the Web root.
 
 ~~~
-http://localhost/inventory-management/web/
+http://localhost/sis/web/
 ~~~
 
 CONFIGURATION
