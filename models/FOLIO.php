@@ -212,7 +212,14 @@ class FOLIO extends Model
 			}
 
 			$tray = $this->getTray($barcode);
-			$shelf = $this->getShelf($tray["boxbarcode"], $callNumber, isset($results["old_location"]) ? $results["old_location"] : '');
+			// error_log(print_r($barcode, TRUE));
+			// error_log(print_r($tray, TRUE));
+			if (empty($tray)){
+				$shelf = "";
+			}
+			else {
+				$shelf = $this->getShelf($tray["boxbarcode"], $callNumber, isset($results["old_location"]) ? $results["old_location"] : '');
+			}
 			$results["tray_id"] = isset($tray["id"]) ? $tray["id"] : '';
 			$results["tray_barcode"] = isset($tray["boxbarcode"]) ? $tray["boxbarcode"] : '';
 			$results["stream"] = isset($tray["stream"]) ? $tray["stream"] : '';
