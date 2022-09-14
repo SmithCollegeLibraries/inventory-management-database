@@ -12,9 +12,9 @@ use app\models\Dewey;
 
 
 class FOLIO extends Model
-{	
+{
 	public $barcode;
-	
+
 	//NEW FOLIO FUNCTIONS START HERE
 	public function processTray($tray)
 	{
@@ -26,19 +26,19 @@ class FOLIO extends Model
 		}
 		return $set;
 	}
-	
+
 	public function processPagingSlips()
 	{
 		$date = date("Ymd");
-		$paging = $this->searchPagingSlips("http://libtools2.smith.edu/folio/web/search/search-circulation?id=9e4b06c8-0cb0-4011-ab1d-a23af57d190c");	
+		$paging = $this->searchPagingSlips("http://libtools2.smith.edu/folio/web/search/search-circulation?id=9e4b06c8-0cb0-4011-ab1d-a23af57d190c");
 		$set = $paging["data"];
-		
+
 		foreach($set as $list){
 			$data[] = $this->processBarcode($list);
 		}
 		return($data);
 	}
-	
+
 	public function processShelfTray($tray)
 	{
 		\Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
@@ -49,7 +49,7 @@ class FOLIO extends Model
 		}
 		return $set;
 	}
-	
+
 	public function processTitleSearch($request)
 	{
 		\Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
@@ -58,13 +58,13 @@ class FOLIO extends Model
 			$results = array();
 			array_push($results, $this->getInfo($search["data"]["instances"][0]));
 			return $results;
-			
+
 		} else {
 			return false;
 		}
-		
+
 	}
-	
+
 	public function processCallNumber($request)
 	{
 		\Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
@@ -75,11 +75,11 @@ class FOLIO extends Model
 			return false;
 		}
 	}
-	
+
 	public function processMultiCallNumber($request)
 	{
 		\Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-		$results = array();	
+		$results = array();
 		foreach($request as $items){
 			$search = $this->search("(items.fullCallNumber=$request)");
 			if(isset($search["data"]["totalRecords"]) && $search["data"]["totalRecords"] > 0){
@@ -87,10 +87,10 @@ class FOLIO extends Model
 			} else {
 				array_push($results, $this->getInfoWithoutAleph($barcode));
 			}
-		}	
+		}
 		return $results;
 	}
-	
+
 	public function processByOCLC($request)
 	{
 		\Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
@@ -99,10 +99,10 @@ class FOLIO extends Model
 			return $this->getInfo($search["data"]["instances"][0]);
 		} else {
 			return false;
-		}	
+		}
 	}
-	
-	
+
+
 	public function processBarcode($barcode, $type="paging")
 	{
 		\Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
@@ -114,9 +114,9 @@ class FOLIO extends Model
 			return $this->getInfoWithoutAleph($barcode);
 		}
 	}
-	
-	
-	
+
+
+
 	private function getInfo($set, $barcodeItem='')
 		{
 		$results = array(
@@ -134,26 +134,34 @@ class FOLIO extends Model
 			   'record_barcode' => '',
 			   'new_call' => ''
 		);
-			
+
 			$id = $set["id"];
-			
+
 			// $rtac = $this->RTACSearch("id=$id");
-			
+
 			$callNumber = '';
 			$issn = '';
 			$isbn = '';
 			$barcode = $this->barcode;
 			$description = array();
-			
+
 			if(!empty($set["items"])){
-				foreach($set["items"] as $items){
-					if($items["effectiveLocationId"] == "5eb79fcc-af08-4ae1-9ab3-dde11e330a01"){
-						$callNumber = $items["effectiveCallNumberComponents"]["callNumber"];
-						$barcode = $items["barcode"];
+				foreach($set["items"] as $item){
+					// The results may include more than one item, because
+					// an instance that matches a particular barcode may
+					// contain other items as well.  So we need to check
+					// that this item is the one we searched for, not another
+					// item belonging to the found instance.
+					if($item["barcode"] != $barcodeItem){
+						continue;
+					}
+					if($item["effectiveLocationId"] == "5eb79fcc-af08-4ae1-9ab3-dde11e330a01"){
+						$callNumber = $item["effectiveCallNumberComponents"]["callNumber"];
+						$barcode = $item["barcode"];
 					}
 				}
 			}
-	
+
 			// if(!empty($rtac["data"])){
 			// 	if(isset($rtac["data"]["holding"][1])){
 			// 		foreach($rtac["data"]["holding"] as $items){
@@ -167,7 +175,7 @@ class FOLIO extends Model
 			// 		}
 			// 	}
 			// }
-			
+
 			if(!empty($set["identifiers"])){
 				foreach($set["identifiers"] as $items){
 					switch($items["identifierTypeId"]){
@@ -180,31 +188,38 @@ class FOLIO extends Model
 					}
 				}
 			}
-			
+
 			if(!empty($set["notes"])){
 				foreach($set["notes"] as $items){
 					array_push($description, $items["note"]);
 				}
 			}
-			
-			
-			
+
+
+
 			$results["title"] = $set["title"];
 			$results["call_number"] = $callNumber;
 			$results["issn"] = $issn;
 			$results["isbn"] = $isbn;
 			$results["description"] = implode("-------", $description);
 			$results["barcode"] = $barcode;
-			
-			
+
+
 			if(isset($this->barcode)){
 				$barcode = $this->barcode;
 			} else {
 				$barcode = $results['barcode'];
-			}	
-						
+			}
+
 			$tray = $this->getTray($barcode);
-			$shelf = $this->getShelf($tray["boxbarcode"], $callNumber, isset($results["old_location"]) ? $results["old_location"] : '');
+			// error_log(print_r($barcode, TRUE));
+			// error_log(print_r($tray, TRUE));
+			if (empty($tray)){
+				$shelf = "";
+			}
+			else {
+				$shelf = $this->getShelf($tray["boxbarcode"], $callNumber, isset($results["old_location"]) ? $results["old_location"] : '');
+			}
 			$results["tray_id"] = isset($tray["id"]) ? $tray["id"] : '';
 			$results["tray_barcode"] = isset($tray["boxbarcode"]) ? $tray["boxbarcode"] : '';
 			$results["stream"] = isset($tray["stream"]) ? $tray["stream"] : '';
@@ -231,7 +246,7 @@ class FOLIO extends Model
 			}
 			return $results;
 		}
-	
+
 	private function RTACSearch($url)
 	{
 		  $client = new Client();
@@ -240,46 +255,45 @@ class FOLIO extends Model
 			->setMethod('get')
 			->setFormat(Client::FORMAT_JSON)
 			->setUrl($location . $url)
-			->send();	
+			->send();
 		if ($response->isOk) {
 			return $response->data;
 		}
 	}
-	
-	
+
+
 	private function search($url)
 	{
-		
-		  $client = new Client(['baseUrl' => "http://libtools2.smith.edu/folio/web/search/search-inventory"]);
-		  $response = $client->createRequest()
+		$client = new Client(['baseUrl' => "http://libtools2.smith.edu/folio/web/search/search-inventory"]);
+		$response = $client->createRequest()
 			->setMethod('get')
 			->setFormat(Client::FORMAT_JSON)
 			->setUrl([
 				'query' => $url
 			])
-			->send();	
+			->send();
 		if ($response->isOk) {
 			return $response->data;
 		} else {
-			
-		}	  
+
+		}
 	}
-	
+
 	private function searchPagingSlips($url)
 	{
 		$client = new Client(['baseUrl' => $url]);
 		  $response = $client->createRequest()
 			->setMethod('get')
 			->setFormat(Client::FORMAT_JSON)
-			->send();	
+			->send();
 		if ($response->isOk) {
 			return $response->data;
 		}
 	}
-	
-	
+
+
 	//FOLIO FUNCTIONS END HERE
-	
+
 	//ALEPH FUNCTIONS START HERE. COMMENT OUT AFTER CONVERSION TO FOLIO
 	// public function processTray($tray)
 	// {
@@ -291,15 +305,15 @@ class FOLIO extends Model
 	// 	}
 	// 	return $set;
 	// }
-	
+
 	// public function processPagingSlips($day)
 	// {
-	// 	$date = date("Ymd");	
+	// 	$date = date("Ymd");
 	// 	if($day == "morning"){
 	// 		$paging = file("http://fcaw.library.umass.edu/pickup/anx.cir.12.paging". $date ."_am_barcode");
 	// 	} else {
 	// 		$paging = file("http://fcaw.library.umass.edu/pickup/anx.cir.12.paging". $date ."_pm_barcode");
-	// 	}	
+	// 	}
 	// 	$set = array();
 	// 	foreach($paging as $items){
 	// 		$items = str_replace('<z30-barcode>', '', $items);
@@ -312,7 +326,7 @@ class FOLIO extends Model
 	// 	}
 	// 	return($data);
 	// }
-	// 
+	//
 	// public function processShelfTray($tray)
 	// {
 	// 	\Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
@@ -323,8 +337,8 @@ class FOLIO extends Model
 	// 	}
 	// 	return $set;
 	// }
-	// 
-	
+	//
+
 	public function processShelf($shelf)
 	{
 		\Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
@@ -346,7 +360,7 @@ class FOLIO extends Model
 */
 // 		return $set;
 	}
-	
+
 	// public function processBarcode($barcode, $type="paging")
 	// {
 	//     $library = $this->ADMCheck($barcode);
@@ -364,9 +378,9 @@ class FOLIO extends Model
 	//     	return $this->processRequest($search["z30"]['z30-doc-number'], $library, $barcode, $type);
 	//     } else {
 	// 	    return $this->getInfoWithoutAleph($barcode);
-	//     }	
+	//     }
 	// }
-	
+
 	private function processRequest($request, $library, $barcode='', $type)
 	{
 		   $options = array (
@@ -380,9 +394,9 @@ class FOLIO extends Model
 		$json = json_encode($search);
 		$json = iconv('UTF-8', 'ISO-8859-1//TRANSLIT//IGNORE', $json);
 		$array = json_decode($json, true);
-		foreach ($array["record"]["metadata"]["oai_marc"]["varfield"] as $field) 
+		foreach ($array["record"]["metadata"]["oai_marc"]["varfield"] as $field)
 		{
-			switch ($field["@attributes"]['id']) 
+			switch ($field["@attributes"]['id'])
 			{
 				case 'LKR' :
 				$search_results['doc'] = "";
@@ -391,11 +405,11 @@ class FOLIO extends Model
 					$term .= $subfield;
 				}
 				break;
-			}	
+			}
 		}
 		return $this->getDoc(str_replace('ADMFCL01', '', $term), $barcode, $type);
 	}
-	
+
 	// public function processByOCLC($request)
 	// {
 	// 	\Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
@@ -404,7 +418,7 @@ class FOLIO extends Model
 	// 		'base' => 'FCL01SMT',
 	// 		'request' => "OCL=$request"
 	// 	);
-	// 	$url = http_build_query($options, '' , '&');	
+	// 	$url = http_build_query($options, '' , '&');
 	// 	$search = $this->search($url);
 	// 	if(isset($search['set_number'])){
 	// 	$options = array (
@@ -455,9 +469,9 @@ class FOLIO extends Model
 	// 	}
 	// 	} else {
 	// 		return false;
-	// 	} 		
+	// 	}
 	// }
-	
+
 	public function basicTemplate()
 	{
 	   $results = array(
@@ -492,18 +506,18 @@ class FOLIO extends Model
 			   'status' => '',
 			   'timestamp' => ''
 		);
-		return $results; 
+		return $results;
 	}
-	
+
 	// public function processCallNumber($request)
 	// {
 	// 	  \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
 	// 	   $options = array (
 	// 		'op' => 'find',
 	// 		'base' => 'FCL01SMT',
-	// 		'request' => "LCI2=$request" 
+	// 		'request' => "LCI2=$request"
 	// 	);
-	// 	$url = http_build_query($options, '' , '&');	
+	// 	$url = http_build_query($options, '' , '&');
 	// 	$search = $this->search($url);
 	// 	$options = array (
 	// 		'op' => 'present',
@@ -514,20 +528,18 @@ class FOLIO extends Model
 	// 	$data = $this->search($url);
 	// 	$content = $data["record"];
 	// 	$results = $this->getDoc($content["doc_number"]);
-	// 	return $results;  
+	// 	return $results;
 	// }
-	
+
 	// public function processMultiCallNumber($request)
 	// {
 	// 			 \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
 	// 	   $options = array (
 	// 		'op' => 'find',
 	// 		'base' => 'FCL01SMT',
-	// 		'request' => "LCI2=$request" 
+	// 		'request' => "LCI2=$request"
 	// 	);
-	// 	$url = http_build_query($options, '' , '&');	
-	// 	$search = $this->search($url);
-	// 	if(isset($search["set_number"])){
+	// 	$url = http_build_query($options, '' , '&');
 	// 	$options = array (
 	// 		'op' => 'present',
 	// 		'set_no' => $search['set_number'],
@@ -540,7 +552,7 @@ class FOLIO extends Model
 	// 	if(isset($content[0])) {
 	// 		 foreach($content as $items){
 	// 			$results[] = $this->getDoc($items["doc_number"]);
-	// 		}     
+	// 		}
 	// 	} else {
 	// 	   $results = $this->getDoc($content["doc_number"]);
 	// 	}
@@ -549,9 +561,9 @@ class FOLIO extends Model
 	// 		return $this->basicTemplate();
 	// 	}
 	// }
-	
 
-	
+
+
 	private function getRecords($set)
 	{
 		$options = array (
@@ -569,7 +581,7 @@ class FOLIO extends Model
 		return $results;
 
 	}
-	
+
 	private function getItems($id)
 	{
 				 $options = array (
@@ -577,7 +589,7 @@ class FOLIO extends Model
 			'base' => 'FCL01',
 			'doc-number' => $id
 		);
-		$url = http_build_query($options, '' , '&');	
+		$url = http_build_query($options, '' , '&');
 		$search = $this->search($url);
 		if(isset($search["item"][0])){
 			foreach($search["item"] as $items){
@@ -588,7 +600,7 @@ class FOLIO extends Model
 		}
 // 		$this->readItem($search["item"]["barcode"]);
 	}
-	
+
 	private function readItem($id)
 	{
 		 $options = array (
@@ -596,13 +608,13 @@ class FOLIO extends Model
 			'library' => 'SMT50',
 			'item_barcode' => $id
 		);
-		$url = http_build_query($options, '' , '&');	
+		$url = http_build_query($options, '' , '&');
 		$search = $this->search($url);
 		$this->format($search);
-		$this->getHoldings($search["z30"]["z30-hol-doc-number"]);   
+		$this->getHoldings($search["z30"]["z30-hol-doc-number"]);
 	}
-	
-	
+
+
 	private function getDoc($id, $barcode='', $type)
 	{
 		  $options = array (
@@ -610,19 +622,19 @@ class FOLIO extends Model
 			'base' => 'FCL01',
 			'doc_num' => $id
 		);
-		$url = http_build_query($options, '' , '&');	
+		$url = http_build_query($options, '' , '&');
 		$search = $this->search($url);
 		if(isset($search["record"])){
 			if($type == "full"){
 				return $this->getFullMarc($search["record"]["metadata"]["oai_marc"], $barcode);
 			} else {
-				return $this->getInfo($search["record"]["metadata"]["oai_marc"], $barcode); 
+				return $this->getInfo($search["record"]["metadata"]["oai_marc"], $barcode);
 			}
 		} else {
 			return '';
-		}	
+		}
 	}
-	
+
 	private function getFullMarc($set, $barcodeItem='')
 	{
 		$results = array();
@@ -631,11 +643,11 @@ class FOLIO extends Model
 		}
 		return $results;
 	}
-	
+
 //     private function getInfo($set, $barcodeItem='')
 //     {
-// 
-// 		
+//
+//
 // 		$results = array(
 // 		   	'title' => '',
 // 		   	'call_number' => '',
@@ -653,7 +665,7 @@ class FOLIO extends Model
 // 		   	'height' => 'none',
 // 			'material' => ''
 // 	    );
-// 	    
+//
 // 		foreach($set["varfield"] as $items) {
 // //			$this->format($items);
 // 			switch($items["@attributes"]["id"]){
@@ -662,7 +674,7 @@ class FOLIO extends Model
 // 				break;
 // 				case '022':
 // 					$results["issn"] = $this->is($items);
-// 				break;	 
+// 				break;
 // /*
 // 				case '050':
 // 			   	case '060':
@@ -671,12 +683,12 @@ class FOLIO extends Model
 // 			   	case '092':
 // 			   	case '099':
 // 			   		$results["call_number"] = $this->callnumber($items);
-// // 			   		$results["call_number_normalized"] = $this->callnumbernormalized($results["call_number"]);	   		
+// // 			   		$results["call_number_normalized"] = $this->callnumbernormalized($results["call_number"]);
 // 			   	break;
 // */
 // 				case '245':
 // 					$results["title"] = $this->title($items);
-// 				break;	
+// 				break;
 // 				case '300':
 // 					$results["description"] = $this->info($items);
 // 				break;
@@ -690,15 +702,15 @@ class FOLIO extends Model
 // 					$results["material"] = $this->info($items);
 // 				case '952':
 // 					$results["old_location"] = $this->old_location($items);
-// 				break;			
+// 				break;
 // 			}
 // 		}
 // 		if(isset($this->barcode)){
 // 			$barcode = $this->barcode;
 // 		} else {
 // 			$barcode = $results['barcode'];
-// 		}	
-// 					
+// 		}
+//
 // 		$tray = $this->getTray($barcode);
 // 		$shelf = $this->getShelf($tray["boxbarcode"], $results["call_number"], isset($results["old_location"]) ? $results["old_location"] : '');
 // 		$results["tray_id"] = isset($tray["id"]) ? $tray["id"] : '';
@@ -714,17 +726,17 @@ class FOLIO extends Model
 // 						$results['height'] = "floor";
 // 					} else if((int)$shelves >= 7) {
 // 						$results['height'] = "lift";
-// 					} else { 
+// 					} else {
 // 						$results['height'] = "none";
 // 					}
-// 				}		
+// 				}
 // 				$results[$key] = $shelves;
 // 			}
 // 		}
 // // 		$results["shelf"] = isset($shelf) ? $shelf : '';
 // 		return $results;
 //     }
-	
+
 	private function getInfoWithoutAleph($barcode)
 	{
 		$results = array(
@@ -743,58 +755,58 @@ class FOLIO extends Model
 			   'new_call' => '',
 			   'height' => 'none'
 		);
-		
+
 		$tray = $this->getTray($barcode);
 		$shelf = $this->getShelf($tray["boxbarcode"], $results["call_number"], isset($results["old_location"]) ? $results["old_location"] : '');
 		$results["tray_id"] = isset($tray["id"]) ? $tray["id"] : '';
-				$results["tray_barcode"] = isset($tray["boxbarcode"]) ? $tray["boxbarcode"] : '';
-				$results["stream"] = isset($tray["stream"]) ? $tray["stream"] : '';
-				$results["status"] = isset($tray["status"]) ? $tray["status"] : '';
-				$results["timestamp"] = isset($tray["timestamp"]) ? $tray["timestamp"] : '';
-				$results["shelf_barcode"] = isset($shelf["shelf"]) ? $shelf["shelf"] : '' ;
-				if(isset($shelf)){
-					foreach($shelf as $key => $shelves){
-						if($key === "shelf_number") {
-							if((int)$shelves < 7){
-								$results['height'] = "floor";
-							} else if((int)$shelves >= 7) {
-								$results['height'] = "lift";
-							} else { 
-								$results['height'] = "none";
-							}
-						}		
-						$results[$key] = $shelves;
+		$results["tray_barcode"] = isset($tray["boxbarcode"]) ? $tray["boxbarcode"] : '';
+		$results["stream"] = isset($tray["stream"]) ? $tray["stream"] : '';
+		$results["status"] = isset($tray["status"]) ? $tray["status"] : '';
+		$results["timestamp"] = isset($tray["timestamp"]) ? $tray["timestamp"] : '';
+		$results["shelf_barcode"] = isset($shelf["shelf"]) ? $shelf["shelf"] : '' ;
+		if(isset($shelf)){
+			foreach($shelf as $key => $shelves){
+				if($key === "shelf_number") {
+					if((int)$shelves < 7){
+						$results['height'] = "floor";
+					} else if((int)$shelves >= 7) {
+						$results['height'] = "lift";
+					} else {
+						$results['height'] = "none";
 					}
 				}
+				$results[$key] = $shelves;
+			}
+		}
 		// 		$results["shelf"] = isset($shelf) ? $shelf : '';
-				return $results;
+		return $results;
 	}
-	
+
 	private function getTrayByID($tray)
 	{
-	  return BarcodeTray::find()->where(['like', 'boxbarcode', $tray])->limit(50)->all();  
+	  return BarcodeTray::find()->where(['like', 'boxbarcode', $tray])->limit(50)->all();
 	}
-	
+
 	private function getTrayByBarcode($tray)
 	{
-	  return BarcodeTray::find()->where(['like', 'barcode', $tray])->limit(50)->all();      
+	  return BarcodeTray::find()->where(['like', 'barcode', $tray])->limit(50)->all();
 	}
-	
+
 	private function getShelfByID($shelf)
 	{
-	  return TrayShelf::find()->where(['like', 'shelf', $shelf])->limit(50)->all();  
+	  return TrayShelf::find()->where(['like', 'shelf', $shelf])->limit(50)->all();
 	}
-	
+
 	private function getTrayByList($tray)
 	{
-	   return BarcodeTray::find()->where(['in', 'boxbarcode', $tray])->limit(50)->all();  
+	   return BarcodeTray::find()->where(['in', 'boxbarcode', $tray])->limit(50)->all();
 	}
-	
+
 	private function getTray($barcode)
 	{
-		return BarcodeTray::find()->where(['like', 'barcode', trim($barcode)])->one();		    
+		return BarcodeTray::find()->where(['like', 'barcode', trim($barcode)])->one();
 	}
-	
+
 	private function getShelf($tray, $callnumber = '', $oldlocation = '')
 	{
 		$shelf = TrayShelf::find()
@@ -802,18 +814,18 @@ class FOLIO extends Model
 					->where(['boxbarcode' => $tray])
 					->asArray()
 					->one();
-		$dewey_shelf = $this->searchDewey($callnumber, $this->locationMap($oldlocation));			
+		$dewey_shelf = $this->searchDewey($callnumber, $this->locationMap($oldlocation));
 		if($shelf){
 			return $shelf;
 		} else if($dewey_shelf){
 			return $dewey_shelf;
-		} else {    
+		} else {
 			return [];
 		}
 	}
-	
+
 	private function is($items)
-	{	
+	{
 		if(is_array($items["subfield"])){
 			foreach($items["subfield"] as $item){
 				return (string)$item;
@@ -822,16 +834,16 @@ class FOLIO extends Model
 			return (string)$items["subfield"];
 		}
 	}
-	
+
 	private function old_location($items)
 	{
 		   if(isset($items["subfield"][1])) {
 			return (string)$items["subfield"][1];
 		} else {
 			return '';
-		} 
+		}
 	}
-	
+
 	private function record_barcode($items){
 // 	    $this->format($items);
 		if(isset($items["subfield"][3]) && strpos($items["subfield"][3], '3101') !== false) {
@@ -839,16 +851,16 @@ class FOLIO extends Model
 		} else if(isset($items["subfield"][4]) && strpos($items["subfield"][4], '3101') !== false) {
 			return (string)$items["subfield"][4];
 		} else if(isset($items["subfield"][5]) && strpos($items["subfield"][5], '3101') !== false){
-			return (string)$items["subfield"][5];	
+			return (string)$items["subfield"][5];
 		} else {
 			return '';
-		}	
+		}
 	}
-	
+
 	private function title($items)
 	{
-	  $results = ''; 
-	  if(is_array($items["subfield"])) { 
+	  $results = '';
+	  if(is_array($items["subfield"])) {
 		  foreach ($items["subfield"] as $key=>$subfield){
 			if($results == "") {
 					   $results .= (string)$subfield;
@@ -858,51 +870,51 @@ class FOLIO extends Model
 			}
 		} else {
 			return (string)$items["subfield"];
-		}	
-		return $results	;	  
+		}
+		return $results	;
 	}
-	
+
 	private function callnumber($items)
 	{
 		$results = '';
 		if(is_array($items["subfield"])) {
 			foreach($items["subfield"] as $subfield) {
 				$results .= (string)$subfield;
-			}	
+			}
 		} else {
 			return $items["subfield"];
-		}	
-		return $results;		    
+		}
+		return $results;
 	}
-	
+
 	private function callnumbertest($items)
 	{
-		
+
 		$base = isset($items["subfield"][2]) ? (string)$items["subfield"][2] : '';
 		$base2 = isset($items["subfield"][3]) ? (string)$items["subfield"][3] : '';
-		return $base . " " . $base2;		    
+		return $base . " " . $base2;
 	}
-	
-	
+
+
 	private function callnumbernormalized($items)
 	{
 		return $this->normalize($items);
 	}
-	
+
 	private function info($items)
 	{
 		$results = '';
 		if(is_array($items["subfield"])) {
 			foreach($items["subfield"] as $subfield) {
 				$results .= (string)$subfield;
-			}	
+			}
 		} else {
 			return $items["subfield"];
-		}	
-		return $results;	  
+		}
+		return $results;
 	}
-	
-	
+
+
 	// private function search($url)
 	// {
 	//   	$client = new Client();
@@ -911,47 +923,47 @@ class FOLIO extends Model
 	// 		->setMethod('get')
 	// 		->setFormat(Client::FORMAT_XML)
 	// 		->setUrl($location . $url)
-	// 		->send();	
+	// 		->send();
 	// 	if ($response->isOk) {
 	// 		return $response->data;
-	// 	}	  
+	// 	}
 	// }
-	
+
 	private function searchDewey($call_number, $location)
 	{
 		$model = new Dewey();
 		$provider = Yii::$app->db->createCommand("
-			SELECT shelf 
-			FROM `dewey` 
+			SELECT shelf
+			FROM `dewey`
 			WHERE '$call_number' BETWEEN `call_number_begin` and `call_number_end` AND collection = '$location'
-		")->queryAll();		
+		")->queryAll();
 		return $provider;
 	}
-	
+
 	private function locationMap($location)
 	{
 		switch($location){
 			case 'SNSTK':
 				return 'Dewey';
-			break;	
+			break;
 			case 'STDEW';
-				return "West Street Dewey";	
+				return "West Street Dewey";
 			break;
 			case 'SNREF':
 				return "Neilson Reference";
 			break;
 			case 'SSNRE':
 				return "Young Reference";
-			break;	
+			break;
 			case 'STJL':
 				return "Josten Periodicals";
 			break;
 			case 'SNPER':
 				return "Neilson Periodicals";
-			break;			
+			break;
 		}
 	}
-	
+
 	private function normalize($callno) {
 		$alpha_match = preg_match("/[A-Z]{1,3}/", $callno, $alpha_bit);
 		$numeric_match = preg_match("/[0-9]{1,4}/", $callno, $numeric_bit);
@@ -961,33 +973,33 @@ class FOLIO extends Model
 		$date_match = preg_match("/(?<=[ ])[0-9][0-9][0-9][0-9][a-zA-Z]?/", $callno, $date_bit);
 	// Validates call number part; checks to see if it exists.  If not, returns null.
 		if ($cutter1_match == "0"){$cutter1_bit = array('');}
-		if ($cutter2_match == "0"){$cutter2_bit = array('');}	
+		if ($cutter2_match == "0"){$cutter2_bit = array('');}
 		if ($date_match == "0"){$date_bit = array('');}
 	// Normalizes callnumber elements that need normalizing.
 		$numeric_bit_f = str_pad($numeric_bit[0], 4, '0', STR_PAD_LEFT);
 		$decimal_bit_f = str_pad($decimal_bit[0], 4, '0', STR_PAD_RIGHT);
-	
+
 	// Prints normalized callnumber.
-		$display = 	"{$alpha_bit[0]} " . 
+		$display = 	"{$alpha_bit[0]} " .
 					"{$numeric_bit_f}" .
-					"{$decimal_bit_f} " . 
-					"{$cutter1_bit[0]} " . 
+					"{$decimal_bit_f} " .
+					"{$cutter1_bit[0]} " .
 					"{$cutter2_bit[0]} " .
 					"{$date_bit[0]}";
-		return $display;			
+		return $display;
 	}
-	
-	
-		
-	
+
+
+
+
 	private function format($value)
 	{
 		print '<pre>';
 		print_r($value);
 		print '</pre>';
 	}
-	
-	
+
+
 	private function ADMCheck($barcode)
 	{
 		switch(true){
@@ -1000,20 +1012,20 @@ class FOLIO extends Model
 			case strpos($barcode, '310203') === 0:
 				return 'MHC50';
 			break;
-			case strpos($barcode, '310183') === 0:	
+			case strpos($barcode, '310183') === 0:
 				return 'SMT50';
-			break; 
+			break;
 			case strpos($barcode, '312066') === 0:
 				return 'UMA50';
 			break;
-			case strpos($barcode, '314000') === 0:	
+			case strpos($barcode, '314000') === 0:
 				return 'DEP50';
-			break;		    
+			break;
 			default:
 				return 'DEP50';
-			break;		
+			break;
 		}
 
 	}
-	
+
 }
