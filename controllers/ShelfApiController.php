@@ -63,6 +63,13 @@ class ShelfApiController extends ActiveController
 		$shelf_depth = $data['shelf_depth'];
 		$shelf_position = $data['shelf_position'];
 		$added = $data['added'];
+
+		//Check if tray exisits
+
+		$traySearch = TrayShelf::find()->where(['like', 'boxbarcode', $data["boxbarcode"]])->one();
+		if(!empty($traySearch)){
+			return \yii\helpers\Json::encode("Tray already exisits");
+		}  else {
 		
 	   	if ($shelfbarcode) {
 			Yii::$app->db->createCommand()->insert('tray_shelf', [
@@ -82,5 +89,6 @@ class ShelfApiController extends ActiveController
         } else {
 			return \yii\helpers\Json::encode(false);
         }		
+		}
    	}
 }

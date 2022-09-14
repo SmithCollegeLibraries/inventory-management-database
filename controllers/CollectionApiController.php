@@ -26,5 +26,23 @@ class CollectionApiController extends ActiveController
 		return $behaviors;
 	}
 	
+	public function actions()
+    {
+        $actions = parent::actions();
+        unset($actions['index']);
+        return $actions;
+    }
+    
+    public function actionIndex()
+    {
+	    $modelClass = 'app\models\Collections';
+	    $dataProvider = new ActiveDataProvider([
+		    'query'      => $modelClass::find(),
+		    'pagination' => false,
+		]);
+		return $dataProvider;
+    }
+
+	
 
 }
