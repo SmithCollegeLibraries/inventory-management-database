@@ -149,10 +149,13 @@ class FOLIO extends Model
 					// contain other items as well.  So we need to check
 					// that this item is the one we searched for, not another
 					// item belonging to the found instance.
-					if($item["barcode"] != $barcodeItem){
+				if (!array_key_exists("barcode", $item)) {
 						continue;
 					}
-					if($item["effectiveLocationId"] == "5eb79fcc-af08-4ae1-9ab3-dde11e330a01"){
+				else if ($item["barcode"] != $barcodeItem) {
+					continue;
+				}
+				else if ($item["effectiveLocationId"] == "5eb79fcc-af08-4ae1-9ab3-dde11e330a01") {
 						$callNumber = $item["effectiveCallNumberComponents"]["callNumber"];
 						$barcode = $item["barcode"];
 					}
