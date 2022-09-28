@@ -115,135 +115,136 @@ class FOLIO extends Model
 	}
 
 	private function getInfo($set, $barcodeItem='')
-		{
+	{
 		$results = array(
-			   'title' => '',
-			   'call_number' => '',
-			   'call_number_normalized' => '',
-			   'issn' => '',
-			   'isbn' => '',
-			   'description' => '',
-			   'barcode' => '',
-			   'tray_barcode' => '',
-			   'stream' => '',
-			   "shelf_barcode" => '',
-			   'shelf' => '',
-			   'record_barcode' => '',
-			   'new_call' => ''
+			'title' => '',
+			'call_number' => '',
+			'call_number_normalized' => '',
+			'issn' => '',
+			'isbn' => '',
+			'description' => '',
+			'barcode' => '',
+			'tray_barcode' => '',
+			'stream' => '',
+			"shelf_barcode" => '',
+			'shelf' => '',
+			'record_barcode' => '',
+			'new_call' => ''
 		);
 
-			$id = $set["id"];
+		$id = $set["id"];
 
-			// $rtac = $this->RTACSearch("id=$id");
+		// $rtac = $this->RTACSearch("id=$id");
 
-			$callNumber = '';
-			$issn = '';
-			$isbn = '';
-			$barcode = $this->barcode;
-			$description = array();
+		$callNumber = '';
+		$issn = '';
+		$isbn = '';
+		$barcode = $this->barcode;
+		$description = array();
 
-			if(!empty($set["items"])){
-				foreach($set["items"] as $item){
-					// The results may include more than one item, because
-					// an instance that matches a particular barcode may
-					// contain other items as well.  So we need to check
-					// that this item is the one we searched for, not another
-					// item belonging to the found instance.
+		if(!empty($set["items"])){
+			foreach($set["items"] as $item){
+				// The results may include more than one item, because
+				// an instance that matches a particular barcode may
+				// contain other items as well.  So we need to check
+				// that this item is the one we searched for, not another
+				// item belonging to the found instance.
 				if (!array_key_exists("barcode", $item)) {
-						continue;
-					}
+					continue;
+				}
 				else if ($item["barcode"] != $barcodeItem) {
 					continue;
 				}
 				else if ($item["effectiveLocationId"] == "5eb79fcc-af08-4ae1-9ab3-dde11e330a01") {
-						$callNumber = $item["effectiveCallNumberComponents"]["callNumber"];
-						$barcode = $item["barcode"];
-					}
+					$callNumber = $item["effectiveCallNumberComponents"]["callNumber"];
+					$barcode = $item["barcode"];
 				}
 			}
-
-			// if(!empty($rtac["data"])){
-			// 	if(isset($rtac["data"]["holding"][1])){
-			// 		foreach($rtac["data"]["holding"] as $items){
-			// 			if(isset($items["location"]) &&  $items["location"] == 'Smith College Annex Stacks'){
-			// 				$callNumber = $items["callNumber"];
-			// 			}
-			// 		}
-			// 	} else {
-			// 		if($rtac["data"]["holding"]["location"] == 'Smith College Annex Stacks'){
-			// 			$callNumber = $rtac["data"]["holding"]["callNumber"];
-			// 		}
-			// 	}
-			// }
-
-			if(!empty($set["identifiers"])){
-				foreach($set["identifiers"] as $items){
-					switch($items["identifierTypeId"]){
-						case '913300b2-03ed-469a-8179-c1092c991227':
-							$issn = $items["value"];
-						break;
-						case '8261054f-be78-422d-bd51-4ed9f33c3422':
-							$isbn = $items["value"];
-						break;
-					}
-				}
-			}
-
-			if(!empty($set["notes"])){
-				foreach($set["notes"] as $items){
-					array_push($description, $items["note"]);
-				}
-			}
-
-			$results["title"] = $set["title"];
-			$results["call_number"] = $callNumber;
-			$results["issn"] = $issn;
-			$results["isbn"] = $isbn;
-			$results["description"] = implode("-------", $description);
-			$results["barcode"] = $barcode;
-
-
-			if(isset($this->barcode)){
-				$barcode = $this->barcode;
-			} else {
-				$barcode = $results['barcode'];
-			}
-
-			$tray = $this->getTray($barcode);
-			// error_log(print_r($barcode, TRUE));
-			// error_log(print_r($tray, TRUE));
-			if (empty($tray)){
-				$shelf = "";
-			}
-			else {
-				$shelf = $this->getShelf($tray["boxbarcode"], $callNumber, isset($results["old_location"]) ? $results["old_location"] : '');
-			}
-			$results["tray_id"] = isset($tray["id"]) ? $tray["id"] : '';
-			$results["tray_barcode"] = isset($tray["boxbarcode"]) ? $tray["boxbarcode"] : '';
-			$results["stream"] = isset($tray["stream"]) ? $tray["stream"] : '';
-			$results["status"] = isset($tray["status"]) ? $tray["status"] : '';
-			$results["timestamp"] = isset($tray["timestamp"]) ? $tray["timestamp"] : '';
-			$results["shelf_barcode"] = isset($shelf["shelf"]) ? $shelf["shelf"] : '' ;
-			if(isset($shelf["id"])){
-				$results["shelf"] = $shelf;
-			} else {
-				$results["shelf"] = array(
-					   'id' => '',
-					   'boxbarcode' => '',
-					   'shelf' => '',
-					   'row' => '',
-					   'side' => '',
-					   'ladder' => '',
-					   'shelf_number' => 0,
-					   'shelf_depth' => '',
-					   'shelf_position' => '',
-					   'initials' => '',
-					   'added' => '',
-					   'timestamp' => ''
-				   );
-			}
-			return $results;
 		}
+
+		// if(!empty($rtac["data"])){
+		// 	if(isset($rtac["data"]["holding"][1])){
+		// 		foreach($rtac["data"]["holding"] as $items){
+		// 			if(isset($items["location"]) &&  $items["location"] == 'Smith College Annex Stacks'){
+		// 				$callNumber = $items["callNumber"];
+		// 			}
+		// 		}
+		// 	} else {
+		// 		if($rtac["data"]["holding"]["location"] == 'Smith College Annex Stacks'){
+		// 			$callNumber = $rtac["data"]["holding"]["callNumber"];
+		// 		}
+		// 	}
+		// }
+
+		if(!empty($set["identifiers"])){
+			foreach($set["identifiers"] as $items){
+				switch($items["identifierTypeId"]){
+					case '913300b2-03ed-469a-8179-c1092c991227':
+						$issn = $items["value"];
+					break;
+					case '8261054f-be78-422d-bd51-4ed9f33c3422':
+						$isbn = $items["value"];
+					break;
+				}
+			}
+		}
+
+		if(!empty($set["notes"])){
+			foreach($set["notes"] as $items){
+				array_push($description, $items["note"]);
+			}
+		}
+
+		$results["title"] = $set["title"];
+		$results["call_number"] = $callNumber;
+		$results["issn"] = $issn;
+		$results["isbn"] = $isbn;
+		$results["description"] = implode("-------", $description);
+		$results["barcode"] = $barcode;
+
+
+		if(isset($this->barcode)){
+			$barcode = $this->barcode;
+		} else {
+			$barcode = $results['barcode'];
+		}
+
+		$tray = $this->getTray($barcode);
+		// error_log(print_r($barcode, TRUE));
+		// error_log(print_r($tray, TRUE));
+		if (empty($tray)){
+			$shelf = "";
+		}
+		else {
+			$shelf = $this->getShelf($tray["boxbarcode"], $callNumber, isset($results["old_location"]) ? $results["old_location"] : '');
+		}
+		$results["tray_id"] = isset($tray["id"]) ? $tray["id"] : '';
+		$results["tray_barcode"] = isset($tray["boxbarcode"]) ? $tray["boxbarcode"] : '';
+		$results["stream"] = isset($tray["stream"]) ? $tray["stream"] : '';
+		$results["status"] = isset($tray["status"]) ? $tray["status"] : '';
+		$results["timestamp"] = isset($tray["timestamp"]) ? $tray["timestamp"] : '';
+		$results["shelf_barcode"] = isset($shelf["shelf"]) ? $shelf["shelf"] : '' ;
+		if (isset($shelf["id"])) {
+			$results["shelf"] = $shelf;
+		}
+		else {
+			$results["shelf"] = array(
+					'id' => '',
+					'boxbarcode' => '',
+					'shelf' => '',
+					'row' => '',
+					'side' => '',
+					'ladder' => '',
+					'shelf_number' => 0,
+					'shelf_depth' => '',
+					'shelf_position' => '',
+					'initials' => '',
+					'added' => '',
+					'timestamp' => ''
+				);
+		}
+		return $results;
+	}
 
 	private function RTACSearch($url)
 	{
