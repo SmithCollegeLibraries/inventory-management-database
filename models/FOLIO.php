@@ -76,20 +76,20 @@ class FOLIO extends Model
 		}
 	}
 
-	public function processMultiCallNumber($request)
-	{
-		\Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-		$results = array();
-		foreach($request as $items){
-			$search = $this->search("(items.fullCallNumber=$request)");
-			if(isset($search["data"]["totalRecords"]) && $search["data"]["totalRecords"] > 0){
-				array_push($results, $this->getInfo($search["data"]["instances"][0]));
-			} else {
-				array_push($results, $this->getInfoWithoutAleph($barcode));
-			}
-		}
-		return $results;
-	}
+	// public function processMultiCallNumber($request)
+	// {
+	// 	\Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+	// 	$results = array();
+	// 	foreach($request as $items){
+	// 		$search = $this->search("(items.fullCallNumber=$request)");
+	// 		if(isset($search["data"]["totalRecords"]) && $search["data"]["totalRecords"] > 0){
+	// 			array_push($results, $this->getInfo($search["data"]["instances"][0]));
+	// 		} else {
+	// 			array_push($results, $this->getInfoWithoutAleph($barcode));
+	// 		}
+	// 	}
+	// 	return $results;
+	// }
 
 	public function processByOCLC($request)
 	{
@@ -114,8 +114,6 @@ class FOLIO extends Model
 			return $this->getInfoWithoutAleph($barcode);
 		}
 	}
-
-
 
 	private function getInfo($set, $barcodeItem='')
 		{
@@ -194,8 +192,6 @@ class FOLIO extends Model
 					array_push($description, $items["note"]);
 				}
 			}
-
-
 
 			$results["title"] = $set["title"];
 			$results["call_number"] = $callNumber;
@@ -291,54 +287,6 @@ class FOLIO extends Model
 		}
 	}
 
-
-	//FOLIO FUNCTIONS END HERE
-
-	//ALEPH FUNCTIONS START HERE. COMMENT OUT AFTER CONVERSION TO FOLIO
-	// public function processTray($tray)
-	// {
-	// 	\Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-	// 	$items = $this->getTrayByID($tray);
-	// 	$set = array();
-	// 	foreach($items as $item){
-	// 		$set[] = $this->processBarcode($item['barcode'], $this->ADMCheck($item['barcode']));
-	// 	}
-	// 	return $set;
-	// }
-
-	// public function processPagingSlips($day)
-	// {
-	// 	$date = date("Ymd");
-	// 	if($day == "morning"){
-	// 		$paging = file("http://fcaw.library.umass.edu/pickup/anx.cir.12.paging". $date ."_am_barcode");
-	// 	} else {
-	// 		$paging = file("http://fcaw.library.umass.edu/pickup/anx.cir.12.paging". $date ."_pm_barcode");
-	// 	}
-	// 	$set = array();
-	// 	foreach($paging as $items){
-	// 		$items = str_replace('<z30-barcode>', '', $items);
-	// 		$items = str_replace('</z30-barcode>', '', $items);
-	// 		$set[] = $items;
-	// 	}
-	// 	$data = array();
-	// 	foreach($set as $list){
-	// 		$data[] = $this->processBarcode($list);
-	// 	}
-	// 	return($data);
-	// }
-	//
-	// public function processShelfTray($tray)
-	// {
-	// 	\Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-	// 	$items = $this->getTrayByBarcode($tray);
-	// 	$set = array();
-	// 	foreach($items as $item){
-	// 		$set[] = $this->processBarcode($item['barcode']);
-	// 	}
-	// 	return $set;
-	// }
-	//
-
 	public function processShelf($shelf)
 	{
 		\Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
@@ -353,33 +301,7 @@ class FOLIO extends Model
 			$response[] = $this->processShelfTray($data["barcode"]);
 		}
 		return $response;
-/*
-		foreach($set as $list){
-			$this->format($list);
-		}
-*/
-// 		return $set;
 	}
-
-	// public function processBarcode($barcode, $type="paging")
-	// {
-	//     $library = $this->ADMCheck($barcode);
-	//     $this->barcode = $barcode;
-	//     \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-	//     $this->barcode = $barcode;
-	//     $options = array (
-	// 	    'op' => 'read-item',
-	// 	    'library' => $library,
-	// 	    'item_barcode' => trim($barcode)
-	//     );
-	//     $url = http_build_query($options, '', '&');
-	//     $search = $this->search($url);
-	//     if(isset($search["z30"]['z30-doc-number'])) {
-	//     	return $this->processRequest($search["z30"]['z30-doc-number'], $library, $barcode, $type);
-	//     } else {
-	// 	    return $this->getInfoWithoutAleph($barcode);
-	//     }
-	// }
 
 	private function processRequest($request, $library, $barcode='', $type)
 	{
@@ -409,68 +331,6 @@ class FOLIO extends Model
 		}
 		return $this->getDoc(str_replace('ADMFCL01', '', $term), $barcode, $type);
 	}
-
-	// public function processByOCLC($request)
-	// {
-	// 	\Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-	// 	   $options = array (
-	// 		'op' => 'find',
-	// 		'base' => 'FCL01SMT',
-	// 		'request' => "OCL=$request"
-	// 	);
-	// 	$url = http_build_query($options, '' , '&');
-	// 	$search = $this->search($url);
-	// 	if(isset($search['set_number'])){
-	// 	$options = array (
-	// 		'op' => 'present',
-	// 		'set_no' => $search['set_number'],
-	// 		'set_entry' => '1-60'
-	// 	);
-	// 	$url = http_build_query($options, '' , '&');
-	// 	$data = $this->search($url);
-	// 	$content = $data["record"];
-	// 	if(isset($content["doc_number"])) {
-	// 		$results = $this->getDoc($content["doc_number"]);
-	// 		return $results;
-	// 	} else {
-	// 	$results = array(
-	// 		   'title' => 'ALEPH OCLC Search Failed : OCLC Number used ' . $request,
-	// 		   'call_number' => '',
-	// 		   'call_number_normalized' => '',
-	// 		   'issn' => '',
-	// 		   'isbn' => '',
-	// 		   'description' => '',
-	// 		   'barcode' => '',
-	// 		   'tray_barcode' => '',
-	// 		   'stream' => '',
-	// 		   "shelf_barcode" => '',
-	// 		   'shelf' => array(
-	// 			   'id' => '',
-	// 			   'boxbarcode' => '',
-	// 			   'shelf' => '',
-	// 			   'row' => '',
-	// 			   'side' => '',
-	// 			   'ladder' => '',
-	// 			   'shelf_number' => '',
-	// 			   'shelf_depth' => '',
-	// 			   'shelf_position' => '',
-	// 			   'initials' => '',
-	// 			   'added' => '',
-	// 			   'timestamp' => ''
-	// 		   ),
-	// 		   'record_barcode' => '',
-	// 		   'new_call' => '',
-	// 		   'old_location' => '',
-	// 		   'tray_id' => '',
-	// 		   'status' => '',
-	// 		   'timestamp' => ''
-	// 	);
-	// 		return $results;
-	// 	}
-	// 	} else {
-	// 		return false;
-	// 	}
-	// }
 
 	public function basicTemplate()
 	{
@@ -508,61 +368,6 @@ class FOLIO extends Model
 		);
 		return $results;
 	}
-
-	// public function processCallNumber($request)
-	// {
-	// 	  \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-	// 	   $options = array (
-	// 		'op' => 'find',
-	// 		'base' => 'FCL01SMT',
-	// 		'request' => "LCI2=$request"
-	// 	);
-	// 	$url = http_build_query($options, '' , '&');
-	// 	$search = $this->search($url);
-	// 	$options = array (
-	// 		'op' => 'present',
-	// 		'set_no' => $search['set_number'],
-	// 		'set_entry' => '1-60'
-	// 	);
-	// 	$url = http_build_query($options, '' , '&');
-	// 	$data = $this->search($url);
-	// 	$content = $data["record"];
-	// 	$results = $this->getDoc($content["doc_number"]);
-	// 	return $results;
-	// }
-
-	// public function processMultiCallNumber($request)
-	// {
-	// 			 \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-	// 	   $options = array (
-	// 		'op' => 'find',
-	// 		'base' => 'FCL01SMT',
-	// 		'request' => "LCI2=$request"
-	// 	);
-	// 	$url = http_build_query($options, '' , '&');
-	// 	$options = array (
-	// 		'op' => 'present',
-	// 		'set_no' => $search['set_number'],
-	// 		'set_entry' => '1-60'
-	// 	);
-	// 	$url = http_build_query($options, '' , '&');
-	// 	$data = $this->search($url);
-	// 	$content = $data["record"];
-	// 	$results = array();
-	// 	if(isset($content[0])) {
-	// 		 foreach($content as $items){
-	// 			$results[] = $this->getDoc($items["doc_number"]);
-	// 		}
-	// 	} else {
-	// 	   $results = $this->getDoc($content["doc_number"]);
-	// 	}
-	// 	return $results;
-	// 	} else {
-	// 		return $this->basicTemplate();
-	// 	}
-	// }
-
-
 
 	private function getRecords($set)
 	{
@@ -643,99 +448,6 @@ class FOLIO extends Model
 		}
 		return $results;
 	}
-
-//     private function getInfo($set, $barcodeItem='')
-//     {
-//
-//
-// 		$results = array(
-// 		   	'title' => '',
-// 		   	'call_number' => '',
-// 		   	'call_number_normalized' => '',
-// 		   	'issn' => '',
-// 		   	'isbn' => '',
-// 		   	'description' => '',
-// 		   	'barcode' => '',
-// 		   	'tray_barcode' => '',
-// 		   	'stream' => '',
-// 		   	"shelf_barcode" => '',
-// 		   	'shelf' => '',
-// 		   	'record_barcode' => '',
-// 		   	'new_call' => '',
-// 		   	'height' => 'none',
-// 			'material' => ''
-// 	    );
-//
-// 		foreach($set["varfield"] as $items) {
-// //			$this->format($items);
-// 			switch($items["@attributes"]["id"]){
-// 				case '020':
-// 					$results['isbn'] = $this->is($items);
-// 				break;
-// 				case '022':
-// 					$results["issn"] = $this->is($items);
-// 				break;
-// /*
-// 				case '050':
-// 			   	case '060':
-// 			   	case '070':
-// 			   	case '090':
-// 			   	case '092':
-// 			   	case '099':
-// 			   		$results["call_number"] = $this->callnumber($items);
-// // 			   		$results["call_number_normalized"] = $this->callnumbernormalized($results["call_number"]);
-// 			   	break;
-// */
-// 				case '245':
-// 					$results["title"] = $this->title($items);
-// 				break;
-// 				case '300':
-// 					$results["description"] = $this->info($items);
-// 				break;
-// 				case '852':
-// 					$results['barcode'] = isset($this->barcode) ? $this->barcode : $this->record_barcode($items);
-// 					$results["call_number"] = $this->callnumbertest($items);
-// 					//TODO ADD LOCATION INFORMATION
-// // 					$results["call_number_normalized"] = $this->callnumbernormalized($results["call_number"]);
-// 				break;
-// 				case 'TYP':
-// 					$results["material"] = $this->info($items);
-// 				case '952':
-// 					$results["old_location"] = $this->old_location($items);
-// 				break;
-// 			}
-// 		}
-// 		if(isset($this->barcode)){
-// 			$barcode = $this->barcode;
-// 		} else {
-// 			$barcode = $results['barcode'];
-// 		}
-//
-// 		$tray = $this->getTray($barcode);
-// 		$shelf = $this->getShelf($tray["boxbarcode"], $results["call_number"], isset($results["old_location"]) ? $results["old_location"] : '');
-// 		$results["tray_id"] = isset($tray["id"]) ? $tray["id"] : '';
-// 		$results["tray_barcode"] = isset($tray["boxbarcode"]) ? $tray["boxbarcode"] : '';
-// 		$results["stream"] = isset($tray["stream"]) ? $tray["stream"] : '';
-// 		$results["status"] = isset($tray["status"]) ? $tray["status"] : '';
-// 		$results["timestamp"] = isset($tray["timestamp"]) ? $tray["timestamp"] : '';
-// 		$results["shelf_barcode"] = isset($shelf["shelf"]) ? $shelf["shelf"] : '' ;
-// 		if(isset($shelf)){
-// 			foreach($shelf as $key => $shelves){
-// 				if($key === "shelf_number") {
-// 					if((int)$shelves < 7){
-// 						$results['height'] = "floor";
-// 					} else if((int)$shelves >= 7) {
-// 						$results['height'] = "lift";
-// 					} else {
-// 						$results['height'] = "none";
-// 					}
-// 				}
-// 				$results[$key] = $shelves;
-// 			}
-// 		}
-// // 		$results["shelf"] = isset($shelf) ? $shelf : '';
-// 		return $results;
-//     }
 
 	private function getInfoWithoutAleph($barcode)
 	{
