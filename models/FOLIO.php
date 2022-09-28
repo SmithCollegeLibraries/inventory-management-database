@@ -102,8 +102,7 @@ class FOLIO extends Model
 		}
 	}
 
-
-	public function processBarcode($barcode, $type="paging")
+	public function processBarcode($barcode)
 	{
 		\Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
 		$this->barcode = $barcode;
@@ -303,7 +302,7 @@ class FOLIO extends Model
 		return $response;
 	}
 
-	private function processRequest($request, $library, $barcode='', $type)
+	private function processRequest($request, $library, $barcode='', $type="paging")
 	{
 		   $options = array (
 			'op' => 'find_doc',
@@ -420,7 +419,7 @@ class FOLIO extends Model
 	}
 
 
-	private function getDoc($id, $barcode='', $type)
+	private function getDoc($id, $barcode='', $type="paging")
 	{
 		  $options = array (
 			'op' => 'find-doc',
