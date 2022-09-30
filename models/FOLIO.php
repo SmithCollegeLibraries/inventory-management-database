@@ -114,7 +114,7 @@ class FOLIO extends Model
 		}
 	}
 
-	private function getInfo($set, $barcodeItem='')
+	private function getInfo($set)
 	{
 		$results = array(
 			'title' => '',
@@ -152,13 +152,10 @@ class FOLIO extends Model
 				if (!array_key_exists("barcode", $item)) {
 					continue;
 				}
-				else if ($item["barcode"] != $barcodeItem) {
+				if ($item["barcode"] != $barcode) {
 					continue;
 				}
-				else if ($item["effectiveLocationId"] == "5eb79fcc-af08-4ae1-9ab3-dde11e330a01") {
-					$callNumber = $item["effectiveCallNumberComponents"]["callNumber"];
-					$barcode = $item["barcode"];
-				}
+				$callNumber = $item["effectiveCallNumberComponents"]["callNumber"];
 			}
 		}
 
