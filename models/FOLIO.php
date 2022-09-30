@@ -146,7 +146,7 @@ class FOLIO extends Model
 			foreach($set["items"] as $item){
 				// The results may include more than one item, because
 				// an instance that matches a particular barcode may
-				// contain other items as well.  So we need to check
+				// contain other items as well. So we need to check
 				// that this item is the one we searched for, not another
 				// item belonging to the found instance.
 				if (!array_key_exists("barcode", $item)) {
@@ -201,7 +201,6 @@ class FOLIO extends Model
 		$results["isbn"] = $isbn;
 		$results["description"] = implode("-------", $description);
 		$results["barcode"] = $barcode;
-
 
 		if(isset($this->barcode)){
 			$barcode = $this->barcode;
@@ -712,35 +711,6 @@ class FOLIO extends Model
 		print '<pre>';
 		print_r($value);
 		print '</pre>';
-	}
-
-
-	private function ADMCheck($barcode)
-	{
-		switch(true){
-			case strpos($barcode, '310212') === 0:
-				return 'AMH50';
-			break;
-			case strpos($barcode, '310093') === 0:
-				return 'HAM50';
-			break;
-			case strpos($barcode, '310203') === 0:
-				return 'MHC50';
-			break;
-			case strpos($barcode, '310183') === 0:
-				return 'SMT50';
-			break;
-			case strpos($barcode, '312066') === 0:
-				return 'UMA50';
-			break;
-			case strpos($barcode, '314000') === 0:
-				return 'DEP50';
-			break;
-			default:
-				return 'DEP50';
-			break;
-		}
-
 	}
 
 }
