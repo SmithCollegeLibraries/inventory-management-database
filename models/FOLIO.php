@@ -451,24 +451,24 @@ class FOLIO extends Model
 	private function getInfoWithoutFolio($barcode)
 	{
 		$results = array(
-			   'title' => '',
-			   'call_number' => '',
-			   'call_number_normalized' => '',
-			   'issn' => '',
-			   'isbn' => '',
-			   'description' => '',
-			   'barcode' => $barcode,
-			   'tray_barcode' => '',
-			   'stream' => '',
-			   "shelf_barcode" => '',
-			   'shelf' => '',
-			   'record_barcode' => '',
-			   'new_call' => '',
-			   'height' => 'none'
+			'title' => '[Item not in FOLIO]',
+			'call_number' => '',
+			'call_number_normalized' => '',
+			'issn' => '',
+			'isbn' => '',
+			'description' => '',
+			'barcode' => $barcode,
+			'tray_barcode' => '',
+			'stream' => '',
+			"shelf_barcode" => '',
+			'shelf' => '',
+			'record_barcode' => '',
+			'new_call' => '',
+			'height' => 'none'
 		);
 
 		$tray = $this->getTray($barcode);
-		$shelf = $this->getShelf($tray["boxbarcode"], $results["call_number"], isset($results["old_location"]) ? $results["old_location"] : '');
+		// $shelf = $this->getShelf($tray["boxbarcode"], $results["call_number"], isset($results["old_location"]) ? $results["old_location"] : '');
 		$results["tray_id"] = isset($tray["id"]) ? $tray["id"] : '';
 		$results["tray_barcode"] = isset($tray["boxbarcode"]) ? $tray["boxbarcode"] : '';
 		$results["stream"] = isset($tray["stream"]) ? $tray["stream"] : '';
