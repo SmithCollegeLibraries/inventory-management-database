@@ -85,7 +85,7 @@ class FOLIO extends Model
 	// 		if(isset($search["data"]["totalRecords"]) && $search["data"]["totalRecords"] > 0){
 	// 			array_push($results, $this->getInfo($search["data"]["instances"][0]));
 	// 		} else {
-	// 			array_push($results, $this->getInfoWithoutAleph($barcode));
+	// 			array_push($results, $this->getInfoWithoutFolio($barcode));
 	// 		}
 	// 	}
 	// 	return $results;
@@ -110,7 +110,7 @@ class FOLIO extends Model
 		if(isset($search["data"]["totalRecords"]) && $search["data"]["totalRecords"] > 0){
 			return $this->getInfo($search["data"]["instances"][0]);
 		} else {
-			return $this->getInfoWithoutAleph($barcode);
+			return $this->getInfoWithoutFolio($barcode);
 		}
 	}
 
@@ -448,7 +448,7 @@ class FOLIO extends Model
 		return $results;
 	}
 
-	private function getInfoWithoutAleph($barcode)
+	private function getInfoWithoutFolio($barcode)
 	{
 		$results = array(
 			   'title' => '',
