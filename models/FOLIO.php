@@ -15,7 +15,6 @@ class FOLIO extends Model
 {
 	public $barcode;
 
-	//NEW FOLIO FUNCTIONS START HERE
 	public function processTray($tray)
 	{
 		\Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
@@ -132,8 +131,7 @@ class FOLIO extends Model
 			'new_call' => ''
 		);
 
-		$id = $set["id"];
-
+		// $id = $set["id"];
 		// $rtac = $this->RTACSearch("id=$id");
 
 		$callNumber = '';
@@ -162,7 +160,7 @@ class FOLIO extends Model
 		// if(!empty($rtac["data"])){
 		// 	if(isset($rtac["data"]["holding"][1])){
 		// 		foreach($rtac["data"]["holding"] as $items){
-		// 			if(isset($items["location"]) &&  $items["location"] == 'Smith College Annex Stacks'){
+		// 			if(isset($items["location"]) && $items["location"] == 'Smith College Annex Stacks'){
 		// 				$callNumber = $items["callNumber"];
 		// 			}
 		// 		}
@@ -225,28 +223,28 @@ class FOLIO extends Model
 		}
 		else {
 			$results["shelf"] = array(
-					'id' => '',
-					'boxbarcode' => '',
-					'shelf' => '',
-					'row' => '',
-					'side' => '',
-					'ladder' => '',
-					'shelf_number' => 0,
-					'shelf_depth' => '',
-					'shelf_position' => '',
-					'initials' => '',
-					'added' => '',
-					'timestamp' => ''
-				);
+				'id' => '',
+				'boxbarcode' => '',
+				'shelf' => '',
+				'row' => '',
+				'side' => '',
+				'ladder' => '',
+				'shelf_number' => 0,
+				'shelf_depth' => '',
+				'shelf_position' => '',
+				'initials' => '',
+				'added' => '',
+				'timestamp' => ''
+			);
 		}
 		return $results;
 	}
 
 	private function RTACSearch($url)
 	{
-		  $client = new Client();
-		  $location = 'http://libtools2.smith.edu/folio/web/search/search-rtac?';
-		  $response = $client->createRequest()
+		$client = new Client();
+		$location = 'http://libtools2.smith.edu/folio/web/search/search-rtac?';
+		$response = $client->createRequest()
 			->setMethod('get')
 			->setFormat(Client::FORMAT_JSON)
 			->setUrl($location . $url)
@@ -277,7 +275,7 @@ class FOLIO extends Model
 	private function searchPagingSlips($url)
 	{
 		$client = new Client(['baseUrl' => $url]);
-		  $response = $client->createRequest()
+		$response = $client->createRequest()
 			->setMethod('get')
 			->setFormat(Client::FORMAT_JSON)
 			->send();
@@ -304,7 +302,7 @@ class FOLIO extends Model
 
 	private function processRequest($request, $library, $barcode='', $type="paging")
 	{
-		   $options = array (
+		$options = array (
 			'op' => 'find_doc',
 			'base' => $library,
 			'doc-number' => $request
@@ -333,37 +331,37 @@ class FOLIO extends Model
 
 	public function basicTemplate()
 	{
-	   $results = array(
-			   'title' => '',
-			   'call_number' => '',
-			   'call_number_normalized' => '',
-			   'issn' => '',
-			   'isbn' => '',
-			   'description' => '',
-			   'barcode' => '',
-			   'tray_barcode' => '',
-			   'stream' => '',
-			   "shelf_barcode" => '',
-			   'shelf' => array(
-				   'id' => '',
-				   'boxbarcode' => '',
-				   'shelf' => '',
-				   'row' => '',
-				   'side' => '',
-				   'ladder' => '',
-				   'shelf_number' => '',
-				   'shelf_depth' => '',
-				   'shelf_position' => '',
-				   'initials' => '',
-				   'added' => '',
-				   'timestamp' => ''
-			   ),
-			   'record_barcode' => '',
-			   'new_call' => '',
-			   'old_location' => '',
-			   'tray_id' => '',
-			   'status' => '',
-			   'timestamp' => ''
+		$results = array(
+			'title' => '',
+			'call_number' => '',
+			'call_number_normalized' => '',
+			'issn' => '',
+			'isbn' => '',
+			'description' => '',
+			'barcode' => '',
+			'tray_barcode' => '',
+			'stream' => '',
+			"shelf_barcode" => '',
+			'shelf' => array(
+				'id' => '',
+				'boxbarcode' => '',
+				'shelf' => '',
+				'row' => '',
+				'side' => '',
+				'ladder' => '',
+				'shelf_number' => '',
+				'shelf_depth' => '',
+				'shelf_position' => '',
+				'initials' => '',
+				'added' => '',
+				'timestamp' => ''
+			),
+			'record_barcode' => '',
+			'new_call' => '',
+			'old_location' => '',
+			'tray_id' => '',
+			'status' => '',
+			'timestamp' => ''
 		);
 		return $results;
 	}
@@ -388,7 +386,7 @@ class FOLIO extends Model
 
 	private function getItems($id)
 	{
-				 $options = array (
+		$options = array (
 			'op' => 'item-data',
 			'base' => 'FCL01',
 			'doc-number' => $id
@@ -421,7 +419,7 @@ class FOLIO extends Model
 
 	private function getDoc($id, $barcode='', $type="paging")
 	{
-		  $options = array (
+		$options = array (
 			'op' => 'find-doc',
 			'base' => 'FCL01',
 			'doc_num' => $id
@@ -478,7 +476,7 @@ class FOLIO extends Model
 		if(isset($shelf)){
 			foreach($shelf as $key => $shelves){
 				if($key === "shelf_number") {
-					if((int)$shelves < 7){
+					if((int)$shelves < 7) {
 						$results['height'] = "floor";
 					} else if((int)$shelves >= 7) {
 						$results['height'] = "lift";
@@ -489,28 +487,28 @@ class FOLIO extends Model
 				$results[$key] = $shelves;
 			}
 		}
-		// 		$results["shelf"] = isset($shelf) ? $shelf : '';
+		$results["shelf"] = isset($shelf["id"]) ? $shelf : '';
 		return $results;
 	}
 
 	private function getTrayByID($tray)
 	{
-	  return BarcodeTray::find()->where(['like', 'boxbarcode', $tray])->limit(50)->all();
+		return BarcodeTray::find()->where(['like', 'boxbarcode', $tray])->limit(50)->all();
 	}
 
 	private function getTrayByBarcode($tray)
 	{
-	  return BarcodeTray::find()->where(['like', 'barcode', $tray])->limit(50)->all();
+		return BarcodeTray::find()->where(['like', 'barcode', $tray])->limit(50)->all();
 	}
 
 	private function getShelfByID($shelf)
 	{
-	  return TrayShelf::find()->where(['like', 'shelf', $shelf])->limit(50)->all();
+		return TrayShelf::find()->where(['like', 'shelf', $shelf])->limit(50)->all();
 	}
 
 	private function getTrayByList($tray)
 	{
-	   return BarcodeTray::find()->where(['in', 'boxbarcode', $tray])->limit(50)->all();
+		return BarcodeTray::find()->where(['in', 'boxbarcode', $tray])->limit(50)->all();
 	}
 
 	private function getTray($barcode)
@@ -548,7 +546,7 @@ class FOLIO extends Model
 
 	private function old_location($items)
 	{
-		   if(isset($items["subfield"][1])) {
+		if(isset($items["subfield"][1])) {
 			return (string)$items["subfield"][1];
 		} else {
 			return '';
@@ -570,19 +568,19 @@ class FOLIO extends Model
 
 	private function title($items)
 	{
-	  $results = '';
-	  if(is_array($items["subfield"])) {
-		  foreach ($items["subfield"] as $key=>$subfield){
-			if($results == "") {
-					   $results .= (string)$subfield;
-				   } else {
-					   $results .= " ".(string)$subfield;
-				   }
+		$results = '';
+		if(is_array($items["subfield"])) {
+			foreach ($items["subfield"] as $key=>$subfield){
+				if($results == "") {
+					$results .= (string)$subfield;
+				} else {
+					$results .= " ".(string)$subfield;
+				}
 			}
 		} else {
 			return (string)$items["subfield"];
 		}
-		return $results	;
+		return $results;
 	}
 
 	private function callnumber($items)
