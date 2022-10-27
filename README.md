@@ -8,7 +8,7 @@ rapidly creating small projects.
 REQUIREMENTS
 ------------
 
-The minimum requirement by this project template that your Web server supports PHP 5.4.0.
+The minimum requirement by this project template that your Web server supports PHP 5.6.0.
 
 
 INSTALLATION
@@ -40,14 +40,14 @@ CONFIGURATION
 
 ### Database
 
-Use the sis.sql file found in the package to create your database structure.
+Use the sis4.sql file found in the package to create your database structure.
 
 Edit the file `config/db.php` with real data, for example:
 
 ```php
 return [
     'class' => 'yii\db\Connection',
-    'dsn' => 'mysql:host=localhost;dbname=sis',
+    'dsn' => 'mysql:host=localhost;dbname=sis4',
     'username' => 'xxxxxxx',
     'password' => 'xxxxxxx',
     'charset' => 'utf8',
@@ -62,13 +62,13 @@ to collect code coverage. You can run your tests and collect coverage with the f
 
 ```
 #collect coverage for all tests
-vendor/bin/codecept run -- --coverage-html --coverage-xml
+vendor/bin/codecept run --coverage --coverage-html --coverage-xml
 
 #collect coverage only for unit tests
-vendor/bin/codecept run unit -- --coverage-html --coverage-xml
+vendor/bin/codecept run unit --coverage --coverage-html --coverage-xml
 
 #collect coverage for unit and functional tests
-vendor/bin/codecept run functional,unit -- --coverage-html --coverage-xml
+vendor/bin/codecept run functional,unit --coverage --coverage-html --coverage-xml
 ```
 
 You can see code coverage output under the `tests/_output` directory.

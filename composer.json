@@ -14,33 +14,40 @@
     },
     "minimum-stability": "stable",
     "require": {
-        "php": ">=5.4.0",
-        "yiisoft/yii2": "~2.0.5",
-        "yiisoft/yii2-bootstrap": "~2.0.0",
-        "yiisoft/yii2-swiftmailer": "~2.0.0",
-        "yiisoft/yii2-httpclient": "^2.0"
+        "php": ">=7.4.0",
+        "yiisoft/yii2": "~2.0.45",
+        "yiisoft/yii2-bootstrap5": "~2.0.2",
+        "yiisoft/yii2-symfonymailer": "~2.0.3"
     },
     "require-dev": {
-        "yiisoft/yii2-debug": "~2.0.0",
-        "yiisoft/yii2-gii": "~2.0.0",
+        "yiisoft/yii2-debug": "~2.1.0",
+        "yiisoft/yii2-gii": "~2.2.0",
         "yiisoft/yii2-faker": "~2.0.0",
-
-        "codeception/base": "^2.2.3",
-        "codeception/verify": "~0.3.1",
-        "codeception/specify": "~0.4.3"
+        "phpunit/phpunit": "~9.5.0",
+        "codeception/codeception": "^5.0.0 || ^4.0",
+        "codeception/lib-innerbrowser": "^3.0 || ^1.1",
+        "codeception/module-asserts": "^3.0 || ^1.1",
+        "codeception/module-yii2": "^1.1",
+        "codeception/module-filesystem": "^3.0 || ^1.1",
+        "codeception/verify": "^2.2",
+        "symfony/browser-kit": "^6.0 || >=2.7 <=4.2.4"
     },
     "config": {
+        "allow-plugins": {
+            "yiisoft/yii2-composer" : true
+        },
         "process-timeout": 1800,
-        "fxp-asset":{
-            "installer-paths": {
-                "npm-asset-library": "vendor/npm",
-                "bower-asset-library": "vendor/bower"
-            }
+        "fxp-asset": {
+            "enabled": false
         }
     },
     "scripts": {
+        "post-install-cmd": [
+            "yii\\composer\\Installer::postInstall"
+        ],
         "post-create-project-cmd": [
-            "yii\\composer\\Installer::postCreateProject"
+            "yii\\composer\\Installer::postCreateProject",
+            "yii\\composer\\Installer::postInstall"
         ]
     },
     "extra": {
@@ -51,10 +58,18 @@
                     "web/assets": "0777",
                     "yii": "0755"
                 }
-            ],
+            ]
+        },
+        "yii\\composer\\Installer::postInstall": {
             "generateCookieValidationKey": [
                 "config/web.php"
             ]
         }
-    }
+    },
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://asset-packagist.org"
+        }
+    ]
 }
