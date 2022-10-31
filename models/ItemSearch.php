@@ -2,29 +2,28 @@
 
 namespace app\models;
 
-use Yii;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
-use app\models\Collections;
+use app\models\Item;
 
 /**
- * CollectonsSearch represents the model behind the search form about `app\models\Collections`.
+ * ItemSearch represents the model behind the search form of `app\models\Item`.
  */
-class CollectonsSearch extends Collections
+class ItemSearch extends Item
 {
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function rules()
     {
         return [
-            [['id'], 'integer'],
-            [['name'], 'safe'],
+            [['id', 'tray_id', 'collection_id', 'active', 'flag'], 'integer'],
+            [['barcode', 'status'], 'safe'],
         ];
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function scenarios()
     {
@@ -41,7 +40,7 @@ class CollectonsSearch extends Collections
      */
     public function search($params)
     {
-        $query = Collections::find();
+        $query = Item::find();
 
         // add conditions that should always apply here
 
@@ -60,9 +59,14 @@ class CollectonsSearch extends Collections
         // grid filtering conditions
         $query->andFilterWhere([
             'id' => $this->id,
+            'tray_id' => $this->tray_id,
+            'collection_id' => $this->collection_id,
+            'active' => $this->active,
+            'flag' => $this->flag,
         ]);
 
-        $query->andFilterWhere(['like', 'name', $this->name]);
+        $query->andFilterWhere(['like', 'barcode', $this->barcode])
+            ->andFilterWhere(['like', 'status', $this->status]);
 
         return $dataProvider;
     }

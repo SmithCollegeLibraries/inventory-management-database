@@ -5,8 +5,10 @@ namespace app\models;
 class User extends \yii\db\ActiveRecord implements \yii\web\IdentityInterface
 {
     public $id;
-    public $username;
-    public $password;
+    public $email;
+    public $passwordhash;
+    public $name;
+    public $level;
     public $authKey;
     public $accessToken;
 
@@ -41,20 +43,20 @@ class User extends \yii\db\ActiveRecord implements \yii\web\IdentityInterface
     }
 
     /**
-     * Finds user by username
+     * Finds user by email
      *
-     * @param string $username
+     * @param string $email
      * @return static|null
      */
-    public static function findByUsername($username)
+    public static function findByEmail($email)
     {
         foreach (self::$users as $user) {
-            if (strcasecmp($user['username'], $username) === 0) {
+            if (strcasecmp($user['email'], $email) === 0) {
                 return new static($user);
             }
         }
 
-        return null;	
+        return null;
 // 		return static::findOne(['access_token' => $token]);
     }
 
@@ -90,6 +92,6 @@ class User extends \yii\db\ActiveRecord implements \yii\web\IdentityInterface
      */
     public function validatePassword($password)
     {
-        return $this->password === $password;
+        return Yii::$app->getSecurity()->validatePassword($password, $this->passwordhash);
     }
 }

@@ -1,0 +1,91 @@
+<?php
+
+namespace app\models;
+
+use Yii;
+
+/**
+ * This is the model class for table "tray".
+ *
+ * @property int $id
+ * @property string $barcode
+ * @property int|null $shelf_id
+ * @property string|null $shelf_depth
+ * @property string|null $shelf_position
+ * @property int $active
+ *
+ * @property Item[] $items
+ * @property Shelf $shelf
+ * @property TrayLog[] $trayLogs
+ */
+class Tray extends \yii\db\ActiveRecord
+{
+    /**
+     * {@inheritdoc}
+     */
+    public static function tableName()
+    {
+        return 'tray';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function rules()
+    {
+        return [
+            [['barcode'], 'required'],
+            [['shelf_id', 'active'], 'integer'],
+            [['barcode'], 'string', 'max' => 20],
+            [['shelf_depth'], 'string', 'max' => 5],
+            [['shelf_position'], 'string', 'max' => 3],
+            [['barcode'], 'unique'],
+            [['shelf_id'], 'exist', 'skipOnError' => true, 'targetClass' => Shelf::class, 'targetAttribute' => ['shelf_id' => 'id']],
+        ];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function attributeLabels()
+    {
+        return [
+            'id' => 'ID',
+            'barcode' => 'Barcode',
+            'shelf_id' => 'Shelf ID',
+            'shelf_depth' => 'Shelf Depth',
+            'shelf_position' => 'Shelf Position',
+            'active' => 'Active',
+        ];
+    }
+
+    /**
+     * Gets query for [[Items]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getItems()
+    {
+        return $this->hasMany(Item::class, ['tray_id' => 'id']);
+    }
+
+    /**
+     * Gets query for [[Shelf]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getShelf()
+    {
+        return $this->hasOne(Shelf::class, ['id' => 'shelf_id']);
+    }
+
+    /**
+     * Gets query for [[TrayLogs]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getTrayLogs()
+    {
+        return $this->hasMany(TrayLog::class, ['tray_id' => 'id']);
+    }
+}

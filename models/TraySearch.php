@@ -2,29 +2,28 @@
 
 namespace app\models;
 
-use Yii;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
-use app\models\TrayShelf;
+use app\models\Tray;
 
 /**
- * TrayShelfSearch represents the model behind the search form about `app\models\TrayShelf`.
+ * TraySearch represents the model behind the search form of `app\models\Tray`.
  */
-class TrayShelfSearch extends TrayShelf
+class TraySearch extends Tray
 {
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function rules()
     {
         return [
-            [['id'], 'integer'],
-            [['boxbarcode', 'shelf', 'row', 'side', 'ladder', 'shelf_number', 'shelf_depth', 'shelf_position', 'initials', 'added', 'timestamp'], 'safe'],
+            [['id', 'shelf_id', 'active'], 'integer'],
+            [['barcode', 'shelf_depth', 'shelf_position'], 'safe'],
         ];
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function scenarios()
     {
@@ -41,7 +40,7 @@ class TrayShelfSearch extends TrayShelf
      */
     public function search($params)
     {
-        $query = TrayShelf::find();
+        $query = Tray::find();
 
         // add conditions that should always apply here
 
@@ -60,19 +59,13 @@ class TrayShelfSearch extends TrayShelf
         // grid filtering conditions
         $query->andFilterWhere([
             'id' => $this->id,
+            'shelf_id' => $this->shelf_id,
+            'active' => $this->active,
         ]);
 
-        $query->andFilterWhere(['like', 'boxbarcode', $this->boxbarcode])
-            ->andFilterWhere(['like', 'shelf', $this->shelf])
-            ->andFilterWhere(['like', 'row', $this->row])
-            ->andFilterWhere(['like', 'side', $this->side])
-            ->andFilterWhere(['like', 'ladder', $this->ladder])
-            ->andFilterWhere(['like', 'shelf_number', $this->shelf_number])
+        $query->andFilterWhere(['like', 'barcode', $this->barcode])
             ->andFilterWhere(['like', 'shelf_depth', $this->shelf_depth])
-            ->andFilterWhere(['like', 'shelf_position', $this->shelf_position])
-            ->andFilterWhere(['like', 'initials', $this->initials])
-            ->andFilterWhere(['like', 'added', $this->added])
-            ->andFilterWhere(['like', 'timestamp', $this->timestamp]);
+            ->andFilterWhere(['like', 'shelf_position', $this->shelf_position]);
 
         return $dataProvider;
     }

@@ -2,29 +2,28 @@
 
 namespace app\models;
 
-use Yii;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
-use app\models\BarcodeTray;
+use app\models\Collection;
 
 /**
- * BarcodeTraySearch represents the model behind the search form about `app\models\BarcodeTray`.
+ * CollectionSearch represents the model behind the search form of `app\models\Collection`.
  */
-class BarcodeTraySearch extends BarcodeTray
+class CollectionSearch extends Collection
 {
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function rules()
     {
         return [
-            [['id'], 'integer'],
-            [['boxbarcode', 'barcode', 'stream', 'initials', 'added', 'timestamp'], 'safe'],
+            [['id', 'active'], 'integer'],
+            [['name'], 'safe'],
         ];
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function scenarios()
     {
@@ -41,7 +40,7 @@ class BarcodeTraySearch extends BarcodeTray
      */
     public function search($params)
     {
-        $query = BarcodeTray::find();
+        $query = Collection::find();
 
         // add conditions that should always apply here
 
@@ -60,14 +59,10 @@ class BarcodeTraySearch extends BarcodeTray
         // grid filtering conditions
         $query->andFilterWhere([
             'id' => $this->id,
+            'active' => $this->active,
         ]);
 
-        $query->andFilterWhere(['like', 'boxbarcode', $this->boxbarcode])
-            ->andFilterWhere(['like', 'barcode', $this->barcode])
-            ->andFilterWhere(['like', 'stream', $this->stream])
-            ->andFilterWhere(['like', 'initials', $this->initials])
-            ->andFilterWhere(['like', 'added', $this->added])
-            ->andFilterWhere(['like', 'timestamp', $this->timestamp]);
+        $query->andFilterWhere(['like', 'name', $this->name]);
 
         return $dataProvider;
     }

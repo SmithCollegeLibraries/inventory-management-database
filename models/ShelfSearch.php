@@ -2,29 +2,28 @@
 
 namespace app\models;
 
-use Yii;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
-use app\models\RecordInformation;
+use app\models\Shelf;
 
 /**
- * RecordInformationSearch represents the model behind the search form about `app\models\RecordInformation`.
+ * ShelfSearch represents the model behind the search form of `app\models\Shelf`.
  */
-class RecordInformationSearch extends RecordInformation
+class ShelfSearch extends Shelf
 {
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function rules()
     {
         return [
-            [['id'], 'integer'],
-            [['barcode', 'title', 'callnumber', 'call_number_normalized', 'isbn', 'issn', 'img', 'status', 'check_out_time', 'return_time'], 'safe'],
+            [['id', 'active'], 'integer'],
+            [['barcode', 'row', 'side', 'ladder', 'rung'], 'safe'],
         ];
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function scenarios()
     {
@@ -41,7 +40,7 @@ class RecordInformationSearch extends RecordInformation
      */
     public function search($params)
     {
-        $query = RecordInformation::find();
+        $query = Shelf::find();
 
         // add conditions that should always apply here
 
@@ -60,18 +59,14 @@ class RecordInformationSearch extends RecordInformation
         // grid filtering conditions
         $query->andFilterWhere([
             'id' => $this->id,
+            'active' => $this->active,
         ]);
 
         $query->andFilterWhere(['like', 'barcode', $this->barcode])
-            ->andFilterWhere(['like', 'title', $this->title])
-            ->andFilterWhere(['like', 'callnumber', $this->callnumber])
-            ->andFilterWhere(['like', 'call_number_normalized', $this->call_number_normalized])
-            ->andFilterWhere(['like', 'isbn', $this->isbn])
-            ->andFilterWhere(['like', 'issn', $this->issn])
-            ->andFilterWhere(['like', 'img', $this->img])
-            ->andFilterWhere(['like', 'status', $this->status])
-            ->andFilterWhere(['like', 'check_out_time', $this->check_out_time])
-            ->andFilterWhere(['like', 'return_time', $this->return_time]);
+            ->andFilterWhere(['like', 'row', $this->row])
+            ->andFilterWhere(['like', 'side', $this->side])
+            ->andFilterWhere(['like', 'ladder', $this->ladder])
+            ->andFilterWhere(['like', 'rung', $this->rung]);
 
         return $dataProvider;
     }
