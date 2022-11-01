@@ -7,9 +7,9 @@ use yii\rest\ActiveController;
 use yii\data\ActiveDataProvider;
 use yii\filters\auth\QueryParamAuth;
 
-class ItemApiController extends ActiveController
+class ShelfApiController extends ActiveController
 {
-	public $modelClass = 'app\models\Item';
+	public $modelClass = 'app\models\Shelf';
 
 	public function init()
 	{

@@ -9,30 +9,30 @@ use yii\filters\auth\QueryParamAuth;
 
 class CollectionApiController extends ActiveController
 {
-	public $modelClass = 'app\models\Collections';
-	
+	public $modelClass = 'app\models\Collection';
+
 	public function init()
 	{
    		parent::init();
    		\Yii::$app->user->enableSession = false;
 	}
-	
+
 	public function behaviors()
 	{
     	$behaviors = parent::behaviors();
 		$behaviors['authenticator'] = [
-        	'class' => QueryParamAuth::className(),
+        	'class' => QueryParamAuth::class,
 			];
 		return $behaviors;
 	}
-	
+
 	public function actions()
     {
         $actions = parent::actions();
         unset($actions['index']);
         return $actions;
     }
-    
+
     public function actionIndex()
     {
 	    $modelClass = 'app\models\Collections';
@@ -43,6 +43,6 @@ class CollectionApiController extends ActiveController
 		return $dataProvider;
     }
 
-	
+
 
 }

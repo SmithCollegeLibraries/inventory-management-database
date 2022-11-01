@@ -2,16 +2,16 @@
 
 namespace app\controllers;
 
-use app\models\Collection;
-use app\models\CollectionSearch;
+use app\models\CollectionLog;
+use app\models\CollectionLogSearch;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 
 /**
- * CollectionController implements the CRUD actions for Collection model.
+ * CollectionLogController implements the CRUD actions for CollectionLog model.
  */
-class CollectionController extends Controller
+class CollectionLogController extends Controller
 {
     /**
      * @inheritDoc
@@ -32,13 +32,13 @@ class CollectionController extends Controller
     }
 
     /**
-     * Lists all Collection models.
+     * Lists all CollectionLog models.
      *
      * @return string
      */
     public function actionIndex()
     {
-        $searchModel = new CollectionSearch();
+        $searchModel = new CollectionLogSearch();
         $dataProvider = $searchModel->search($this->request->queryParams);
 
         return $this->render('index', [
@@ -48,7 +48,7 @@ class CollectionController extends Controller
     }
 
     /**
-     * Displays a single Collection model.
+     * Displays a single CollectionLog model.
      * @param int $id ID
      * @return string
      * @throws NotFoundHttpException if the model cannot be found
@@ -61,13 +61,13 @@ class CollectionController extends Controller
     }
 
     /**
-     * Creates a new Collection model.
+     * Creates a new CollectionLog model.
      * If creation is successful, the browser will be redirected to the 'view' page.
      * @return string|\yii\web\Response
      */
     public function actionCreate()
     {
-        $model = new Collection();
+        $model = new CollectionLog();
 
         if ($this->request->isPost) {
             if ($model->load($this->request->post()) && $model->save()) {
@@ -83,7 +83,7 @@ class CollectionController extends Controller
     }
 
     /**
-     * Updates an existing Collection model.
+     * Updates an existing CollectionLog model.
      * If update is successful, the browser will be redirected to the 'view' page.
      * @param int $id ID
      * @return string|\yii\web\Response
@@ -103,7 +103,7 @@ class CollectionController extends Controller
     }
 
     /**
-     * Deletes an existing Collection model.
+     * Deletes an existing CollectionLog model.
      * If deletion is successful, the browser will be redirected to the 'index' page.
      * @param int $id ID
      * @return \yii\web\Response
@@ -117,15 +117,15 @@ class CollectionController extends Controller
     }
 
     /**
-     * Finds the Collection model based on its primary key value.
+     * Finds the CollectionLog model based on its primary key value.
      * If the model is not found, a 404 HTTP exception will be thrown.
      * @param int $id ID
-     * @return Collection the loaded model
+     * @return CollectionLog the loaded model
      * @throws NotFoundHttpException if the model cannot be found
      */
     protected function findModel($id)
     {
-        if (($model = Collection::findOne(['id' => $id])) !== null) {
+        if (($model = CollectionLog::findOne(['id' => $id])) !== null) {
             return $model;
         }
 
