@@ -57,9 +57,9 @@ abstract class AbstractResult
      *
      * @var string
      */
-    private $_data;    
-    
-    
+    private $_data;
+
+
     /**
      * Sets the result code, and failure messages
      *
@@ -73,14 +73,14 @@ abstract class AbstractResult
 
         if ($code < self::FAILURE_UNCATEGORIZED) {
             $code = self::FAILURE;
-            $this->_data = null;            
+            $this->_data = null;
         } elseif ($code >= self::SUCCESS ) {
             $code = 1;
             $this->_data = $data;
         }
 
         $this->_code     = $code;
-        $this->_messages = $messages;        
+        $this->_messages = $messages;
     }
 
     /**
@@ -114,7 +114,7 @@ abstract class AbstractResult
     {
         return $this->_messages;
     }
-    
+
     /**
      * Returns string containing data
      *
@@ -124,24 +124,24 @@ abstract class AbstractResult
      */
     public function getData()
     {
-    	if ($this->success())
-    	{
-        	return $this->_data;
-    	} else {
-    		return null;
-    	}
-    }    
-    
+        if ($this->success())
+        {
+            return $this->_data;
+        } else {
+            return null;
+        }
+    }
+
     /**
      * Parse xml data and return array
      *
      * @return Array
-     */    
-	abstract public function to_a();
-	
-	public function getTitleCount()
-	{
-		return is_array($this->_data) ? count($this->_data) : 0;
-	}
+     */
+    abstract public function to_a();
+
+    public function getTitleCount()
+    {
+        return is_array($this->_data) ? count($this->_data) : 0;
+    }
 
 }
