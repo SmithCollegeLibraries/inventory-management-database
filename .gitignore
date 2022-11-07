@@ -30,11 +30,9 @@ tests/_output/*
 tests/_support/_generated
 
 /config/db.php
-/models/User.php
 
 composer.lock
 node_modules/*
 package-lock.json
 yarn-error.log
 yarn.lock
-
