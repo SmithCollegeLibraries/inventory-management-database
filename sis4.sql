@@ -63,8 +63,8 @@ CREATE TABLE IF NOT EXISTS `tray` (
   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `barcode` varchar(20) NOT NULL,
   `shelf_id` int(11) UNSIGNED,
-  `shelf_depth` varchar(5) DEFAULT NULL,
-  `shelf_position` varchar(3) DEFAULT NULL,
+  `depth` varchar(6) DEFAULT NULL,
+  `position` varchar(3) DEFAULT NULL,
   `active` boolean NOT NULL DEFAULT TRUE,
   PRIMARY KEY (id),
   FOREIGN KEY (shelf_id) REFERENCES shelf(id),
@@ -100,10 +100,12 @@ CREATE TABLE IF NOT EXISTS `item` (
 CREATE TABLE IF NOT EXISTS `user` (
   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `email` varchar(255) NOT NULL,
-  `passwordhash` varchar(255) NOT NULL,
   `name` varchar(31) NOT NULL,
-  `level` int(3) NOT NULL DEFAULT 10,
+  `level` int(3) NOT NULL DEFAULT 0,
+  `passwordhash` varchar(255) NOT NULL,
+  `access_token` varchar(255),
   `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `active` boolean NOT NULL DEFAULT TRUE,
   PRIMARY KEY (id),
   UNIQUE (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

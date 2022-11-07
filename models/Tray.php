@@ -10,8 +10,8 @@ use Yii;
  * @property int $id
  * @property string $barcode
  * @property int|null $shelf_id
- * @property string|null $shelf_depth
- * @property string|null $shelf_position
+ * @property string|null $depth
+ * @property string|null $position
  * @property int $active
  *
  * @property Item[] $items
@@ -37,8 +37,8 @@ class Tray extends \yii\db\ActiveRecord
             [['barcode'], 'required'],
             [['shelf_id', 'active'], 'integer'],
             [['barcode'], 'string', 'max' => 20],
-            [['shelf_depth'], 'string', 'max' => 5],
-            [['shelf_position'], 'string', 'max' => 3],
+            [['depth'], 'string', 'max' => 6],
+            [['position'], 'string', 'max' => 3],
             [['barcode'], 'unique'],
             [['shelf_id'], 'exist', 'skipOnError' => true, 'targetClass' => Shelf::class, 'targetAttribute' => ['shelf_id' => 'id']],
         ];
@@ -53,8 +53,8 @@ class Tray extends \yii\db\ActiveRecord
             'id' => 'ID',
             'barcode' => 'Barcode',
             'shelf_id' => 'Shelf ID',
-            'shelf_depth' => 'Shelf Depth',
-            'shelf_position' => 'Shelf Position',
+            'depth' => 'Depth',
+            'position' => 'Position from left',
             'active' => 'Active',
         ];
     }

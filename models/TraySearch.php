@@ -18,7 +18,7 @@ class TraySearch extends Tray
     {
         return [
             [['id', 'shelf_id', 'active'], 'integer'],
-            [['barcode', 'shelf_depth', 'shelf_position'], 'safe'],
+            [['barcode', 'depth', 'position'], 'safe'],
         ];
     }
 
@@ -64,8 +64,8 @@ class TraySearch extends Tray
         ]);
 
         $query->andFilterWhere(['like', 'barcode', $this->barcode])
-            ->andFilterWhere(['like', 'shelf_depth', $this->shelf_depth])
-            ->andFilterWhere(['like', 'shelf_position', $this->shelf_position]);
+            ->andFilterWhere(['like', 'depth', $this->depth])
+            ->andFilterWhere(['like', 'position', $this-position]);
 
         return $dataProvider;
     }
