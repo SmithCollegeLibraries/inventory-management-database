@@ -3,14 +3,15 @@
 use yii\helpers\Html;
 use yii\widgets\DetailView;
 
-/* @var $this yii\web\View */
-/* @var $model app\models\BarcodeTray */
+/** @var yii\web\View $this */
+/** @var app\models\Shelf $model */
 
 $this->title = $model->id;
-$this->params['breadcrumbs'][] = ['label' => 'Barcode Trays', 'url' => ['index']];
+$this->params['breadcrumbs'][] = ['label' => 'Shelves', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
+\yii\web\YiiAsset::register($this);
 ?>
-<div class="barcode-tray-view">
+<div class="shelf-view">
 
     <h1><?= Html::encode($this->title) ?></h1>
 
@@ -29,12 +30,12 @@ $this->params['breadcrumbs'][] = $this->title;
         'model' => $model,
         'attributes' => [
             'id',
-            'boxbarcode',
             'barcode',
-            'stream',
-            'initials',
-            'added',
-            'timestamp',
+            'row',
+            'side',
+            'ladder',
+            'rung',
+            'active',
         ],
     ]) ?>
 

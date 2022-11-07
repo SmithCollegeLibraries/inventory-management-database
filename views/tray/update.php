@@ -2,15 +2,15 @@
 
 use yii\helpers\Html;
 
-/* @var $this yii\web\View */
-/* @var $model app\models\TrayShelf */
+/** @var yii\web\View $this */
+/** @var app\models\Tray $model */
 
-$this->title = 'Update Tray Shelf: ' . $model->id;
-$this->params['breadcrumbs'][] = ['label' => 'Tray Shelves', 'url' => ['index']];
+$this->title = 'Update Tray: ' . $model->id;
+$this->params['breadcrumbs'][] = ['label' => 'Trays', 'url' => ['index']];
 $this->params['breadcrumbs'][] = ['label' => $model->id, 'url' => ['view', 'id' => $model->id]];
 $this->params['breadcrumbs'][] = 'Update';
 ?>
-<div class="tray-shelf-update">
+<div class="tray-update">
 
     <h1><?= Html::encode($this->title) ?></h1>
 

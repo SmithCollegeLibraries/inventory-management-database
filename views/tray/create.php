@@ -3,13 +3,13 @@
 use yii\helpers\Html;
 
 /** @var yii\web\View $this */
-/** @var app\models\Collection $model */
+/** @var app\models\Tray $model */
 
-$this->title = 'Create Collection';
-$this->params['breadcrumbs'][] = ['label' => 'Collections', 'url' => ['index']];
+$this->title = 'Create Tray';
+$this->params['breadcrumbs'][] = ['label' => 'Trays', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
 ?>
-<div class="collection-create">
+<div class="tray-create">
 
     <h1><?= Html::encode($this->title) ?></h1>
 

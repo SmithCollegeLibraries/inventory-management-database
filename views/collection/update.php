@@ -2,15 +2,15 @@
 
 use yii\helpers\Html;
 
-/* @var $this yii\web\View */
-/* @var $model app\models\Collections */
+/** @var yii\web\View $this */
+/** @var app\models\Collection $model */
 
-$this->title = 'Update Collections: ' . $model->name;
+$this->title = 'Update Collection: ' . $model->name;
 $this->params['breadcrumbs'][] = ['label' => 'Collections', 'url' => ['index']];
 $this->params['breadcrumbs'][] = ['label' => $model->name, 'url' => ['view', 'id' => $model->id]];
 $this->params['breadcrumbs'][] = 'Update';
 ?>
-<div class="collections-update">
+<div class="collection-update">
 
     <h1><?= Html::encode($this->title) ?></h1>
 

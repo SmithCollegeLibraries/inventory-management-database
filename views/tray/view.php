@@ -3,14 +3,15 @@
 use yii\helpers\Html;
 use yii\widgets\DetailView;
 
-/* @var $this yii\web\View */
-/* @var $model app\models\TrayShelf */
+/** @var yii\web\View $this */
+/** @var app\models\Tray $model */
 
 $this->title = $model->id;
-$this->params['breadcrumbs'][] = ['label' => 'Tray Shelves', 'url' => ['index']];
+$this->params['breadcrumbs'][] = ['label' => 'Trays', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
+\yii\web\YiiAsset::register($this);
 ?>
-<div class="tray-shelf-view">
+<div class="tray-view">
 
     <h1><?= Html::encode($this->title) ?></h1>
 
@@ -29,17 +30,11 @@ $this->params['breadcrumbs'][] = $this->title;
         'model' => $model,
         'attributes' => [
             'id',
-            'boxbarcode',
-            'shelf',
-            'row',
-            'side',
-            'ladder',
-            'shelf_number',
-            'shelf_depth',
-            'shelf_position',
-            'initials',
-            'added',
-            'timestamp',
+            'barcode',
+            'shelf_id',
+            'depth',
+            'position',
+            'active',
         ],
     ]) ?>
 
