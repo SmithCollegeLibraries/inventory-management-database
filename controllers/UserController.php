@@ -125,6 +125,11 @@ class UserController extends Controller
         $tokenCheck = $modelClass::find()->where(['access_token' => $token])->one();
         if ($tokenCheck['level'] >= 100) {
             $user = $modelClass::find()->where(['active' => true])->asArray()->all();
+            // We need to add a blank password field in order to
+            // manage the password using controlled form
+            for ($i = 0; $i < count($user); $i++) {
+                $user[$i]['password'] = "";
+            }
             return $user;
         } else {
             throw new \yii\web\ForbiddenHttpException('You are not authorized to see users');
@@ -169,7 +174,9 @@ class UserController extends Controller
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
         if ($tokenCheck and $tokenCheck['level'] >= 100){
             $user = User::findOne($data["id"]);
-            $user->passwordhash = Yii::$app->getSecurity()->generatePasswordHash($data["password"]);
+            if (isset($data["password"])) {
+                $user->passwordhash = Yii::$app->getSecurity()->generatePasswordHash($data["password"]);
+            }
             $user->level = $data["level"];
             $user->save();
             if ($user->save()) {
