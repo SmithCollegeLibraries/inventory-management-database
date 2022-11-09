@@ -71,7 +71,7 @@ class UserController extends Controller
             $account->access_token = Yii::$app->getSecurity()->generateRandomString();
             $account->level = $data["level"];
             $account->save();
-            if($account->save()){
+            if ($account->save()) {
                 $loggedin = User::find()->where(['email' => $data["email"]])->one();
                 return [
                     "name" => $loggedin->name,
@@ -147,22 +147,11 @@ class UserController extends Controller
             $user = User::findOne($data["id"]);
             // Mark user as inactive instead of deleting from database
             $user->active = false;
-            $this->updateHistory($user["email"] . " deleted", $user["email"], 'deleted', $tokenCheck["email"]);
+            $user->save();
             return true;
         } else {
             throw new \yii\web\ForbiddenHttpException('You are not authorized to delete users');
         }
-    }
-
-    private function updateHistory($action, $item, $status_change, $user)
-    {
-        Yii::$app->db->createCommand()->insert('history', [
-            'action' => $action,
-            'item' => $item,
-            'status_change' => $status_change,
-            'initials' => $user,
-            'timestamp' => date("Y-m-d H:i:s")
-        ])->execute();
     }
 
     public function actionUpdateAccount()
@@ -172,7 +161,7 @@ class UserController extends Controller
         $data = json_decode($json, true);
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
-        if ($tokenCheck and $tokenCheck['level'] >= 100){
+        if ($tokenCheck and $tokenCheck['level'] >= 100) {
             $user = User::findOne($data["id"]);
             if (isset($data["password"])) {
                 $user->passwordhash = Yii::$app->getSecurity()->generatePasswordHash($data["password"]);
