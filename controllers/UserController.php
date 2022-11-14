@@ -63,7 +63,7 @@ class UserController extends Controller
         if ($user) {
             throw new \yii\web\NotFoundHttpException('User already exists');
         }
-        if($data["password"] && $data["email"]){
+        if ($data["password"] && $data["email"]) {
             $account = new User();
             $account->email = $data["email"];
             $account->name = $data["name"];
@@ -124,13 +124,13 @@ class UserController extends Controller
         $token = $_REQUEST["access-token"];
         $tokenCheck = $modelClass::find()->where(['access_token' => $token])->one();
         if ($tokenCheck['level'] >= 100) {
-            $user = $modelClass::find()->where(['active' => true])->asArray()->all();
+            $users = $modelClass::find()->where(['active' => true])->asArray()->all();
             // We need to add a blank password field in order to
             // manage the password using controlled form
-            for ($i = 0; $i < count($user); $i++) {
-                $user[$i]['password'] = "";
+            for ($i = 0; $i < count($users); $i++) {
+                $users[$i]['password'] = "";
             }
-            return $user;
+            return $users;
         } else {
             throw new \yii\web\ForbiddenHttpException('You are not authorized to see users');
         }
