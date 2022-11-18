@@ -64,7 +64,6 @@ class CollectionApiController extends ActiveController
             $modelLog->user_id = $tokenCheck['id'];
             $modelLog->action = "Created";
             $modelLog->details = sprintf('Created %s', $data['name']);
-            $modelLog->timestamp = date('Y-m-d H:i:s');
             $modelLog->save();
 
             return $model;
