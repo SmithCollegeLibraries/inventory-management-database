@@ -13,8 +13,8 @@ class ItemApiController extends ActiveController
 
     public function init()
     {
-           parent::init();
-           \Yii::$app->user->enableSession = false;
+        parent::init();
+        \Yii::$app->user->enableSession = false;
     }
 
     public function behaviors()
@@ -35,12 +35,34 @@ class ItemApiController extends ActiveController
 
     public function actionIndex()
     {
-        $modelClass = 'app\models\Collection';
         $dataProvider = new ActiveDataProvider([
-            'query' => $modelClass::find(),
+            'query' => $this->modelClass::find(),
             'pagination' => false,
         ]);
         return $dataProvider;
     }
 
+    public function actionSearch()
+    {
+        $json = file_get_contents('php://input');
+        $data = json_decode($json, true);
+        $results = $this->modelClass::find()->where(['barcode' => $data["barcodes"]])->all();
+        return $results;
+    }
+
+    // Expects a single barcode in data under "barcode". Returns a single
+    // true/false value whether the item is in FOLIO.
+    public function actionCheckFolio()
+    {
+        $json = file_get_contents('php://input');
+        $data = json_decode($json, true);
+        $results = \app\components\Folio::barcodeLookup($data["barcode"]);
+        try {
+            return $results["data"]["totalRecords"] > 0;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
 }
+

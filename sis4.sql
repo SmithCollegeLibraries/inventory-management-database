@@ -120,6 +120,7 @@ CREATE TABLE IF NOT EXISTS `collection_log` (
   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `collection_id` int(11) UNSIGNED NOT NULL,
   `action` varchar(63) NOT NULL,
+  `details` tinytext,
   `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `user_id` int(11) UNSIGNED NOT NULL,
   PRIMARY KEY (id),
