@@ -7,6 +7,8 @@ use yii\rest\ActiveController;
 use yii\data\ActiveDataProvider;
 use yii\filters\auth\QueryParamAuth;
 
+use app\models\User;
+
 class TrayApiController extends ActiveController
 {
     public $modelClass = 'app\models\Tray';
