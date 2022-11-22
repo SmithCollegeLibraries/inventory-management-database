@@ -47,19 +47,18 @@ class CollectionApiController extends ActiveController
 
     public function actionNewCollection()
     {
-        $model = new $this->modelClass;
-        $modelLog = new $this->modelLogClass;
         $json = file_get_contents('php://input');
         $data = json_decode($json, true);
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
         if ($tokenCheck['level'] >= 60) {
             // Add collection to database
-            $model->name = Yii::$app->request->post('name');
-            $model->active = 1;
+            $model = new $this->modelClass;
+            $model->name = $data["name"];
             $model->save();
 
             // Add log to database
+            $modelLog = new $this->modelLogClass;
             $modelLog->collection_id = $model->id;
             $modelLog->user_id = $tokenCheck['id'];
             $modelLog->action = "Created";
@@ -91,7 +90,6 @@ class CollectionApiController extends ActiveController
             $modelLog->user_id = $tokenCheck['id'];
             $modelLog->action = "Updated";
             $modelLog->details = sprintf('Renamed %s to %s', $oldName, $data['name']);
-            $modelLog->timestamp = date('Y-m-d H:i:s');
             $modelLog->save();
 
             return true;
@@ -119,7 +117,6 @@ class CollectionApiController extends ActiveController
             $modelLog->user_id = $tokenCheck['id'];
             $modelLog->action = "Deleted";
             $modelLog->details = sprintf('Deleted %s', $collection->name);
-            $modelLog->timestamp = date('Y-m-d H:i:s');
             $modelLog->save();
 
             return true;
@@ -148,7 +145,6 @@ class CollectionApiController extends ActiveController
                 $modelLog->user_id = $tokenCheck['id'];
                 $modelLog->action = "Restored";
                 $modelLog->details = sprintf('Restored %s', $collection->name);
-                $modelLog->timestamp = date('Y-m-d H:i:s');
                 $modelLog->save();
                 return true;
             } else {
