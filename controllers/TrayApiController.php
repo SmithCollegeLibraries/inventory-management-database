@@ -111,4 +111,12 @@ class TrayApiController extends ActiveController
         }
     }
 
+    public function actionSearch()
+    {
+        $json = file_get_contents('php://input');
+        $data = json_decode($json, true);
+        $results = $this->modelClass::find()->where(['barcode' => $data["barcode"]])->all();
+        return $results;
+    }
+
 }
