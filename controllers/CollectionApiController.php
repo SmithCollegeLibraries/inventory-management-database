@@ -52,20 +52,44 @@ class CollectionApiController extends ActiveController
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
         if ($tokenCheck['level'] >= 60) {
-            // Add collection to database
-            $model = new $this->modelClass;
-            $model->name = $data["name"];
-            $model->save();
+            // If there hasn't been a collection with that name before,
+            // we add a new row to the database
+            $collection = Collection::find()->where(['name' => $data["name"]])->one();
+            if ($collection == null) {
+                // Add collection to database
+                $model = new $this->modelClass;
+                $model->name = $data["name"];
+                $model->save();
 
-            // Add log to database
-            $modelLog = new $this->modelLogClass;
-            $modelLog->collection_id = $model->id;
-            $modelLog->user_id = $tokenCheck['id'];
-            $modelLog->action = "Created";
-            $modelLog->details = sprintf('Created %s', $data['name']);
-            $modelLog->save();
+                // Add log to database
+                $modelLog = new $this->modelLogClass;
+                $modelLog->collection_id = $model->id;
+                $modelLog->user_id = $tokenCheck['id'];
+                $modelLog->action = "Created";
+                $modelLog->details = sprintf('Created %s', $data['name']);
+                $modelLog->save();
+                return $model;
+            }
+            // Otherwise, if the collection has existed before but is
+            // currently inactive, restore it
+            else if (!$collection['active']) {
+                $collection->active = 1;
+                $collection->save();
 
-            return $model;
+                // Add log to database
+                $modelLog = new $this->modelLogClass;
+                $modelLog->collection_id = $collection->id;
+                $modelLog->user_id = $tokenCheck['id'];
+                $modelLog->action = "Restored";
+                $modelLog->details = sprintf('Restored %s', $data['name']);
+                $modelLog->save();
+                return $collection;
+            }
+            // Finally, if the collection already exists and is active,
+            // do nothing
+            else {
+                throw new \yii\web\HttpException(500, sprintf('Collection %s already exists', $data['name']));
+            }
         } else {
             throw new \yii\web\ForbiddenHttpException('You are not authorized to update collections');
         }
@@ -106,50 +130,24 @@ class CollectionApiController extends ActiveController
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
         if ($tokenCheck['level'] >= 60) {
-            $collection = Collection::findOne($data["id"]);
-            // Mark collection as inactive instead of deleting from database
-            $collection->active = 0;
-            $collection->save();
-
-            // Add log to database
-            $modelLog = new $this->modelLogClass;
-            $modelLog->collection_id = $data["id"];
-            $modelLog->user_id = $tokenCheck['id'];
-            $modelLog->action = "Deleted";
-            $modelLog->details = sprintf('Deleted %s', $collection->name);
-            $modelLog->save();
-
-            return true;
-        } else {
-            throw new \yii\web\ForbiddenHttpException('You are not authorized to delete collections');
-        }
-    }
-
-    public function actionRestoreCollection()
-    {
-        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-        $json = file_get_contents('php://input');
-        $data = json_decode($json, true);
-        $token = $_REQUEST["access-token"];
-        $tokenCheck = User::find()->where(['access_token' => $token])->one();
-        if ($tokenCheck['level'] >= 90) {
-            $collection = Collection::findOne($data["id"]);
-            // Mark collection as active again
-            if ($collection->active == 0) {
-                $collection->active = 1;
+            try {
+                $collection = Collection::findOne($data["id"]);
+                // Mark collection as inactive instead of deleting from database
+                $collection->active = 0;
                 $collection->save();
 
                 // Add log to database
                 $modelLog = new $this->modelLogClass;
-                $modelLog->collection_id = $collection->id;
+                $modelLog->collection_id = $data["id"];
                 $modelLog->user_id = $tokenCheck['id'];
-                $modelLog->action = "Restored";
-                $modelLog->details = sprintf('Restored %s', $collection->name);
+                $modelLog->action = "Deleted";
+                $modelLog->details = sprintf('Deleted %s', $collection->name);
                 $modelLog->save();
+
                 return true;
-            } else {
-                // Collection is already active
-                return false;
+            }
+            catch (\Exception $e) {
+                throw new \yii\web\HttpException(500, sprintf('Collection %s does not exist', $data['name']));
             }
         } else {
             throw new \yii\web\ForbiddenHttpException('You are not authorized to delete collections');
