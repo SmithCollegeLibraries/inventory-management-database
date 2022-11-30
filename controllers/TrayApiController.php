@@ -111,6 +111,120 @@ class TrayApiController extends ActiveController
         }
     }
 
+    public function actionUpdateTray()
+    {
+        // We want the id, as well as the following optional fields:
+        // (new) tray barcode, (new) shelf barcode, (new) collection name,
+        // depth, and position.
+        $json = file_get_contents('php://input');
+        $data = json_decode($json, true);
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if (tokenCheck['level'] >= 60) {
+            // Get the tray
+            $tray = $this->modelClass::find()->where(['id' => $data['id']])->one();
+            $trayLog = new $this->modelLogClass;
+
+            $logDetails = [];
+
+            // If a barcode was provided and it's not the same as the current
+            // one, check that it's not already in use
+            if (isset($data['barcode']) and $data['barcode'] != $tray->barcode) {
+                $trayCheck = $this->modelClass::find()->where(['barcode' => $data["barcode"]])->one();
+                if ($trayCheck != null) {
+                    throw new \yii\web\HttpException(500, sprintf('Tray %s already exists', $data['barcode']));
+                }
+                $tray->barcode = $data['barcode'];
+                $logDetails[] = sprintf("barcode %s", $data['barcode']);
+            }
+            // Shelf
+            if (isset($data['shelf']) and $data['shelf'] != $tray->shelf->barcode) {
+                $shelf = \app\models\Shelf::find()->where(['barcode' => $data['shelf']])->one();
+                if ($shelf == null) {
+                    throw new \yii\web\HttpException(500, sprintf('Shelf %s does not exist', $data['shelf']));
+                }
+                $tray->shelf_id = $shelf->id;
+                $logDetails[] = sprintf("shelf %s", $data['shelf']);
+            }
+            // Collection
+            if (isset($data['collection']) and $data['collection'] != $tray->collection->name) {
+                $collection = \app\models\Collection::find()->where(['name' => $data['collection']])->one();
+                if ($collection == null) {
+                    throw new \yii\web\HttpException(500, sprintf('Collection %s does not exist', $data['collection']));
+                }
+                $tray->collection_id = $collection->id;
+                $logDetails[] = sprintf("collection %s", $data['collection']);
+            }
+            // Depth and position
+            if (isset($data['depth']) and $data['depth'] != $tray->depth) {
+                $tray->depth = $data['depth'];
+                $logDetails[] = sprintf("depth %s", $data['depth']);
+            }
+            if (isset($data['position']) and $data['position'] != $tray->position) {
+                $tray->position = $data['position'];
+            }
+            $tray->save();
+
+            // Log the update
+            $trayLog->tray_id = $tray->id;
+            $trayLog->action = 'Updated';
+            if (count($logDetails) > 0) {
+                $trayLog->details = sprintf("Updated tray %s: %s", $tray->barcode, implode(', ', $logDetails));
+            }
+            else {
+                $trayLog->details = sprintf("Updated tray %s (unchanged)", $tray->barcode);
+            }
+            $trayLog->user_id = $tokenCheck['id'];
+            $trayLog->save();
+        }
+    }
+
+    // Deleting a tray deletes all its items as well. They can be restored
+    // or added to the system again, but for the time being they are not
+    // in the system.
+    public function actionDeleteTray()
+    {
+        // All we should get is the ID of the tray to delete / make inactive.
+        // We'll also need the user's token to make sure they have permission.
+        $json = file_get_contents('php://input');
+        $data = json_decode($json, true);
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if ($tokenCheck['level'] >= 60) {
+            $tray = $this->modelClass::findOne($data['id']);
+            $tray->active = 0;
+            $tray->save();
+
+            $trayLog = new $this->modelLogClass;
+            $trayLog->tray_id = $tray->id;
+            $trayLog->action = 'Deleted';
+            $trayLog->details = sprintf("Deleted tray %s", $tray->barcode);
+            $trayLog->user_id = $tokenCheck['id'];
+            $trayLog->save();
+
+            $items = $this->itemClass::find()->where(['tray_id' => $tray->id])->all();
+            foreach ($items as $item) {
+                $item->active = 0;
+                $item->save();
+
+                $itemLog = new $this->itemLogClass;
+                $itemLog->item_id = $item->id;
+                $itemLog->action = 'Deleted';
+                $itemLog->details = sprintf("Deleted item %s along with tray %s", $item->barcode, $tray->barcode);
+                $itemLog->user_id = $tokenCheck['id'];
+                $itemLog->save();
+            }
+
+            return $tray;
+        }
+
+        else {
+            throw new \yii\web\HttpException(500, 'You do not have permission to delete trays');
+        }
+    }
+
     public function actionSearch()
     {
         $json = file_get_contents('php://input');
