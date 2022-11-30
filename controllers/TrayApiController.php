@@ -40,13 +40,13 @@ class TrayApiController extends ActiveController
         if ($tokenCheck['level'] >= 60) {
 
             // We expect barcodes in the form of an array, but if it's not, we'll make it one
-            if (!is_array($data["barcodes"])) {
-                $barcodes = explode(PHP_EOL, $data['barcodes']);
+            if (!is_array($data["items"])) {
+                $barcodes = explode(PHP_EOL, $data['items']);
             } else {
-                $barcodes = $data["barcodes"];
+                $barcodes = $data["items"];
             }
 
-            $trayBarcode = $data['tray'];
+            $trayBarcode = $data['barcode'];
             $collectionName = $data['collection'];
 
             // Get collection ID, while making sure that a collection of that name exists
