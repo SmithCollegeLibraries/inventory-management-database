@@ -225,6 +225,38 @@ class TrayApiController extends ActiveController
         }
     }
 
+    public function actionGetTrayWithItems()
+    {
+        $json = file_get_contents('php://input');
+        $data = json_decode($json, true);
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if ($tokenCheck['level'] >= 20) {
+            $tray = $this->modelClass::find()->where(['id' => $data['id']])->one();
+            // $items = $this->itemClass::find()->where(['tray_id' => $tray->id])->all();
+            // $tray->items = $items;
+            return $tray;
+
+        }
+        else {
+            throw new \yii\web\HttpException(500, 'You do not have permission to view trays');
+        }
+    }
+
+    public function actionViewAllTrays() {
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if ($tokenCheck['level'] >= 20) {
+            $trays = $this->modelClass::find()->all();
+            return $trays;
+        }
+        else {
+            throw new \yii\web\HttpException(500, 'You do not have permission to view trays');
+        }
+    }
+
     public function actionSearch()
     {
         $json = file_get_contents('php://input');

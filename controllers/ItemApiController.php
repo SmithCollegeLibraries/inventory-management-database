@@ -50,6 +50,13 @@ class ItemApiController extends ActiveController
         return $results;
     }
 
+    // TODO: remove; this is just for testing purposes
+    public function actionViewAllItems()
+    {
+        $results = $this->modelClass::find()->all();
+        return $results;
+    }
+
     // Expects a single barcode in data under "barcode". Returns a single
     // true/false value whether the item is in FOLIO.
     public function actionCheckFolio()

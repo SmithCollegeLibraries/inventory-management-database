@@ -45,6 +45,31 @@ class Item extends \yii\db\ActiveRecord
         ];
     }
 
+    public function fields()
+    {
+        return [
+            'id',
+            'barcode',
+            'status',
+            'tray'=>function($item){
+                $tray = 'app\models\Tray'::find()->where(['id' => $item["tray_id"]])->one();
+                if ($tray) {
+                    return $tray->barcode;
+                }
+                return $tray;
+            },
+            'collection'=>function($item){
+                $collection = 'app\models\Collection'::find()->where(['id' => $item["collection_id"]])->one();
+                if ($collection) {
+                    return $collection->name;
+                }
+                return $collection;
+            },
+            'active',
+            'flag',
+        ];
+    }
+
     /**
      * {@inheritdoc}
      */
