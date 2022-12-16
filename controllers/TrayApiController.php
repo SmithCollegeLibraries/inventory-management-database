@@ -57,50 +57,74 @@ class TrayApiController extends ActiveController
             }
 
             // If tray already exists, return error
-            if (\app\models\Tray::find()->where(['barcode' => $trayBarcode])->all() != []) {
+            if (\app\models\Tray::find()->where(['barcode' => $trayBarcode])->andWhere(['active' => true])->all() != []) {
                 throw new \yii\web\HttpException(500, sprintf('Tray %s already exists', $trayBarcode));
             }
 
             // If any of the items already exist, return error
             foreach ($barcodes as $barcode) {
-                if (\app\models\Item::find()->where(['barcode' => $barcode])->all() != []) {
+                if (\app\models\Item::find()->where(['barcode' => $barcode])->andWhere(['active' => true])->all() != []) {
                     throw new \yii\web\HttpException(500, sprintf('Item %s already exists', $barcode));
                 }
             }
 
             // Create new tray
-            $tray = new $this->modelClass;
-            $tray->barcode = $trayBarcode;
-            $tray->save();
-            // Log the new tray
-            $trayLog = new $this->modelLogClass;
-            $trayLog->tray_id = $tray->id;
-            $trayLog->action = 'Created';
-            $trayLog->details = sprintf("Created tray %s", $tray->barcode);
-            $trayLog->user_id = $tokenCheck['id'];
-            $trayLog->save();
+            // If it already exists but is inactive, reactivate it
+            if (\app\models\Tray::find()->where(['barcode' => $trayBarcode])->all() != []) {
+                $tray = \app\models\Tray::find()->where(['barcode' => $trayBarcode])->one();
+                $tray->active = 1;
+                $tray->save();
+                // Log the reactivation
+                $trayLog = new $this->modelLogClass;
+                $trayLog->tray_id = $tray->id;
+                $trayLog->action = 'Reactivated';
+                $trayLog->details = sprintf("Reactivated tray %s", $tray->barcode);
+                $trayLog->user_id = $tokenCheck['id'];
+                $trayLog->save();
+            }
+            else {
+                $tray = new $this->modelClass;
+                $tray->barcode = $trayBarcode;
+                $tray->save();
+                // Log the new tray
+                $trayLog = new $this->modelLogClass;
+                $trayLog->tray_id = $tray->id;
+                $trayLog->action = 'Created';
+                $trayLog->details = sprintf("Created tray %s", $tray->barcode);
+                $trayLog->user_id = $tokenCheck['id'];
+                $trayLog->save();
+            }
 
             // Create new items and add them to tray; add logs as well
             foreach ($barcodes as $barcode) {
-                $item = new $this->itemClass;
-                $item->tray_id = $tray->id;
-                $item->barcode = $barcode;
-                $item->collection_id = $collectionId;
-                $item->save();
+                // If item already exists but is inactive, reactivate it
+                if (\app\models\Item::find()->where(['barcode' => $barcode])->all() != []) {
+                    $item = \app\models\Item::find()->where(['barcode' => $barcode])->one();
+                    $item->active = 1;
+                    $item->tray_id = $tray->id;
+                    $item->save();
+                    // Log the reactivation
+                    $itemLog = new $this->itemLogClass;
+                    $itemLog->item_id = $item->id;
+                    $itemLog->action = 'Reactivated';
+                    $itemLog->details = sprintf("Reactivated item %s", $item->barcode);
+                    $itemLog->user_id = $tokenCheck['id'];
+                    $itemLog->save();
+                }
+                else {
+                    $item = new $this->itemClass;
+                    $item->tray_id = $tray->id;
+                    $item->barcode = $barcode;
+                    $item->collection_id = $collectionId;
+                    $item->save();
 
-                $itemLog = new $this->itemLogClass;
-                $itemLog->item_id = $item->id;
-                $itemLog->action = 'Created';
-                $itemLog->details = sprintf("Created item %s", $item->barcode);
-                $itemLog->user_id = $tokenCheck['id'];
-                $itemLog->save();
-
-                $itemLog = new $this->itemLogClass;
-                $itemLog->item_id = $item->id;
-                $itemLog->action = 'Trayed';
-                $itemLog->details = sprintf("Added to tray %s", $tray->barcode);
-                $itemLog->user_id = $tokenCheck['id'];
-                $itemLog->save();
+                    $itemLog = new $this->itemLogClass;
+                    $itemLog->item_id = $item->id;
+                    $itemLog->action = 'Created';
+                    $itemLog->details = sprintf("Created item %s", $item->barcode);
+                    $itemLog->user_id = $tokenCheck['id'];
+                    $itemLog->save();
+                }
             }
 
             return $barcodes;
@@ -183,7 +207,7 @@ class TrayApiController extends ActiveController
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
         if ($tokenCheck['level'] >= 60) {
-            $tray = $this->modelClass::findOne($data['id']);
+            $tray = $this->modelClass::find()->where(['barcode' => $data['barcode']])->one();
             $tray->active = 0;
             $tray->save();
 
@@ -251,7 +275,9 @@ class TrayApiController extends ActiveController
     {
         $query = $_REQUEST["query"];
         $provider = new ActiveDataProvider([
-            'query' => $this->modelClass::find()->where(['like', 'barcode', $query]),
+            'query' => $this->modelClass::find()
+                ->where(['like', 'barcode', $query])
+                ->andWhere(['active' => true]),
             'sort' => [
                 'defaultOrder' => [
                     'updated' => SORT_DESC,
@@ -269,7 +295,10 @@ class TrayApiController extends ActiveController
     {
         $json = file_get_contents('php://input');
         $data = json_decode($json, true);
-        $tray = $this->modelClass::find()->where(['barcode' => $data['barcode']])->one();
+        $tray = $this->modelClass::find()
+            ->where(['barcode' => $data['barcode']])
+            ->andWhere(['active' => true])
+            ->one();
         return $tray;
     }
 

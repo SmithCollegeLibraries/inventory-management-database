@@ -62,7 +62,7 @@ class Tray extends \yii\db\ActiveRecord
                 }
             },
             'items' => function ($tray) {
-                $items = $this->getItems()->all();
+                $items = $this->getItems()->where(["active" => true])->all();
                 $itemArray = [];
                 foreach ($items as $item) {
                     $itemArray[] = $item->barcode;
