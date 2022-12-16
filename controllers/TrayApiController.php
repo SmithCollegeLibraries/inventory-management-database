@@ -144,22 +144,22 @@ class TrayApiController extends ActiveController
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
-        if (tokenCheck['level'] >= 60) {
+        if ($tokenCheck['level'] >= 60) {
             // Get the tray
-            $tray = $this->modelClass::find()->where(['id' => $data['id']])->one();
+            $tray = $this->modelClass::find()->where(['barcode' => $data['barcode']])->one();
             $trayLog = new $this->modelLogClass;
 
             $logDetails = [];
 
             // If a barcode was provided and it's not the same as the current
             // one, check that it's not already in use
-            if (isset($data['barcode']) and $data['barcode'] != $tray->barcode) {
-                $trayCheck = $this->modelClass::find()->where(['barcode' => $data["barcode"]])->one();
+            if (isset($data['new_barcode']) and $data['new_barcode'] != $tray->barcode) {
+                $trayCheck = $this->modelClass::find()->where(['barcode' => $data["new_barcode"]])->one();
                 if ($trayCheck != null) {
-                    throw new \yii\web\HttpException(500, sprintf('Tray %s already exists', $data['barcode']));
+                    throw new \yii\web\HttpException(500, sprintf('Tray %s already exists', $data['new_barcode']));
                 }
-                $tray->barcode = $data['barcode'];
-                $logDetails[] = sprintf("barcode %s", $data['barcode']);
+                $tray->barcode = $data['new_barcode'];
+                $logDetails[] = sprintf("barcode %s", $data['new_barcode']);
             }
             // Shelf
             if (isset($data['shelf']) and $data['shelf'] != $tray->shelf->barcode) {
