@@ -114,8 +114,7 @@ class TrayApiController extends ActiveController
     public function actionUpdateTray()
     {
         // We want the id, as well as the following optional fields:
-        // (new) tray barcode, (new) shelf barcode, (new) collection name,
-        // depth, and position.
+        // (new tray) barcode, (new) shelf (barcode), depth, and position.
         $json = file_get_contents('php://input');
         $data = json_decode($json, true);
         $token = $_REQUEST["access-token"];
@@ -146,15 +145,6 @@ class TrayApiController extends ActiveController
                 }
                 $tray->shelf_id = $shelf->id;
                 $logDetails[] = sprintf("shelf %s", $data['shelf']);
-            }
-            // Collection
-            if (isset($data['collection']) and $data['collection'] != $tray->collection->name) {
-                $collection = \app\models\Collection::find()->where(['name' => $data['collection']])->one();
-                if ($collection == null) {
-                    throw new \yii\web\HttpException(500, sprintf('Collection %s does not exist', $data['collection']));
-                }
-                $tray->collection_id = $collection->id;
-                $logDetails[] = sprintf("collection %s", $data['collection']);
             }
             // Depth and position
             if (isset($data['depth']) and $data['depth'] != $tray->depth) {
