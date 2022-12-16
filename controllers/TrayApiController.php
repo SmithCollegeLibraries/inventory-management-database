@@ -153,7 +153,7 @@ class TrayApiController extends ActiveController
 
             // If a barcode was provided and it's not the same as the current
             // one, check that it's not already in use
-            if (isset($data['new_barcode']) and $data['new_barcode'] != $tray->barcode) {
+            if (isset($data['new_barcode']) and $data['new_barcode'] != $data['barcode']) {
                 $trayCheck = $this->modelClass::find()->where(['barcode' => $data["new_barcode"]])->one();
                 if ($trayCheck != null) {
                     throw new \yii\web\HttpException(500, sprintf('Tray %s already exists', $data['new_barcode']));
@@ -162,7 +162,7 @@ class TrayApiController extends ActiveController
                 $logDetails[] = sprintf("barcode %s", $data['new_barcode']);
             }
             // Shelf
-            if (isset($data['shelf']) and $data['shelf'] != $tray->shelf->barcode) {
+            if (isset($data['shelf']) and (!$tray->shelf || $data['shelf'] != $tray->shelf->barcode)) {
                 $shelf = \app\models\Shelf::find()->where(['barcode' => $data['shelf']])->one();
                 if ($shelf == null) {
                     throw new \yii\web\HttpException(500, sprintf('Shelf %s does not exist', $data['shelf']));
@@ -176,7 +176,12 @@ class TrayApiController extends ActiveController
                 $logDetails[] = sprintf("depth %s", $data['depth']);
             }
             if (isset($data['position']) and $data['position'] != $tray->position) {
-                $tray->position = $data['position'];
+                if (gettype($data['position']) != 'integer') {
+                    $tray->position = str_pad($data['position'], 2, '0', STR_PAD_LEFT);
+                }
+                else {
+                    $tray->position = $data['position'];
+                }
             }
             $tray->save();
 
@@ -191,6 +196,11 @@ class TrayApiController extends ActiveController
             }
             $trayLog->user_id = $tokenCheck['id'];
             $trayLog->save();
+
+            return $tray;
+        }
+        else {
+            throw new \yii\web\HttpException(500, 'You do not have permission to update trays');
         }
     }
 
