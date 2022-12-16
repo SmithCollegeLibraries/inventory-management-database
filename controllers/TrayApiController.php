@@ -234,25 +234,43 @@ class TrayApiController extends ActiveController
         }
     }
 
-    public function actionViewAllTrays() {
-        $token = $_REQUEST["access-token"];
-        $tokenCheck = User::find()->where(['access_token' => $token])->one();
-
-        if ($tokenCheck['level'] >= 20) {
-            $trays = $this->modelClass::find()->all();
-            return $trays;
-        }
-        else {
-            throw new \yii\web\HttpException(500, 'You do not have permission to view trays');
-        }
-    }
+    // public function actionViewAllTrays() {
+    //     $token = $_REQUEST["access-token"];
+    //     $tokenCheck = User::find()->where(['access_token' => $token])->one();
+    //
+    //     if ($tokenCheck['level'] >= 20) {
+    //         $trays = $this->modelClass::find()->all();
+    //         return $trays;
+    //     }
+    //     else {
+    //         throw new \yii\web\HttpException(500, 'You do not have permission to view trays');
+    //     }
+    // }
 
     public function actionSearch()
     {
+        $query = $_REQUEST["query"];
+        $provider = new ActiveDataProvider([
+            'query' => $this->modelClass::find()->where(['like', 'barcode', $query]),
+            'sort' => [
+                'defaultOrder' => [
+                    'updated' => SORT_DESC,
+                ]
+            ],
+            'pagination' => [
+                'pageSize' => 20,
+            ],
+        ]);
+
+        return $provider->getModels();;
+    }
+
+    public function actionGetTray()
+    {
         $json = file_get_contents('php://input');
         $data = json_decode($json, true);
-        $results = $this->modelClass::find()->where(['barcode' => $data["barcode"]])->all();
-        return $results;
+        $tray = $this->modelClass::find()->where(['barcode' => $data['barcode']])->one();
+        return $tray;
     }
 
 }
