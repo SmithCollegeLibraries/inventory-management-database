@@ -66,6 +66,8 @@ CREATE TABLE IF NOT EXISTS `tray` (
   `depth` varchar(6) DEFAULT NULL,
   `position` varchar(3) DEFAULT NULL,
   `active` boolean NOT NULL DEFAULT TRUE,
+  `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   FOREIGN KEY (shelf_id) REFERENCES shelf(id),
   UNIQUE (barcode)

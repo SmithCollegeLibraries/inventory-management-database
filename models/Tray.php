@@ -44,6 +44,36 @@ class Tray extends \yii\db\ActiveRecord
         ];
     }
 
+    public function fields()
+    {
+        return [
+            'id',
+            'barcode',
+            'depth',
+            'position',
+            'active',
+            'shelf' => function ($tray) {
+                $shelf = 'app\models\Shelf'::find()->where(['id' => $tray["shelf_id"]])->one();
+                if ($shelf) {
+                    return $shelf->barcode;
+                }
+                else {
+                    return null;
+                }
+            },
+            'items' => function ($tray) {
+                $items = $this->getItems()->all();
+                $itemArray = [];
+                foreach ($items as $item) {
+                    $itemArray[] = $item->barcode;
+                }
+                return $itemArray;
+            },
+            'created',
+            'updated',
+        ];
+    }
+
     /**
      * {@inheritdoc}
      */
