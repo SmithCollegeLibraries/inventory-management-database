@@ -4,7 +4,7 @@ namespace app\components;
 
 use yii\httpclient\Client;
 
-class FOLIO
+class Folio
 {
 
     public static function barcodeLookup($barcode)
