@@ -31,6 +31,22 @@ class TrayApiController extends ActiveController
         return $behaviors;
     }
 
+    private function alreadyOccupied($shelf_id, $depth, $position)
+    {
+        $tray = $this->modelClass::find()
+            ->where(['shelf_id' => $shelf_id])
+            ->andWhere(['depth' => $depth])
+            ->andWhere(['position' => $position])
+            ->andWhere(['active' => 1])
+            ->one();
+        if ($tray) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
     public function actionNewTray()
     {
         $json = file_get_contents('php://input');
@@ -64,6 +80,17 @@ class TrayApiController extends ActiveController
             foreach ($barcodes as $barcode) {
                 if (\app\models\Item::find()->where(['barcode' => $barcode])->andWhere(['active' => true])->all() != []) {
                     throw new \yii\web\HttpException(500, sprintf('Item %s already exists', $barcode));
+                }
+            }
+
+            // If the tray location is already occupied, return error
+            if ($data[shelf]) {
+                $shelf = \app\models\Shelf::find()->where(['barcode' => $data['shelf']])->one();
+                if ($shelf) {
+                    $shelfId = \app\models\Shelf::find()->where(['barcode' => $data['shelf']])->one()->id;
+                    if ($this->alreadyOccupied($shelfId, $data['depth'], $data['position'])) {
+                        throw new \yii\web\HttpException(500, sprintf('Shelf %s, depth %s, position %s is already occupied by another tray', $data['shelf'], $data['depth'], $data['position']));
+                    }
                 }
             }
 
@@ -178,6 +205,10 @@ class TrayApiController extends ActiveController
                 $tray->position = $data['position'];
             }
         }
+        // If the tray's new location is already occupied, throw an error
+        if ($this->alreadyOccupied($tray->shelf_id, $tray->depth, $tray->position)) {
+            throw new \yii\web\HttpException(500, sprintf('Shelf %s, depth %s, position %s is already occupied by another tray', $data['shelf'], $data['depth'], $data['position']));
+        }
         $tray->save();
 
         // Log the update
@@ -228,7 +259,7 @@ class TrayApiController extends ActiveController
         if ($tokenCheck['level'] >= 40) {
             // If the tray is already shelved, throw an error
             $tray = $this->modelClass::find()->where(['barcode' => $data['tray']])->one();
-            if ($tray->shelf_id != null) {
+            if ($tray && $tray->shelf_id != null) {
                 throw new \yii\web\HttpException(500, sprintf('Tray %s is already shelved', $data['tray']));
             }
             $newData = [
