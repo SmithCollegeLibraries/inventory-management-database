@@ -142,8 +142,8 @@ class ShelfApiController extends ActiveController
                 // Log the new tray
                 $shelfLog = new $this->modelLogClass;
                 $shelfLog->shelf_id = $shelf->id;
-                $shelfLog->action = 'Created';
-                $shelfLog->details = sprintf("Created shelf %s", $shelf->barcode);
+                $shelfLog->action = 'Added';
+                $shelfLog->details = sprintf("Added shelf %s", $shelf->barcode);
                 $shelfLog->user_id = $tokenCheck['id'];
                 $shelfLog->save();
             }

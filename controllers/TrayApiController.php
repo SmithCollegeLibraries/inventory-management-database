@@ -88,8 +88,8 @@ class TrayApiController extends ActiveController
                 // Log the new tray
                 $trayLog = new $this->modelLogClass;
                 $trayLog->tray_id = $tray->id;
-                $trayLog->action = 'Created';
-                $trayLog->details = sprintf("Created tray %s", $tray->barcode);
+                $trayLog->action = 'Added';
+                $trayLog->details = sprintf("Added tray %s", $tray->barcode);
                 $trayLog->user_id = $tokenCheck['id'];
                 $trayLog->save();
             }
@@ -129,8 +129,8 @@ class TrayApiController extends ActiveController
 
                     $itemLog = new $this->itemLogClass;
                     $itemLog->item_id = $item->id;
-                    $itemLog->action = 'Created';
-                    $itemLog->details = sprintf("Created item %s along with tray %s", $item->barcode, $tray->barcode);
+                    $itemLog->action = 'Added';
+                    $itemLog->details = sprintf("Added item %s in tray %s", $item->barcode, $tray->barcode);
                     $itemLog->user_id = $tokenCheck['id'];
                     $itemLog->save();
                 }
