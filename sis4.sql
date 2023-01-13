@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS `tray` (
   `barcode` varchar(20) NOT NULL,
   `shelf_id` int(11) UNSIGNED,
   `depth` varchar(6) DEFAULT NULL,
-  `position` varchar(2) DEFAULT NULL,
+  `position` tinyint(2) UNSIGNED DEFAULT NULL,
   `active` boolean NOT NULL DEFAULT TRUE,
   `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
