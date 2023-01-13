@@ -44,6 +44,29 @@ class Shelf extends \yii\db\ActiveRecord
         ];
     }
 
+    public function fields()
+    {
+        return [
+            'id',
+            'barcode',
+            'row',
+            'side',
+            'ladder',
+            'rung',
+            'active',
+            'trays' => function ($shelf) {
+                $trays = $this->getTrays()->where(["active" => true])->all();
+                $trayArray = [];
+                foreach ($trays as $tray) {
+                    $trayArray[] = $tray->barcode;
+                }
+                return $trayArray;
+            },
+            // 'created',
+            // 'updated',
+        ];
+    }
+
     /**
      * {@inheritdoc}
      */
