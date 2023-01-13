@@ -38,7 +38,6 @@ class TrayApiController extends ActiveController
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
         if ($tokenCheck['level'] >= 60) {
-
             // We expect barcodes in the form of an array, but if it's not, we'll make it one
             if (!is_array($data["items"])) {
                 $barcodes = explode(PHP_EOL, $data['items']);
@@ -135,6 +134,63 @@ class TrayApiController extends ActiveController
         }
     }
 
+    private function handleTrayUpdate($data, $userId)
+    {
+        // Get the tray
+        $tray = $this->modelClass::find()->where(['barcode' => $data['barcode']])->one();
+        $trayLog = new $this->modelLogClass;
+
+        $logDetails = [];
+
+        // If a barcode was provided and it's not the same as the current
+        // one, check that it's not already in use
+        if (isset($data['new_barcode']) and $data['new_barcode'] != $data['barcode']) {
+            $trayCheck = $this->modelClass::find()->where(['barcode' => $data["new_barcode"]])->one();
+            if ($trayCheck != null) {
+                throw new \yii\web\HttpException(500, sprintf('Tray %s already exists', $data['new_barcode']));
+            }
+            $tray->barcode = $data['new_barcode'];
+            $logDetails[] = sprintf("barcode %s", $data['new_barcode']);
+        }
+        // Shelf
+        if (isset($data['shelf']) and (!$tray->shelf || $data['shelf'] != $tray->shelf->barcode)) {
+            $shelf = \app\models\Shelf::find()->where(['barcode' => $data['shelf']])->one();
+            if ($shelf == null) {
+                throw new \yii\web\HttpException(500, sprintf('Shelf %s does not exist', $data['shelf']));
+            }
+            $tray->shelf_id = $shelf->id;
+            $logDetails[] = sprintf("shelf %s", $data['shelf']);
+        }
+        // Depth and position
+        if (isset($data['depth']) and $data['depth'] != $tray->depth) {
+            $tray->depth = $data['depth'];
+            $logDetails[] = sprintf("depth %s", $data['depth']);
+        }
+        if (isset($data['position']) and $data['position'] != $tray->position) {
+            if (gettype($data['position']) != 'integer') {
+                $tray->position = str_pad($data['position'], 2, '0', STR_PAD_LEFT);
+            }
+            else {
+                $tray->position = $data['position'];
+            }
+        }
+        $tray->save();
+
+        // Log the update
+        $trayLog->tray_id = $tray->id;
+        $trayLog->action = 'Updated';
+        if (count($logDetails) > 0) {
+            $trayLog->details = sprintf("Updated tray %s: %s", $tray->barcode, implode(', ', $logDetails));
+        }
+        else {
+            $trayLog->details = sprintf("Updated tray %s (unchanged)", $tray->barcode);
+        }
+        $trayLog->user_id = $userId;
+        $trayLog->save();
+
+        return $tray;
+    }
+
     public function actionUpdateTray()
     {
         // We want the id, as well as the following optional fields:
@@ -145,62 +201,38 @@ class TrayApiController extends ActiveController
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
         if ($tokenCheck['level'] >= 60) {
-            // Get the tray
-            $tray = $this->modelClass::find()->where(['barcode' => $data['barcode']])->one();
-            $trayLog = new $this->modelLogClass;
-
-            $logDetails = [];
-
-            // If a barcode was provided and it's not the same as the current
-            // one, check that it's not already in use
-            if (isset($data['new_barcode']) and $data['new_barcode'] != $data['barcode']) {
-                $trayCheck = $this->modelClass::find()->where(['barcode' => $data["new_barcode"]])->one();
-                if ($trayCheck != null) {
-                    throw new \yii\web\HttpException(500, sprintf('Tray %s already exists', $data['new_barcode']));
-                }
-                $tray->barcode = $data['new_barcode'];
-                $logDetails[] = sprintf("barcode %s", $data['new_barcode']);
-            }
-            // Shelf
-            if (isset($data['shelf']) and (!$tray->shelf || $data['shelf'] != $tray->shelf->barcode)) {
-                $shelf = \app\models\Shelf::find()->where(['barcode' => $data['shelf']])->one();
-                if ($shelf == null) {
-                    throw new \yii\web\HttpException(500, sprintf('Shelf %s does not exist', $data['shelf']));
-                }
-                $tray->shelf_id = $shelf->id;
-                $logDetails[] = sprintf("shelf %s", $data['shelf']);
-            }
-            // Depth and position
-            if (isset($data['depth']) and $data['depth'] != $tray->depth) {
-                $tray->depth = $data['depth'];
-                $logDetails[] = sprintf("depth %s", $data['depth']);
-            }
-            if (isset($data['position']) and $data['position'] != $tray->position) {
-                if (gettype($data['position']) != 'integer') {
-                    $tray->position = str_pad($data['position'], 2, '0', STR_PAD_LEFT);
-                }
-                else {
-                    $tray->position = $data['position'];
-                }
-            }
-            $tray->save();
-
-            // Log the update
-            $trayLog->tray_id = $tray->id;
-            $trayLog->action = 'Updated';
-            if (count($logDetails) > 0) {
-                $trayLog->details = sprintf("Updated tray %s: %s", $tray->barcode, implode(', ', $logDetails));
-            }
-            else {
-                $trayLog->details = sprintf("Updated tray %s (unchanged)", $tray->barcode);
-            }
-            $trayLog->user_id = $tokenCheck['id'];
-            $trayLog->save();
-
+            $tray = $this->handleTrayUpdate($data, $tokenCheck['id']);
             return $tray;
         }
         else {
             throw new \yii\web\HttpException(500, 'You do not have permission to update trays');
+        }
+    }
+
+    // Wrapper function that makes it easier to do the most common
+    // type of tray update
+    public function actionShelveTray()
+    {
+        // We will calculate the ID from the barcode given. A tray's
+        // barcode will not be changed using this function. We will also
+        // get the shelf barcode, depth, and position.
+        $json = file_get_contents('php://input');
+        $data = json_decode($json, true);
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if ($tokenCheck['level'] >= 40) {
+            $newData = [
+                'barcode' => $data['tray'],
+                'shelf' => $data['shelf'],
+                'depth' => $data['depth'],
+                'position' => $data['position']
+            ];
+            $tray = $this->handleTrayUpdate($newData, $tokenCheck['id']);
+            return $tray;
+        }
+        else {
+            throw new \yii\web\HttpException(500, 'You do not have permission to shelve trays');
         }
     }
 
@@ -249,25 +281,6 @@ class TrayApiController extends ActiveController
         }
     }
 
-    public function actionGetTrayWithItems()
-    {
-        $json = file_get_contents('php://input');
-        $data = json_decode($json, true);
-        $token = $_REQUEST["access-token"];
-        $tokenCheck = User::find()->where(['access_token' => $token])->one();
-
-        if ($tokenCheck['level'] >= 20) {
-            $tray = $this->modelClass::find()->where(['id' => $data['id']])->one();
-            // $items = $this->itemClass::find()->where(['tray_id' => $tray->id])->all();
-            // $tray->items = $items;
-            return $tray;
-
-        }
-        else {
-            throw new \yii\web\HttpException(500, 'You do not have permission to view trays');
-        }
-    }
-
     // public function actionViewAllTrays() {
     //     $token = $_REQUEST["access-token"];
     //     $tokenCheck = User::find()->where(['access_token' => $token])->one();
@@ -305,11 +318,21 @@ class TrayApiController extends ActiveController
     {
         $json = file_get_contents('php://input');
         $data = json_decode($json, true);
-        $tray = $this->modelClass::find()
-            ->where(['barcode' => $data['barcode']])
-            ->andWhere(['active' => true])
-            ->one();
-        return $tray;
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if ($tokenCheck['level'] >= 20) {
+            $json = file_get_contents('php://input');
+            $data = json_decode($json, true);
+            $tray = $this->modelClass::find()
+                ->where(['barcode' => $data['barcode']])
+                ->andWhere(['active' => true])
+                ->one();
+            return $tray;
+        }
+        else {
+            throw new \yii\web\HttpException(500, 'You do not have permission to view trays');
+        }
     }
 
 }
