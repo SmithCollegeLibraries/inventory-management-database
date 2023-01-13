@@ -76,8 +76,8 @@ class TrayApiController extends ActiveController
                 // Log the reactivation
                 $trayLog = new $this->modelLogClass;
                 $trayLog->tray_id = $tray->id;
-                $trayLog->action = 'Reactivated';
-                $trayLog->details = sprintf("Reactivated tray %s", $tray->barcode);
+                $trayLog->action = 'Restored';
+                $trayLog->details = sprintf("Restored tray %s", $tray->barcode);
                 $trayLog->user_id = $tokenCheck['id'];
                 $trayLog->save();
             }
@@ -99,20 +99,30 @@ class TrayApiController extends ActiveController
                 // If item already exists but is inactive, reactivate it
                 if (\app\models\Item::find()->where(['barcode' => $barcode])->all() != []) {
                     $item = \app\models\Item::find()->where(['barcode' => $barcode])->one();
+                    $oldItemStatus = $item->status;
+
                     $item->active = 1;
                     $item->tray_id = $tray->id;
+                    $item->status = "Trayed";
                     $item->save();
                     // Log the reactivation
                     $itemLog = new $this->itemLogClass;
                     $itemLog->item_id = $item->id;
-                    $itemLog->action = 'Reactivated';
-                    $itemLog->details = sprintf("Reactivated item %s", $item->barcode);
+                    $itemLog->action = 'Restored';
+                    if ($oldItemStatus != 'Trayed') {
+                        $statusChange = sprintf(" (status changed from %s to %s)", $oldItemStatus, 'Trayed');
+                    }
+                    else {
+                        $statusChange = '';
+                    }
+                    $itemLog->details = sprintf("Restored item %s%s", $item->barcode, $statusChange);
                     $itemLog->user_id = $tokenCheck['id'];
                     $itemLog->save();
                 }
                 else {
                     $item = new $this->itemClass;
                     $item->tray_id = $tray->id;
+                    $item->status = "Trayed";
                     $item->barcode = $barcode;
                     $item->collection_id = $collectionId;
                     $item->save();

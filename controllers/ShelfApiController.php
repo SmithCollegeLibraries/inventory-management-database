@@ -126,8 +126,8 @@ class ShelfApiController extends ActiveController
                 // Log the reactivation
                 $shelfLog = new $this->modelLogClass;
                 $shelfLog->shelf_id = $shelf->id;
-                $shelfLog->action = 'Reactivated';
-                $shelfLog->details = sprintf("Reactivated shelf %s", $shelf->barcode);
+                $shelfLog->action = 'Restored';
+                $shelfLog->details = sprintf("Restored shelf %s", $shelf->barcode);
                 $shelfLog->user_id = $tokenCheck['id'];
                 $shelfLog->save();
             }

@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS `tray` (
 CREATE TABLE IF NOT EXISTS `item` (
   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `barcode` varchar(20) NOT NULL,
-  `status` varchar(25) NOT NULL DEFAULT 'Trayed',
+  `status` varchar(25) NOT NULL,
   `tray_id` int(11) UNSIGNED,
   `collection_id` int(11) UNSIGNED NOT NULL,
   `active` boolean NOT NULL DEFAULT TRUE,
