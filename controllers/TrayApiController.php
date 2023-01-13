@@ -232,6 +232,11 @@ class TrayApiController extends ActiveController
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
         if ($tokenCheck['level'] >= 40) {
+            // If the tray is already shelved, throw an error
+            $tray = $this->modelClass::find()->where(['barcode' => $data['tray']])->one();
+            if ($tray->shelf_id != null) {
+                throw new \yii\web\HttpException(500, sprintf('Tray %s is already shelved', $data['tray']));
+            }
             $newData = [
                 'barcode' => $data['tray'],
                 'shelf' => $data['shelf'],
