@@ -265,6 +265,9 @@ class TrayApiController extends ActiveController
             else {
                 $oldLocation = sprintf("shelf %s, depth %s, position %s", $tray->shelf->barcode, $tray->depth, $tray->position);
             }
+            $tray->shelf_id = null;
+            $tray->depth = null;
+            $tray->position = null;
             $tray->active = 0;
             $tray->save();
 
@@ -277,6 +280,7 @@ class TrayApiController extends ActiveController
 
             $items = $this->itemClass::find()->where(['tray_id' => $tray->id])->all();
             foreach ($items as $item) {
+                $item->status = 'Deleted';
                 $item->active = 0;
                 $item->save();
 
