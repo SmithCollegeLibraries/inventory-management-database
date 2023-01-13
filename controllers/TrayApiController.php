@@ -109,13 +109,7 @@ class TrayApiController extends ActiveController
                     $itemLog = new $this->itemLogClass;
                     $itemLog->item_id = $item->id;
                     $itemLog->action = 'Restored';
-                    if ($oldItemStatus != 'Trayed') {
-                        $statusChange = sprintf(" (status changed from %s to %s)", $oldItemStatus, 'Trayed');
-                    }
-                    else {
-                        $statusChange = '';
-                    }
-                    $itemLog->details = sprintf("Restored item %s%s", $item->barcode, $statusChange);
+                    $itemLog->details = sprintf("Restored item %s and added to tray %s", $item->barcode, $tray->barcode);
                     $itemLog->user_id = $tokenCheck['id'];
                     $itemLog->save();
                 }
@@ -265,13 +259,19 @@ class TrayApiController extends ActiveController
 
         if ($tokenCheck['level'] >= 60) {
             $tray = $this->modelClass::find()->where(['barcode' => $data['barcode']])->one();
+            if ($tray->shelf_id == null) {
+                $oldLocation = 'not shelved';
+            }
+            else {
+                $oldLocation = sprintf("shelf %s, depth %s, position %s", $tray->shelf->barcode, $tray->depth, $tray->position);
+            }
             $tray->active = 0;
             $tray->save();
 
             $trayLog = new $this->modelLogClass;
             $trayLog->tray_id = $tray->id;
             $trayLog->action = 'Deleted';
-            $trayLog->details = sprintf("Deleted tray %s", $tray->barcode);
+            $trayLog->details = sprintf("Deleted tray %s (%s)", $tray->barcode, $oldLocation);
             $trayLog->user_id = $tokenCheck['id'];
             $trayLog->save();
 
