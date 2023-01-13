@@ -130,7 +130,7 @@ class TrayApiController extends ActiveController
                     $itemLog = new $this->itemLogClass;
                     $itemLog->item_id = $item->id;
                     $itemLog->action = 'Created';
-                    $itemLog->details = sprintf("Created item %s", $item->barcode);
+                    $itemLog->details = sprintf("Created item %s along with tray %s", $item->barcode, $tray->barcode);
                     $itemLog->user_id = $tokenCheck['id'];
                     $itemLog->save();
                 }
