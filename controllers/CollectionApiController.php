@@ -25,7 +25,7 @@ class CollectionApiController extends ActiveController
         $behaviors = parent::behaviors();
         $behaviors['authenticator'] = [
             'class' => QueryParamAuth::class,
-            ];
+        ];
         return $behaviors;
     }
 

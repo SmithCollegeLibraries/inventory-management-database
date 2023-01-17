@@ -7,6 +7,7 @@ use yii\rest\ActiveController;
 use yii\data\ActiveDataProvider;
 use yii\filters\auth\QueryParamAuth;
 
+use app\models\Shelf;
 use app\models\User;
 
 class TrayApiController extends ActiveController
@@ -84,7 +85,7 @@ class TrayApiController extends ActiveController
             }
 
             // If the tray location is already occupied, return error
-            if ($data[shelf]) {
+            if (isset($data['shelf'])) {
                 $shelf = \app\models\Shelf::find()->where(['barcode' => $data['shelf']])->one();
                 if ($shelf) {
                     $shelfId = \app\models\Shelf::find()->where(['barcode' => $data['shelf']])->one()->id;
@@ -169,6 +170,12 @@ class TrayApiController extends ActiveController
     {
         // Get the tray
         $tray = $this->modelClass::find()->where(['barcode' => $data['barcode']])->one();
+
+        // If the tray doesn't exist, return error
+        if ($tray == null) {
+            throw new \yii\web\HttpException(500, sprintf('Tray %s does not exist', $data['barcode']));
+        }
+
         $trayLog = new $this->modelLogClass;
 
         $logDetails = [];
@@ -184,7 +191,7 @@ class TrayApiController extends ActiveController
             $logDetails[] = sprintf("barcode %s", $data['new_barcode']);
         }
         // Shelf
-        if (isset($data['shelf']) and (!$tray->shelf || $data['shelf'] != $tray->shelf->barcode)) {
+        if (isset($data['shelf']) and (!isset($tray->shelf) or $data['shelf'] != $tray->shelf->barcode)) {
             $shelf = \app\models\Shelf::find()->where(['barcode' => $data['shelf']])->one();
             if ($shelf == null) {
                 throw new \yii\web\HttpException(500, sprintf('Shelf %s does not exist', $data['shelf']));
