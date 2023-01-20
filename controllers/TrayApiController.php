@@ -353,22 +353,46 @@ class TrayApiController extends ActiveController
 
     public function actionSearch()
     {
-        $query = $_REQUEST["query"];
-        $provider = new ActiveDataProvider([
-            'query' => $this->modelClass::find()
-                ->where(['like', 'barcode', $query])
-                ->andWhere(['active' => true]),
-            'sort' => [
-                'defaultOrder' => [
-                    'updated' => SORT_DESC,
-                ]
-            ],
-            'pagination' => [
-                'pageSize' => 20,
-            ],
-        ]);
+        $barcode = isset($_REQUEST["query"]) ? $_REQUEST["query"] : null;
+        $shelf = isset($_REQUEST["shelf"]) ? $_REQUEST["shelf"] : null;
+        $depth = isset($_REQUEST["depth"]) ? $_REQUEST["depth"] : null;
+        $position = isset($_REQUEST["position"]) ? $_REQUEST["position"] : null;
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
-        return $provider->getModels();;
+        if ($tokenCheck['level'] >= 20) {
+            // If a barcode has been provided, search by parcode and return
+            // up to 20 results
+            if ($barcode != null) {
+                $provider = new ActiveDataProvider([
+                    'query' => $this->modelClass::find()
+                        ->where(['like', 'barcode', $barcode])
+                        ->andWhere(['active' => true]),
+                    'sort' => [
+                        'defaultOrder' => [
+                            'updated' => SORT_DESC,
+                        ]
+                    ],
+                    'pagination' => [
+                        'pageSize' => 20,
+                    ],
+                ]);
+                return $provider->getModels();
+            }
+            else {
+                // Use the shelf, depth, and position to search for trays
+                $tray = $this->modelClass::find()
+                    ->where(['shelf_id' => $shelf])
+                    ->andWhere(['depth' => $depth])
+                    ->andWhere(['position' => $position])
+                    ->andWhere(['active' => true])
+                    ->one();
+                return $tray;
+            }
+        }
+        else {
+            throw new \yii\web\HttpException(500, 'You do not have permission to view trays');
+        }
     }
 
     public function actionGetTray()
