@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS `tray` (
   `depth` varchar(6) DEFAULT NULL,
   `position` tinyint(2) UNSIGNED DEFAULT NULL,
   `active` boolean NOT NULL DEFAULT TRUE,
+  `flag` boolean NOT NULL DEFAULT FALSE,
   `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),

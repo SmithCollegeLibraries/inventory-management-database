@@ -13,6 +13,7 @@ use Yii;
  * @property string|null $depth
  * @property string|null $position
  * @property int $active
+ * @property int $flag
  *
  * @property Item[] $items
  * @property Shelf $shelf
@@ -35,7 +36,7 @@ class Tray extends \yii\db\ActiveRecord
     {
         return [
             [['barcode'], 'required'],
-            [['shelf_id', 'active'], 'integer'],
+            [['shelf_id', 'active', 'flag'], 'integer'],
             [['barcode'], 'string', 'max' => 20],
             [['depth'], 'string', 'max' => 6],
             [['position'], 'integer', 'max' => 20],
@@ -52,6 +53,7 @@ class Tray extends \yii\db\ActiveRecord
             'depth',
             'position',
             'active',
+            'flag',
             'shelf' => function ($tray) {
                 $shelf = 'app\models\Shelf'::find()->where(['id' => $tray["shelf_id"]])->one();
                 if ($shelf) {
@@ -86,6 +88,7 @@ class Tray extends \yii\db\ActiveRecord
             'depth' => 'Depth',
             'position' => 'Position from left',
             'active' => 'Active',
+            'flag' => 'Flag',
         ];
     }
 

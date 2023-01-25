@@ -32,20 +32,46 @@ class TrayApiController extends ActiveController
         return $behaviors;
     }
 
-    private function alreadyOccupied($shelf_id, $depth, $position)
+    private function alreadyOccupyingTray($shelf_id, $depth, $position)
     {
-        $tray = $this->modelClass::find()
+        return $this->modelClass::find()
             ->where(['shelf_id' => $shelf_id])
             ->andWhere(['depth' => $depth])
             ->andWhere(['position' => $position])
             ->andWhere(['active' => 1])
             ->one();
-        if ($tray) {
-            return true;
+    }
+
+    private function handleCreateTray($trayBarcode, $userId)
+    {
+        // If the tray used to exist but has been deactivated, reactivate
+        // it instead of creating a new object
+        if (\app\models\Tray::find()->where(['barcode' => $trayBarcode])->all() != []) {
+            $tray = \app\models\Tray::find()->where(['barcode' => $trayBarcode])->one();
+            $tray->active = 1;
+            $tray->save();
+            // Log the reactivation
+            $trayLog = new $this->modelLogClass;
+            $trayLog->tray_id = $tray->id;
+            $trayLog->action = 'Restored';
+            $trayLog->details = sprintf("Restored tray %s", $tray->barcode);
+            $trayLog->user_id = $userId;
+            $trayLog->save();
         }
         else {
-            return false;
+            $tray = new $this->modelClass;
+            $tray->barcode = $trayBarcode;
+            $tray->save();
+            // Log the new tray
+            $trayLog = new $this->modelLogClass;
+            $trayLog->tray_id = $tray->id;
+            $trayLog->action = 'Added';
+            $trayLog->details = sprintf("Added tray %s", $tray->barcode);
+            $trayLog->user_id = $userId;
+            $trayLog->save();
         }
+
+        return $tray;
     }
 
     public function actionNewTray()
@@ -89,38 +115,14 @@ class TrayApiController extends ActiveController
                 $shelf = \app\models\Shelf::find()->where(['barcode' => $data['shelf']])->one();
                 if ($shelf) {
                     $shelfId = \app\models\Shelf::find()->where(['barcode' => $data['shelf']])->one()->id;
-                    if ($this->alreadyOccupied($shelfId, $data['depth'], $data['position'])) {
-                        throw new \yii\web\HttpException(500, sprintf('Shelf %s, depth %s, position %s is already occupied by another tray', $data['shelf'], $data['depth'], $data['position']));
+                    if (count($this->alreadyOccupyingTray($shelfId, $data['depth'], $data['position'])) != null) {
+                        throw new \yii\web\HttpException(500, sprintf('Shelf %s, %s, position %s is already occupied by tray', $data['shelf'], $data['depth'], $data['position']));
                     }
                 }
             }
 
             // Create new tray
-            // If it already exists but is inactive, reactivate it
-            if (\app\models\Tray::find()->where(['barcode' => $trayBarcode])->all() != []) {
-                $tray = \app\models\Tray::find()->where(['barcode' => $trayBarcode])->one();
-                $tray->active = 1;
-                $tray->save();
-                // Log the reactivation
-                $trayLog = new $this->modelLogClass;
-                $trayLog->tray_id = $tray->id;
-                $trayLog->action = 'Restored';
-                $trayLog->details = sprintf("Restored tray %s", $tray->barcode);
-                $trayLog->user_id = $tokenCheck['id'];
-                $trayLog->save();
-            }
-            else {
-                $tray = new $this->modelClass;
-                $tray->barcode = $trayBarcode;
-                $tray->save();
-                // Log the new tray
-                $trayLog = new $this->modelLogClass;
-                $trayLog->tray_id = $tray->id;
-                $trayLog->action = 'Added';
-                $trayLog->details = sprintf("Added tray %s", $tray->barcode);
-                $trayLog->user_id = $tokenCheck['id'];
-                $trayLog->save();
-            }
+            $tray = $this->handleCreateTray($trayBarcode, $tokenCheck['id']);
 
             // Create new items and add them to tray; add logs as well
             foreach ($barcodes as $barcode) {
@@ -166,23 +168,100 @@ class TrayApiController extends ActiveController
         }
     }
 
-    private function handleTrayUpdate($data, $userId)
+    // If $flagsAllowed is set, certain anomalies will be allowed but
+    // flagged and logged. This may happen when vendors are shelving using
+    // the rapid load form, but aren't connected to the internet.
+    private function handleTrayUpdate($data, $userId, $flagsAllowed)
     {
-        // Get the tray
-        $tray = $this->modelClass::find()->where(['barcode' => $data['barcode']])->one();
+        $trayLog = new $this->modelLogClass;
+        $logDetails = [];
+        $flag = false;
+        $flagDetails = [];
 
-        // If the tray doesn't exist, return error
+        // Get the tray and shelf
+        $trayBarcode = $data['barcode'];
+        $tray = $this->modelClass::find()->where(['barcode' => $trayBarcode])->one();
+        $shelf = \app\models\Shelf::find()->where(['barcode' => $data['shelf']])->one();
+
+        // Here are the five anomalies where we either throw an error
+        // or shelve and flag, depending on the situation.
+
+        // 1. If the tray doesn't exist
         if ($tray == null) {
-            throw new \yii\web\HttpException(500, sprintf('Tray %s does not exist', $data['barcode']));
+            if ($flagsAllowed == true) {
+                $tray = $this->handleCreateTray($trayBarcode, $userId);
+                $flag = true;
+                $flagDetails[] = sprintf('Tray %s did not exist before being shelved', $trayBarcode);
+            }
+            else {
+                throw new \yii\web\HttpException(500, sprintf('Tray %s does not exist', $trayBarcode));
+            }
         }
 
-        $trayLog = new $this->modelLogClass;
+        // 2. If the tray is empty
+        if ($tray->items == []) {
+            if ($flagsAllowed == true) {
+                $flag = true;
+                $flagDetails[] = sprintf('Tray %s was shelved when empty', $trayBarcode);
+            }
+            else {
+                // Do nothing: This isn't actually a problem when updating
+                // a tray manually, although it should be flagged if this
+                // situation happens using the rapid load form.
+            }
+        }
 
-        $logDetails = [];
+        // 3. If the tray is already shelved:
+        $oldShelf = \app\models\Shelf::find()->where(['id' => $tray->shelf_id])->one();
+        if ($tray && $tray->shelf_id != null) {
+            if ($flagsAllowed == true) {
+                $flag = true;
+                $oldShelfBarcode = $oldShelf->barcode;
+                $oldPosition = $tray->position == null ? 'null' : $tray->position;
+                $oldDepth = $tray->depth == null ? 'null' : $tray->depth;
+                $flagDetails[] = sprintf('Tray %s was already on shelf %s, %s, position %s', $trayBarcode, $oldShelfBarcode, $oldDepth, $oldPosition);
+            }
+            else {
+                throw new \yii\web\HttpException(500, sprintf('Tray %s is already shelved', $trayBarcode));
+            }
+        }
+
+        // 4. If the shelf doesn't exist:
+        if ($shelf == null) {
+            if ($flagsAllowed == true) {
+                $shelfBarcode = $data['shelf'];
+                $shelf = new \app\models\Shelf;
+                $shelf->barcode = $shelfBarcode;
+                $shelf->row = substr($shelfBarcode, 0, 2);
+                $shelf->side = substr($shelfBarcode, 2, 1);
+                $shelf->ladder = substr($shelfBarcode, 3, 2);
+                $shelf->rung = substr($shelfBarcode, 5, 2);
+                $shelf->active = 1;
+                $shelf->save();
+                $flag = true;
+                $flagDetails[] = sprintf('Tray %s was assigned to shelf %s, which didn\'t exist yet', $trayBarcode, $data['shelf']);
+            }
+            else {
+                throw new \yii\web\HttpException(500, sprintf('Shelf %s does not exist', $data['shelf']));
+            }
+        }
+
+        // 5. If the location of the tray is already taken:
+        $existingTray = $this->alreadyOccupyingTray($tray->shelf_id, $tray->depth, $tray->position);
+        if ($existingTray != null) {
+            if ($flagsAllowed == true) {
+                $flag = true;
+                $flagDetails[] = sprintf('Tray %s was assigned to shelf %s, %s, position %s, which was already occupied by tray %s', $trayBarcode, $data['shelf'], $data['depth'], $data['position'], $existingTray->barcode);
+            }
+            else {
+                throw new \yii\web\HttpException(500, sprintf('Shelf %s, %s, position %s is already occupied by tray %s', $data['shelf'], $data['depth'], $data['position'], $existingTray->barcode));
+            }
+        }
 
         // If a barcode was provided and it's not the same as the current
-        // one, check that it's not already in use
-        if (isset($data['new_barcode']) and $data['new_barcode'] != $data['barcode']) {
+        // one, check that it's not already in use (this doesn't happen with
+        // the rapid load form)
+        if (isset($data['new_barcode']) && $data['new_barcode'] != $data['barcode']) {
             $trayCheck = $this->modelClass::find()->where(['barcode' => $data["new_barcode"]])->one();
             if ($trayCheck != null) {
                 throw new \yii\web\HttpException(500, sprintf('Tray %s already exists', $data['new_barcode']));
@@ -191,20 +270,16 @@ class TrayApiController extends ActiveController
             $logDetails[] = sprintf("barcode %s", $data['new_barcode']);
         }
         // Shelf
-        if (isset($data['shelf']) and (!isset($tray->shelf) or $data['shelf'] != $tray->shelf->barcode)) {
-            $shelf = \app\models\Shelf::find()->where(['barcode' => $data['shelf']])->one();
-            if ($shelf == null) {
-                throw new \yii\web\HttpException(500, sprintf('Shelf %s does not exist', $data['shelf']));
-            }
+        if (isset($data['shelf']) && (!isset($tray->shelf) || $data['shelf'] != $tray->shelf->barcode)) {
             $tray->shelf_id = $shelf->id;
             $logDetails[] = sprintf("shelf %s", $data['shelf']);
         }
         // Depth and position
-        if (isset($data['depth']) and $data['depth'] != $tray->depth) {
+        if (isset($data['depth']) && $data['depth'] != $tray->depth) {
             $tray->depth = $data['depth'];
             $logDetails[] = sprintf("depth %s", $data['depth']);
         }
-        if (isset($data['position']) and $data['position'] != $tray->position) {
+        if (isset($data['position']) && $data['position'] != $tray->position) {
             if (gettype($data['position']) != 'integer') {
                 $tray->position = str_pad($data['position'], 2, '0', STR_PAD_LEFT);
             }
@@ -212,9 +287,9 @@ class TrayApiController extends ActiveController
                 $tray->position = $data['position'];
             }
         }
-        // If the tray's new location is already occupied, throw an error
-        if ($this->alreadyOccupied($tray->shelf_id, $tray->depth, $tray->position)) {
-            throw new \yii\web\HttpException(500, sprintf('Shelf %s, depth %s, position %s is already occupied by another tray', $data['shelf'], $data['depth'], $data['position']));
+        // Flag
+        if ($flag == true) {
+            $tray->flag = 1;
         }
         $tray->save();
 
@@ -230,6 +305,16 @@ class TrayApiController extends ActiveController
         $trayLog->user_id = $userId;
         $trayLog->save();
 
+        // Log any flags that occurred
+        foreach ($flagDetails as $flagDetail) {
+            $flagLog = new $this->modelLogClass;
+            $flagLog->tray_id = $tray->id;
+            $flagLog->action = 'Flagged';
+            $flagLog->details = $flagDetail;
+            $flagLog->user_id = $userId;
+            $flagLog->save();
+        }
+
         return $tray;
     }
 
@@ -243,7 +328,7 @@ class TrayApiController extends ActiveController
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
         if ($tokenCheck['level'] >= 60) {
-            $tray = $this->handleTrayUpdate($data, $tokenCheck['id']);
+            $tray = $this->handleTrayUpdate($data, $tokenCheck['id'], false);
             return $tray;
         }
         else {
@@ -264,18 +349,13 @@ class TrayApiController extends ActiveController
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
         if ($tokenCheck['level'] >= 40) {
-            // If the tray is already shelved, throw an error
-            $tray = $this->modelClass::find()->where(['barcode' => $data['tray']])->one();
-            if ($tray && $tray->shelf_id != null) {
-                throw new \yii\web\HttpException(500, sprintf('Tray %s is already shelved', $data['tray']));
-            }
             $newData = [
                 'barcode' => $data['tray'],
                 'shelf' => $data['shelf'],
                 'depth' => $data['depth'],
                 'position' => $data['position']
             ];
-            $tray = $this->handleTrayUpdate($newData, $tokenCheck['id']);
+            $tray = $this->handleTrayUpdate($newData, $tokenCheck['id'], true);
             return $tray;
         }
         else {
@@ -301,7 +381,7 @@ class TrayApiController extends ActiveController
                 $oldLocation = 'not shelved';
             }
             else {
-                $oldLocation = sprintf("shelf %s, depth %s, position %s", $tray->shelf->barcode, $tray->depth, $tray->position);
+                $oldLocation = sprintf("shelf %s, %s, position %s", $tray->shelf->barcode, $tray->depth, $tray->position);
             }
             $tray->shelf_id = null;
             $tray->depth = null;
