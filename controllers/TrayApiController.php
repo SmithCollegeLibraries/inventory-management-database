@@ -460,7 +460,7 @@ class TrayApiController extends ActiveController
     {
         $json = file_get_contents('php://input');
         $data = json_decode($json, true);
-        $shelf = isset($data['shelf']) ? $data['shelf'] : null;
+        $shelfBarcode = isset($data['shelf']) ? $data['shelf'] : null;
         $depth = isset($data['depth']) ? $data['depth'] : null;
         $position = isset($data['position']) ? $data['position'] : null;
 
@@ -468,15 +468,21 @@ class TrayApiController extends ActiveController
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
         if ($tokenCheck['level'] >= 20) {
-            $shelfId = Shelf::find()->where(['barcode' => $shelf])->one()->id;
-            // Use the shelf, depth, and position to search for trays
-            $tray = $this->modelClass::find()
-                ->where(['shelf_id' => $shelfId])
-                ->andWhere(['depth' => $depth])
-                ->andWhere(['position' => $position])
-                ->andWhere(['active' => true])
-                ->all();
-            return $tray;
+            $shelf = Shelf::find()->where(['barcode' => $shelfBarcode])->one();
+            if ($shelf == null) {
+                return [];
+            }
+            else {
+                // Use the shelf ID, depth, and position to search for trays
+                $shelfId = $shelf->id;
+                $trays = $this->modelClass::find()
+                    ->where(['shelf_id' => $shelfId])
+                    ->andWhere(['depth' => $depth])
+                    ->andWhere(['position' => $position])
+                    ->andWhere(['active' => true])
+                    ->all();
+                return $trays;
+            }
         }
         else {
             throw new \yii\web\HttpException(500, 'You do not have permission to view trays');
