@@ -116,7 +116,7 @@ class TrayApiController extends ActiveController
                 if ($shelf) {
                     $shelfId = \app\models\Shelf::find()->where(['barcode' => $data['shelf']])->one()->id;
                     if (count($this->alreadyOccupyingTray($shelfId, $data['depth'], $data['position'])) != null) {
-                        throw new \yii\web\HttpException(500, sprintf('Shelf %s, %s, position %s is already occupied by tray', $data['shelf'], $data['depth'], $data['position']));
+                        throw new \yii\web\HttpException(500, sprintf('Shelf %s, depth %s, position %s is already occupied by tray', $data['shelf'], $data['depth'], $data['position']));
                     }
                 }
             }
@@ -219,7 +219,7 @@ class TrayApiController extends ActiveController
                 $oldShelfBarcode = $oldShelf->barcode;
                 $oldPosition = $tray->position == null ? 'null' : $tray->position;
                 $oldDepth = $tray->depth == null ? 'null' : $tray->depth;
-                $flagDetails[] = sprintf('Tray %s was already on shelf %s, %s, position %s', $trayBarcode, $oldShelfBarcode, $oldDepth, $oldPosition);
+                $flagDetails[] = sprintf('Tray %s was already on shelf %s, depth %s, position %s', $trayBarcode, $oldShelfBarcode, $oldDepth, $oldPosition);
             }
             else {
                 throw new \yii\web\HttpException(500, sprintf('Tray %s is already shelved', $trayBarcode));
@@ -252,10 +252,10 @@ class TrayApiController extends ActiveController
         if ($existingTray != null) {
             if ($flagsAllowed == true) {
                 $flag = true;
-                $flagDetails[] = sprintf('Tray %s was assigned to shelf %s, %s, position %s, which was already occupied by tray %s', $trayBarcode, $data['shelf'], $data['depth'], $data['position'], $existingTray->barcode);
+                $flagDetails[] = sprintf('Tray %s was assigned to shelf %s, depth %s, position %s, which was already occupied by tray %s', $trayBarcode, $data['shelf'], $data['depth'], $data['position'], $existingTray->barcode);
             }
             else {
-                throw new \yii\web\HttpException(500, sprintf('Shelf %s, %s, position %s is already occupied by tray %s', $data['shelf'], $data['depth'], $data['position'], $existingTray->barcode));
+                throw new \yii\web\HttpException(500, sprintf('Shelf %s, depth %s, position %s is already occupied by tray %s', $data['shelf'], $data['depth'], $data['position'], $existingTray->barcode));
             }
         }
 
@@ -287,6 +287,7 @@ class TrayApiController extends ActiveController
             else {
                 $tray->position = $data['position'];
             }
+            $logDetails[] = sprintf("position %s", $data['position']);
         }
         // Flag
         if ($flag == true) {
@@ -382,7 +383,7 @@ class TrayApiController extends ActiveController
                 $oldLocation = 'not shelved';
             }
             else {
-                $oldLocation = sprintf("shelf %s, %s, position %s", $tray->shelf->barcode, $tray->depth, $tray->position);
+                $oldLocation = sprintf("shelf %s, depth %s, position %s", $tray->shelf->barcode, $tray->depth, $tray->position);
             }
             $tray->shelf_id = null;
             $tray->depth = null;
