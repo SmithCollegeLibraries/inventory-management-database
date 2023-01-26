@@ -247,7 +247,8 @@ class TrayApiController extends ActiveController
         }
 
         // 5. If the location of the tray is already taken:
-        $existingTray = $this->alreadyOccupyingTray($tray->shelf_id, $tray->depth, $tray->position);
+        $shelfId = \app\models\Shelf::find()->where(['barcode' => $data['shelf']])->one()->id;
+        $existingTray = $this->alreadyOccupyingTray($shelfId, $data['depth'], $data['position']);
         if ($existingTray != null) {
             if ($flagsAllowed == true) {
                 $flag = true;
