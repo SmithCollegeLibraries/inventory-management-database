@@ -211,7 +211,7 @@ class TrayApiController extends ActiveController
             }
         }
 
-        // 3. If the tray is already shelved:
+        // 3. If the tray is already shelved
         $oldShelf = \app\models\Shelf::find()->where(['id' => $tray->shelf_id])->one();
         if ($tray && $tray->shelf_id != null) {
             if ($flagsAllowed == true) {
@@ -226,27 +226,21 @@ class TrayApiController extends ActiveController
             }
         }
 
-        // 4. If the shelf doesn't exist:
+        // 4. If the shelf doesn't exist: this isn't actually a problem,
+        // but we do need to create the shelf on the fly
         if ($shelf == null) {
-            if ($flagsAllowed == true) {
-                $shelfBarcode = $data['shelf'];
-                $shelf = new \app\models\Shelf;
-                $shelf->barcode = $shelfBarcode;
-                $shelf->row = substr($shelfBarcode, 0, 2);
-                $shelf->side = substr($shelfBarcode, 2, 1);
-                $shelf->ladder = substr($shelfBarcode, 3, 2);
-                $shelf->rung = substr($shelfBarcode, 5, 2);
-                $shelf->active = 1;
-                $shelf->save();
-                $flag = true;
-                $flagDetails[] = sprintf('Tray %s was assigned to shelf %s, which didn\'t exist yet', $trayBarcode, $data['shelf']);
-            }
-            else {
-                throw new \yii\web\HttpException(500, sprintf('Shelf %s does not exist', $data['shelf']));
-            }
+            $shelfBarcode = $data['shelf'];
+            $shelf = new \app\models\Shelf;
+            $shelf->barcode = $shelfBarcode;
+            $shelf->row = substr($shelfBarcode, 0, 2);
+            $shelf->side = substr($shelfBarcode, 2, 1);
+            $shelf->ladder = substr($shelfBarcode, 3, 2);
+            $shelf->rung = substr($shelfBarcode, 5, 2);
+            $shelf->active = 1;
+            $shelf->save();
         }
 
-        // 5. If the location of the tray is already taken:
+        // 5. If the location of the tray is already taken
         $shelfId = \app\models\Shelf::find()->where(['barcode' => $data['shelf']])->one()->id;
         $existingTray = $this->alreadyOccupyingTray($shelfId, $data['depth'], $data['position']);
         if ($existingTray != null) {
