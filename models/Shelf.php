@@ -14,6 +14,7 @@ use Yii;
  * @property string|null $ladder
  * @property string|null $rung
  * @property int $active
+ * @property int $flag
  *
  * @property ShelfLog[] $shelfLogs
  * @property Tray[] $trays
@@ -35,7 +36,7 @@ class Shelf extends \yii\db\ActiveRecord
     {
         return [
             [['barcode'], 'required'],
-            [['active'], 'integer'],
+            [['active', 'flag'], 'integer'],
             [['barcode'], 'string', 'max' => 20],
             [['row', 'ladder', 'rung'], 'string', 'max' => 2],
             [['side'], 'string', 'max' => 1],
@@ -54,6 +55,7 @@ class Shelf extends \yii\db\ActiveRecord
             'ladder',
             'rung',
             'active',
+            'flag',
             'trays' => function ($shelf) {
                 $trays = $this->getTrays()->where(["active" => true])->all();
                 $trayArray = [];
@@ -80,6 +82,7 @@ class Shelf extends \yii\db\ActiveRecord
             'ladder' => 'Ladder',
             'rung' => 'Rung',
             'active' => 'Active',
+            'flag' => 'Flag',
         ];
     }
 

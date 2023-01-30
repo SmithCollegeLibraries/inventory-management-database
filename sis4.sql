@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS `shelf` (
   `ladder` char(2) DEFAULT NULL,
   `rung` char(2) DEFAULT NULL,
   `active` boolean NOT NULL DEFAULT TRUE,
+  `flag` boolean NOT NULL DEFAULT FALSE,
   PRIMARY KEY (id),
   UNIQUE (barcode),
   CONSTRAINT shelf_label UNIQUE (row, side, ladder, rung)
