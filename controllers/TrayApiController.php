@@ -319,7 +319,7 @@ class TrayApiController extends ActiveController
         }
         // Position
         if (isset($data['position']) && $data['position'] != $tray->position) {
-            if ($data['position'] == "") {
+            if ($data['position'] == "" || $data['position'] == "0" || $data['position'] == 0) {
                 $tray->position = null;
                 $logDetails[] = sprintf("position null");
             }
