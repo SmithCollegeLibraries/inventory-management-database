@@ -325,7 +325,7 @@ class TrayApiController extends ActiveController
             }
             else {
                 if (gettype($data['position']) != 'integer') {
-                    $tray->position = str_pad($data['position'], 2, '0', STR_PAD_LEFT);
+                    $tray->position = intval($data['position']);
                 }
                 else {
                     $tray->position = $data['position'];
