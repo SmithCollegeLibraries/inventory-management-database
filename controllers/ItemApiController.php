@@ -53,7 +53,7 @@ class ItemApiController extends ActiveController
     // TODO: remove; this is just for testing purposes
     public function actionViewAllItems()
     {
-        $results = $this->modelClass::find()->all();
+        $results = $this->modelClass::find()->where(['active' => 1])->all();
         return $results;
     }
 
