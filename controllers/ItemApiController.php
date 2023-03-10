@@ -46,7 +46,7 @@ class ItemApiController extends ActiveController
     {
         $json = file_get_contents('php://input');
         $data = json_decode($json, true);
-        $results = $this->modelClass::find()->where(['barcode' => $data["barcodes"]])->all();
+        $results = $this->modelClass::find()->where(['barcode' => $data["barcodes"], 'active' => 1])->all();
         return $results;
     }
 
