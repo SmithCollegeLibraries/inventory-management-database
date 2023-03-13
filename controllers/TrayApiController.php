@@ -255,7 +255,6 @@ class TrayApiController extends ActiveController
                 $shelf->ladder = substr($shelfBarcode, 3, 2);
                 $shelf->rung = substr($shelfBarcode, 5, 2);
                 $shelf->active = 1;
-                $shelf->flag = 1;
                 $shelf->save();
 
                 $shelfLog = new \app\models\ShelfLog;
@@ -264,13 +263,6 @@ class TrayApiController extends ActiveController
                 $shelfLog->details = sprintf('Created shelf %s automatically', $shelf->barcode);
                 $shelfLog->user_id = $userId;
                 $shelfLog->save();
-
-                $shelfFlagLog = new \app\models\ShelfLog;
-                $shelfFlagLog->shelf_id = $shelf->id;
-                $shelfFlagLog->action = 'Flagged';
-                $shelfFlagLog->details = sprintf('Shelf %s automatically created with rapid load', $shelf->barcode);
-                $shelfFlagLog->user_id = $userId;
-                $shelfFlagLog->save();
             }
             else {
                 // You can clear the shelf field in the manual tray edit form,
