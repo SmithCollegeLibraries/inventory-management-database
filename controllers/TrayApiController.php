@@ -91,7 +91,7 @@ class TrayApiController extends ActiveController
         $data = json_decode($json, true);
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
-        if ($tokenCheck['level'] >= 60) {
+        if ($tokenCheck['level'] >= 30) {
             // We expect barcodes in the form of an array, but if it's not, we'll make it one
             if (!is_array($data["items"])) {
                 $barcodes = explode(PHP_EOL, $data['items']);
@@ -386,7 +386,7 @@ class TrayApiController extends ActiveController
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
-        if ($tokenCheck['level'] >= 40) {
+        if ($tokenCheck['level'] >= 30) {
             $newData = [
                 'barcode' => $data['tray'],
                 'shelf' => $data['shelf'],
