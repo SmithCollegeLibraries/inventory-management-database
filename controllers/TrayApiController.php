@@ -181,7 +181,7 @@ class TrayApiController extends ActiveController
 
     // If $flagsAllowed is set, certain anomalies will be allowed but
     // flagged and logged. This may happen when vendors are shelving using
-    // the rapid load form, but aren't connected to the internet.
+    // the rapid shelve form, but aren't connected to the internet.
     private function handleTrayUpdate($data, $userId, $flagsAllowed)
     {
         $trayLog = new $this->modelLogClass;
@@ -221,7 +221,7 @@ class TrayApiController extends ActiveController
             else {
                 // Do nothing: This isn't actually a problem when updating
                 // a tray manually, although it should be flagged if this
-                // situation happens using the rapid load form.
+                // situation happens using the rapid shelve form.
             }
         }
 
@@ -236,12 +236,12 @@ class TrayApiController extends ActiveController
                 $flagDetails[] = sprintf('Tray %s was already on shelf %s, depth %s, position %s', $trayBarcode, $oldShelfBarcode, $oldDepth, $oldPosition);
             }
             else {
-                // This isn't an issue when using the non-rapid load form:
+                // This isn't an issue when using the non-rapid shelve form:
                 // it's actually normal to be editing already-shelved trays
             }
         }
 
-        // 4. If the shelf doesn't exist: with rapid load, this isn't a
+        // 4. If the shelf doesn't exist: with rapid shelve, this isn't a
         // problem, though we do need to create the shelf on the fly.
         // When editing a tray manually, we should create the shelf first
         // and confirm it exists, so we throw an error in that case.
@@ -290,7 +290,7 @@ class TrayApiController extends ActiveController
 
         // If a barcode was provided and it's not the same as the current
         // one, check that it's not already in use (this doesn't happen with
-        // the rapid load form)
+        // the rapid shelve form)
         if (isset($data['new_barcode']) && $data['new_barcode'] != $data['barcode']) {
             $trayCheck = $this->modelClass::find()->where(['barcode' => $data["new_barcode"]])->one();
             if ($trayCheck != null) {
@@ -476,7 +476,7 @@ class TrayApiController extends ActiveController
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
         if ($tokenCheck['level'] >= 20) {
-            // If a barcode has been provided, search by parcode and return
+            // If a barcode has been provided, search by barcode and return
             // up to 20 results
             $provider = new ActiveDataProvider([
                 'query' => $this->modelClass::find()
