@@ -216,3 +216,37 @@ CREATE TABLE IF NOT EXISTS `setting_log` (
   FOREIGN KEY (setting_id) REFERENCES setting(id),
   FOREIGN KEY (user_id) REFERENCES user(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+-- Create indexes
+
+CREATE INDEX idx_item_barcode ON item (barcode);
+CREATE INDEX idx_item_status ON item (status);
+CREATE INDEX idx_item_tray ON item (tray_id);
+CREATE INDEX idx_item_collection ON item (collection_id);
+CREATE INDEX idx_item_flag ON item (flag);
+CREATE INDEX idx_item_active ON item (active);
+
+CREATE INDEX idx_tray_barcode ON tray (barcode);
+CREATE INDEX idx_tray_shelf ON tray (shelf_id);
+CREATE INDEX idx_tray_depth ON tray (depth);
+CREATE INDEX idx_tray_position ON tray (position);
+CREATE INDEX idx_tray_flag ON tray (flag);
+CREATE INDEX idx_tray_active ON tray (active);
+
+CREATE INDEX idx_shelf_barcode ON shelf (barcode);
+CREATE INDEX idx_shelf_row ON shelf (row);
+
+-- Create indexes for logs
+
+CREATE INDEX idx_item_log_item ON item_log (item_id);
+CREATE INDEX idx_item_log_user ON item_log (user_id);
+CREATE INDEX idx_item_log_action ON item_log (action);
+
+CREATE INDEX idx_tray_log_tray ON tray_log (tray_id);
+CREATE INDEX idx_tray_log_user ON tray_log (user_id);
+CREATE INDEX idx_tray_log_action ON tray_log (action);
+
+CREATE INDEX idx_shelf_log_shelf ON shelf_log (shelf_id);
+CREATE INDEX idx_shelf_log_user ON shelf_log (user_id);
+CREATE INDEX idx_shelf_log_action ON shelf_log (action);
