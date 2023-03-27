@@ -46,13 +46,16 @@ class ItemLogApiController extends ActiveController
     {
         // Get data by date and user
         $data = array();
-        $startDate = '2023-03-20';
-        for ($date = date('Y-m-d'); $date >= $startDate; date('Y-m-d', strtotime($date . ' -1 day'))) {
+        $startDate = strtotime("2023-03-20");
+        $numberOfDays = (now() - $startDate) / (60 * 60 * 24) + 1;
+
+        for ($count = 0; $count < $numberOfDays; $count++) {
+            $date = date('Y-m-d', strtotime(`-$count days`));
             $query = $this->modelClass::find()
                 ->select('user.name, count(*) as count')
                 ->joinWith('user', 'item_log.user_id = user.id')
                 ->where(['item_log.action' => 'Added'])
-                ->andWhere(['like', 'item_log.timestamp', $date . '%'])
+                ->andWhere(['like', 'item_log.timestamp', $date])
                 ->groupBy(['user.name'])
                 ->all();
             if ($query) {
