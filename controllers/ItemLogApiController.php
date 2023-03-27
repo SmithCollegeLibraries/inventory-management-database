@@ -47,7 +47,7 @@ class ItemLogApiController extends ActiveController
         // Get data by date and user
         $data = array();
         $startDate = strtotime("2023-03-20");
-        $numberOfDays = (strtotime("now") - $startDate) / (60 * 60 * 24) + 1;
+        $numberOfDays = round((strtotime("now") - $startDate) / (60 * 60 * 24)) + 1;
 
         for ($count = 0; $count < $numberOfDays; $count++) {
             $date = date('Y-m-d', strtotime(`-$count days`));
