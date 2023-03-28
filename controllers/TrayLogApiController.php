@@ -75,7 +75,7 @@ class TrayLogApiController extends ActiveController
             return $data;
         }
         else {
-            return "You do not have permission to view this data.";
+            throw new \yii\web\HttpException(500, "You do not have permission to view this data.");
         }
     }
 
@@ -110,7 +110,7 @@ class TrayLogApiController extends ActiveController
             return $data;
         }
         else {
-            return "You do not have permission to view this data.";
+            throw new \yii\web\HttpException(500, "You do not have permission to view this data.");
         }
     }
 
