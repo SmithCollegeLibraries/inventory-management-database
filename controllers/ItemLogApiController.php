@@ -51,16 +51,21 @@ class ItemLogApiController extends ActiveController
 
         for ($count = 0; $count < $numberOfDays; $count++) {
             $date = date('Y-m-d', strtotime('-' . $count . ' days'));
-            $query = $this->modelClass::find()
+	    $queryCommand = $this->modelClass::find()
                 ->select('user.name, count(*) as count')
                 ->joinWith('user', 'item_log.user_id = user.id')
                 ->where(['item_log.action' => 'Added'])
                 ->andWhere(['like', 'item_log.timestamp', $date])
-                ->groupBy(['user.name'])
-                ->all();
-                $data[] = $query;
+		->groupBy(['user.name'])
+		->createCommand();
+	    if ($queryCommand->queryAll() != []) {
+		$data[] = [
+		    "date" => $date,    
+		    "counts" => $queryCommand->queryAll()
+	        ];
+            }
         }
-        return $data;
+	return $data;
     }
 
 }
