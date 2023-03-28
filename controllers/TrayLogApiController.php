@@ -10,9 +10,9 @@ use yii\filters\auth\QueryParamAuth;
 $startDate = strtotime("2023-03-20");
 $numberOfDays = round((strtotime("now") - $startDate) / (60 * 60 * 24));
 
-class ItemLogApiController extends ActiveController
+class TrayLogApiController extends ActiveController
 {
-    public $modelClass = 'app\models\ItemLog';
+    public $modelClass = 'app\models\TrayLog';
 
     public function init()
     {
@@ -45,7 +45,8 @@ class ItemLogApiController extends ActiveController
         return $dataProvider;
     }
 
-    public function actionStatistics()
+
+    public function actionAddedStatistics()
     {
         // Get data by date and user
         $data = array();
@@ -55,9 +56,9 @@ class ItemLogApiController extends ActiveController
             $date = date('Y-m-d', strtotime('-' . $count . ' days'));
             $queryCommand = $this->modelClass::find()
                 ->select('user.name, count(*) as count')
-                ->joinWith('user', 'item_log.user_id = user.id')
-                ->where(['item_log.action' => 'Added'])
-                ->andWhere(['like', 'item_log.timestamp', $date])
+                ->joinWith('user', 'tray_log.user_id = user.id')
+                ->where(['tray_log.action' => 'Added'])
+                ->andWhere(['like', 'tray_log.timestamp', $date])
                 ->groupBy(['user.name'])
                 ->createCommand();
             if ($queryCommand->queryAll() != []) {
@@ -69,4 +70,32 @@ class ItemLogApiController extends ActiveController
         }
         return $data;
     }
+
+
+    public function actionUpdatedStatistics()
+    {
+        // Get data by date and user
+        $data = array();
+        global $numberOfDays;
+
+        for ($count = 0; $count < $numberOfDays; $count++) {
+            $date = date('Y-m-d', strtotime('-' . $count . ' days'));
+            $queryCommand = $this->modelClass::find()
+                ->select('user.name, count(*) as count')
+                ->joinWith('user', 'tray_log.user_id = user.id')
+                ->where(['tray_log.action' => 'Updated'])
+                ->andWhere(['like', 'tray_log.timestamp', $date])
+                ->groupBy(['user.name'])
+                ->createCommand();
+            if ($queryCommand->queryAll() != []) {
+                $data[] = [
+                    "date" => $date,
+                    "counts" => $queryCommand->queryAll()
+                ];
+            }
+        }
+        return $data;
+    }
+
 }
+
