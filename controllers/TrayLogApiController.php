@@ -7,9 +7,6 @@ use yii\rest\ActiveController;
 use yii\data\ActiveDataProvider;
 use yii\filters\auth\QueryParamAuth;
 
-$startDate = strtotime("2023-03-20");
-$numberOfDays = round((strtotime("now") - $startDate) / (60 * 60 * 24));
-
 class TrayLogApiController extends ActiveController
 {
     public $modelClass = 'app\models\TrayLog';
@@ -50,7 +47,8 @@ class TrayLogApiController extends ActiveController
     {
         // Get data by date and user
         $data = array();
-        global $numberOfDays;
+        $startDate = strtotime("2023-03-20");
+        $numberOfDays = round((strtotime("now") - $startDate) / (60 * 60 * 24));
 
         for ($count = 0; $count < $numberOfDays; $count++) {
             $date = date('Y-m-d', strtotime('-' . $count . ' days'));
@@ -76,7 +74,8 @@ class TrayLogApiController extends ActiveController
     {
         // Get data by date and user
         $data = array();
-        global $numberOfDays;
+        $startDate = strtotime("2023-03-20");
+        $numberOfDays = round((strtotime("now") - $startDate) / (60 * 60 * 24));
 
         for ($count = 0; $count < $numberOfDays; $count++) {
             $date = date('Y-m-d', strtotime('-' . $count . ' days'));
