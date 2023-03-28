@@ -136,6 +136,21 @@ class UserController extends Controller
         }
     }
 
+    public function actionGetName()
+    {
+        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        $modelClass = 'app\models\User';
+        $token = $_REQUEST["access-token"];
+        $user_id = $_REQUEST["id"];
+        $tokenCheck = $modelClass::find()->where(['access_token' => $token])->one();
+        if ($tokenCheck['level'] >= 35) {
+            $result = $modelClass::find()->where(['id' => $user_id, 'active' => true])->one();
+            return array('id'=>$user_id, 'name'=>$result ? $result['name'] : null);
+        } else {
+            throw new \yii\web\ForbiddenHttpException('You are not authorized to see users');
+        }
+    }
+
     public function actionDeleteUsers()
     {
         \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;

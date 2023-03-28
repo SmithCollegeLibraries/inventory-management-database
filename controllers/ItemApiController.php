@@ -7,6 +7,8 @@ use yii\rest\ActiveController;
 use yii\data\ActiveDataProvider;
 use yii\filters\auth\QueryParamAuth;
 
+use app\models\User;
+
 class ItemApiController extends ActiveController
 {
     public $modelClass = 'app\models\Item';
@@ -50,11 +52,33 @@ class ItemApiController extends ActiveController
         return $results;
     }
 
-    // TODO: remove; this is just for testing purposes
-    public function actionViewAllItems()
+    public function actionBrowse()
     {
-        $results = $this->modelClass::find()->where(['active' => 1])->all();
-        return $results;
+        $barcode = isset($_REQUEST["query"]) ? $_REQUEST["query"] : null;
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if ($tokenCheck['level'] >= 20) {
+            // If a barcode has been provided, search by barcode and return
+            // up to 20 results
+            $provider = new ActiveDataProvider([
+                'query' => $this->modelClass::find()
+                    ->where(['like', 'barcode', $barcode])
+                    ->andWhere(['active' => 1]),
+                'sort' => [
+                    'defaultOrder' => [
+                        'id' => SORT_DESC,
+                    ]
+                ],
+                'pagination' => [
+                    'pageSize' => 100,
+                ],
+            ]);
+            return $provider->getModels();
+        }
+        else {
+            throw new \yii\web\HttpException(500, 'You do not have permission to browse items');
+        }
     }
 
     // Expects a single barcode in data under "barcode". Returns a single
