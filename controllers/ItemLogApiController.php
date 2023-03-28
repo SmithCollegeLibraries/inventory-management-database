@@ -7,6 +7,8 @@ use yii\rest\ActiveController;
 use yii\data\ActiveDataProvider;
 use yii\filters\auth\QueryParamAuth;
 
+use app\models\User;
+
 class ItemLogApiController extends ActiveController
 {
     public $modelClass = 'app\models\ItemLog';
@@ -44,27 +46,35 @@ class ItemLogApiController extends ActiveController
 
     public function actionStatistics()
     {
-        // Get data by date and user
-        $data = array();
-        $startDate = strtotime("2023-03-20");
-        $numberOfDays = round((strtotime("now") - $startDate) / (60 * 60 * 24));
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
-        for ($count = 0; $count < $numberOfDays; $count++) {
-            $date = date('Y-m-d', strtotime('-' . $count . ' days'));
-            $queryCommand = $this->modelClass::find()
-                ->select('user.name, count(*) as count')
-                ->joinWith('user', 'item_log.user_id = user.id')
-                ->where(['item_log.action' => 'Added'])
-                ->andWhere(['like', 'item_log.timestamp', $date])
-                ->groupBy(['user.name'])
-                ->createCommand();
-            if ($queryCommand->queryAll() != []) {
-                $data[] = [
-                    "date" => $date,
-                    "counts" => $queryCommand->queryAll()
-                ];
+        if ($tokenCheck['level'] >= 35) {
+            // Get data by date and user
+            $data = array();
+            $startDate = strtotime("2023-03-20");
+            $numberOfDays = round((strtotime("now") - $startDate) / (60 * 60 * 24));
+
+            for ($count = 0; $count < $numberOfDays; $count++) {
+                $date = date('Y-m-d', strtotime('-' . $count . ' days'));
+                $queryCommand = $this->modelClass::find()
+                    ->select('user.name, count(*) as count')
+                    ->joinWith('user', 'item_log.user_id = user.id')
+                    ->where(['item_log.action' => 'Added'])
+                    ->andWhere(['like', 'item_log.timestamp', $date])
+                    ->groupBy(['user.name'])
+                    ->createCommand();
+                if ($queryCommand->queryAll() != []) {
+                    $data[] = [
+                        "date" => $date,
+                        "counts" => $queryCommand->queryAll()
+                    ];
+                }
             }
+            return $data;
         }
-        return $data;
+        else {
+            return "You do not have permission to view this data.";
+        }
     }
 }
