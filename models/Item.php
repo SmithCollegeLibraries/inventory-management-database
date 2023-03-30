@@ -54,7 +54,12 @@ class Item extends \yii\db\ActiveRecord
             'tray' => function ($item) {
                 $tray = 'app\models\Tray'::find()->where(['id' => $item["tray_id"]])->one();
                 if ($tray) {
-                    return $tray->barcode;
+                    return [
+                        "barcode" => $tray->barcode,
+                        "shelf" => $tray->shelf ? $tray->shelf->barcode : null,
+                        "depth" => $tray->depth,
+                        "position" => $tray->position,
+                    ];
                 }
                 return $tray;
             },
