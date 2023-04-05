@@ -71,7 +71,7 @@ class ItemApiController extends ActiveController
                     ]
                 ],
                 'pagination' => [
-                    'pageSize' => 100,
+                    'pageSize' => 20,
                 ],
             ]);
             return $provider->getModels();
