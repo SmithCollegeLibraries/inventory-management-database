@@ -95,5 +95,36 @@ class ItemApiController extends ActiveController
         }
     }
 
+    // Expects a single barcode in data under "barcode". Returns the item's
+    // barcode, title and call number.
+    public function actionInfoFromFolio()
+    {
+        $json = file_get_contents('php://input');
+        $data = json_decode($json, true);
+        $results = \app\components\Folio::barcodeLookup($data["barcode"]);
+        try {
+            // If the item is in FOLIO, there should be exactly one result
+            // for this barcode.
+            $instance = $results["data"]["instances"][0];
+            // The title is located on the instance record
+            $title = $instance["title"];
+            // To get the call number, we will have to look at the items,
+            // find the item that matches on the barcode, and then get the
+            // call number from effectiveCallNumberComponents.
+            $items = $instance["items"];
+            $item = array_filter($items, function($item) use ($data) {
+                return $item["barcode"] == $data["barcode"];
+            })[0];
+            $callNumber = $item["effectiveCallNumberComponents"]["callNumber"];
+            return [
+                "barcode" => $data["barcode"],
+                "title" => $title,
+                "callNumber" => $callNumber,
+            ];
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
 }
 
