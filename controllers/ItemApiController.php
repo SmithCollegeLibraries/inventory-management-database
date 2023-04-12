@@ -105,7 +105,7 @@ class ItemApiController extends ActiveController
         try {
             // If the item is in FOLIO, there should be exactly one result
             // for this barcode.
-            $instance = $results["data"]["instances"][0];
+            $instance = reset($results["data"]["instances"]);
             // The title is located on the instance record
             $title = $instance["title"];
             // To get the call number, we will have to look at the items,
@@ -114,8 +114,9 @@ class ItemApiController extends ActiveController
             $items = $instance["items"];
             $item = array_filter($items, function($item) use ($data) {
                 return $item["barcode"] == $data["barcode"];
-            })[0];
-            $callNumber = $item["effectiveCallNumberComponents"]["callNumber"];
+            });
+            $firstItem = reset($item);
+            $callNumber = $firstItem["effectiveCallNumberComponents"]["callNumber"];
             return [
                 "barcode" => $data["barcode"],
                 "title" => $title,
