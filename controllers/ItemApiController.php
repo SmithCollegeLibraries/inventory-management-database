@@ -60,7 +60,7 @@ class ItemApiController extends ActiveController
 
         if ($tokenCheck['level'] >= 20) {
             // If a barcode has been provided, search by barcode and return
-            // up to 20 results
+            // a liminted number of results
             $provider = new ActiveDataProvider([
                 'query' => $this->modelClass::find()
                     ->where(['like', 'barcode', $barcode])
@@ -71,7 +71,7 @@ class ItemApiController extends ActiveController
                     ]
                 ],
                 'pagination' => [
-                    'pageSize' => 20,
+                    'pageSize' => 10,
                 ],
             ]);
             return $provider->getModels();
