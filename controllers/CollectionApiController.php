@@ -154,14 +154,22 @@ class CollectionApiController extends ActiveController
         }
     }
 
-    public function collectionExists($name): bool
+    public function actionCollectionExists()
     {
+        $name = isset($_REQUEST["query"]) ? $_REQUEST["query"] : null;
         return Collection::find()->where(['name' => $name])->exists();
     }
 
-    public function collectionHasItems($id): bool
+    public function actionCollectionHasItems()
     {
-        return Collection::findOne($id)->getItems()->exists();
+        $id = isset($_REQUEST["query"]) ? $_REQUEST["query"] : null;
+        $collection = Collection::findOne($id);
+        if ($collection == null) {
+            return false;
+        }
+        else {
+            return $collection->getItems()->exists();
+        }
     }
 
 }

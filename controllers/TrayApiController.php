@@ -42,7 +42,7 @@ class TrayApiController extends ActiveController
                 ->where(['shelf_id' => $shelfId])
                 ->andWhere(['depth' => $depth])
                 ->andWhere(['position' => $position])
-                ->andWhere(['active' => 1])
+                ->andWhere(['active' => true])
                 ->one();
             if ($foundTray != null && $foundTray->barcode != $trayBarcode) {
                 return $foundTray;
@@ -55,9 +55,13 @@ class TrayApiController extends ActiveController
 
     private function handleCreateTray($trayBarcode, $userId)
     {
+        // If the tray already exists and is active, throw an error
+        if (\app\models\Tray::find()->where(['barcode' => $trayBarcode])->andWhere(['active' => true])->all() != []) {
+            throw new \yii\web\HttpException(500, sprintf('Tray %s already exists', $trayBarcode));
+        }
         // If the tray used to exist but has been deactivated, reactivate
         // it instead of creating a new object
-        if (\app\models\Tray::find()->where(['barcode' => $trayBarcode])->all() != []) {
+        else if (\app\models\Tray::find()->where(['barcode' => $trayBarcode])->all() != []) {
             $tray = \app\models\Tray::find()->where(['barcode' => $trayBarcode])->one();
             $tray->active = 1;
             $tray->save();
@@ -171,7 +175,14 @@ class TrayApiController extends ActiveController
                 }
             }
 
-            return $barcodes;
+            // Return the barcode of the new tray as confirmation, after
+            // double-checking that it was actually added to the database
+            if (\app\models\Tray::find()->where(['barcode' => $trayBarcode])->andWhere(['active' => true])->all() != []) {
+                return $trayBarcode;
+            }
+            else {
+                throw new \yii\web\HttpException(500, sprintf('Tray %s was not added to the database', $trayBarcode));
+            }
         }
 
         else {
