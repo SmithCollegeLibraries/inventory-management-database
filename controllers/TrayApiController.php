@@ -370,7 +370,7 @@ class TrayApiController extends ActiveController
     public function actionUpdateTray()
     {
         // We want the id, as well as the following optional fields:
-        // (new tray) barcode, (new) shelf (barcode), depth, and position.
+        // new tray barcode, shelf barcode, depth, position.
         $json = file_get_contents('php://input');
         $data = json_decode($json, true);
         $token = $_REQUEST["access-token"];
@@ -381,7 +381,7 @@ class TrayApiController extends ActiveController
             return $tray;
         }
         else {
-            throw new \yii\web\HttpException(500, 'You do not have permission to update trays');
+            throw new \yii\web\HttpException(500, 'You do not have permission to update trays.');
         }
     }
 
@@ -426,6 +426,8 @@ class TrayApiController extends ActiveController
 
         if ($tokenCheck['level'] >= 60) {
             $tray = $this->modelClass::find()->where(['barcode' => $data['barcode']])->one();
+            $previousStatus = $tray->active;
+
             if ($tray->shelf_id == null) {
                 $oldLocation = 'not shelved';
             }
@@ -441,7 +443,12 @@ class TrayApiController extends ActiveController
             $trayLog = new $this->modelLogClass;
             $trayLog->tray_id = $tray->id;
             $trayLog->action = 'Deleted';
-            $trayLog->details = sprintf("Deleted tray %s (%s)", $tray->barcode, $oldLocation);
+            if ($previousStatus == 0) {
+                $trayLog->details = sprintf("Deleted tray %s (was already deleted)", $tray->barcode);
+            }
+            else {
+                $trayLog->details = sprintf("Deleted tray %s (%s)", $tray->barcode, $oldLocation);
+            }
             $trayLog->user_id = $tokenCheck['id'];
             $trayLog->save();
 
