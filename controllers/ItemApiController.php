@@ -143,22 +143,12 @@ class ItemApiController extends ActiveController
         $collection = isset($data['collection']) ? $data['collection'] : null;
         $status = isset($data['status']) ? $data['status'] : null;
         $item = $this->modelClass::find()->where(['barcode' => $itemBarcode])->one();
-        $tray = Tray::find()->where(['barcode' => $trayBarcode])->one();
 
         // Here are the anomalies where we throw an error.
 
         // If the item doesn't exist
         if ($item == null) {
             throw new \yii\web\HttpException(500, sprintf('Item %s does not exist', $itemBarcode));
-        }
-
-        // If the tray doesn't exist
-        if ($tray == null) {
-            // You can clear the shelf field in the manual tray edit form,
-            // so it's not an error if this is a null string
-            if ($trayBarcode != "") {
-                throw new \yii\web\HttpException(500, sprintf('Tray %s does not exist', $trayBarcode));
-            }
         }
 
         // If a barcode was provided and it's not the same as the current
@@ -179,7 +169,20 @@ class ItemApiController extends ActiveController
             $logDetails[] = sprintf("barcode %s", $data['new_barcode']);
         }
         // Tray
-        if (isset($item->tray) && $trayBarcode != null && $trayBarcode != $item->tray->barcode) {
+        if ($trayBarcode == "") {
+            $item->tray_id = null;
+            // If the item was previously in a tray, log that it was made null
+            if ($item->tray != null) {
+                $logDetails[] = sprintf("tray null");
+            }
+        }
+        else if ($trayBarcode == null) {
+            // Do nothing if no tray barcode was provided
+        }
+        // If a tray barcode was provided (we've already confirmed it's not
+        // empty) and either there was no tray previously, or it's different
+        // than what was there previously, update it and log it
+        else if ($item->tray == null || $trayBarcode != $item->tray->barcode) {
             $newTray = Tray::find()->where(['barcode' => $trayBarcode])->andWhere(['active' => true])->one();
             if ($newTray == null) {
                 if (Tray::find()->where(['barcode' => $trayBarcode])->andWhere(['active' => false])->one()) {
@@ -190,7 +193,7 @@ class ItemApiController extends ActiveController
                 }
             }
             $item->tray_id = $newTray->id;
-            $logDetails[] = sprintf("tray %s", $trayBarcode == null ? "null" : $trayBarcode);
+            $logDetails[] = sprintf("tray %s", $trayBarcode);
         }
         // Collection
         if ($collection) {
