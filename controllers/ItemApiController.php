@@ -116,7 +116,7 @@ class ItemApiController extends ActiveController
             // call number from effectiveCallNumberComponents.
             $items = $instance["items"];
             $item = array_filter($items, function($item) use ($data) {
-                return $item["barcode"] == $data["barcode"];
+                return isset($item["barcode"]) && $item["barcode"] == $data["barcode"];
             });
             $firstItem = reset($item);
             $callNumber = $firstItem["effectiveCallNumberComponents"]["callNumber"];
