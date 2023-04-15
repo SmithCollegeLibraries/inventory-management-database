@@ -267,6 +267,123 @@ class ItemApiController extends ActiveController
         }
     }
 
+    // Receive new item info and update the database
+    public function actionNewItem()
+    {
+        $json = file_get_contents('php://input');
+        $data = json_decode($json, true);
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if ($tokenCheck['level'] >= 60) {
+            $item = new $this->modelClass;
+            $itemLog = new $this->modelLogClass;
+            $logDetails = [];
+            $flag = false;
+            $flagDetails = [];
+
+            // Item barcode
+            if (isset($data['new_barcode'])) {
+                $itemBarcode = $data['new_barcode'];
+            }
+            else if (isset($data['barcode'])) {
+                $itemBarcode = $data['barcode'];
+            }
+            else {
+                throw new \yii\web\HttpException(500, 'No barcode provided.');
+            }
+            // Check that the barcode is not already in use
+            $itemCheck = $this->modelClass::find()->where(['barcode' => $itemBarcode])->one();
+            if ($itemCheck != null) {
+                if ($itemCheck->active == false) {
+                    throw new \yii\web\HttpException(500, sprintf('Item %s used to exist, and was deleted. Please re-add that item instead of changing this one.', $itemBarcode));
+                }
+                else {
+                    throw new \yii\web\HttpException(500, sprintf('Item %s already exists', $itemBarcode));
+                }
+            }
+            $item->barcode = $itemBarcode;
+            $logDetails[] = sprintf("barcode %s", $itemBarcode);
+
+            // Tray barcode
+            $trayBarcode = isset($data['tray']) && $data['tray'] != '' ? $data['tray'] : null;
+            if ($trayBarcode) {
+                $tray = Tray::find()->where(['barcode' => $trayBarcode])->andWhere(['active' => true])->one();
+                if ($tray == null) {
+                    if (Tray::find()->where(['barcode' => $trayBarcode])->andWhere(['active' => false])->one()) {
+                        throw new \yii\web\HttpException(500, sprintf('Tray %s has been deleted.', $trayBarcode));
+                    }
+                    else {
+                        throw new \yii\web\HttpException(500, sprintf('Tray %s does not exist.', $trayBarcode));
+                    }
+                }
+                $item->tray_id = $tray->id;
+                $logDetails[] = sprintf("tray %s", $trayBarcode);
+            }
+            else {
+                $item->tray_id = null;
+                $logDetails[] = "null tray";
+            }
+
+            // Collection
+            if (isset($data['collection']) && $data['collection'] != '') {
+                $collection = Collection::find()->where(['name' => $data['collection']])->andWhere(['active' => true])->one();
+                if ($collection == null) {
+                    if (Collection::find()->where(['name' => $collection])->andWhere(['active' => false])->one()) {
+                        throw new \yii\web\HttpException(500, sprintf('Collection %s has been deleted.', $data['collection']));
+                    }
+                    else {
+                        throw new \yii\web\HttpException(500, sprintf('Collection %s does not exist.', $data['collection']));
+                    }
+                }
+                else {
+                    $item->collection_id = $collection->id;
+                    $logDetails[] = sprintf("collection %s", $data['collection']);
+                }
+            }
+            else {
+                throw new \yii\web\HttpException(500, 'Collection cannot be blank.');
+            }
+
+            // Status
+            if (isset($data['status']) && $data['status'] != '') {
+                $item->status = $data['status'];
+                $logDetails[] = sprintf("status %s", $data['status'] == "" ? "null" : $data['status']);
+            }
+            else {
+                throw new \yii\web\HttpException(500, 'Status cannot be blank.');
+            }
+
+            // Flag
+            $item->flag = isset($data['flag']) && $data['flag'] == true ? 1 : 0;
+
+            $item->active = 1;
+            $item->save();
+
+            // Log the update
+            $itemLog->item_id = $item->id;
+            $itemLog->action = 'Added';
+            $itemLog->details = sprintf("Added item %s manually: %s", $item->barcode, implode(', ', $logDetails));
+            $itemLog->user_id = $tokenCheck['id'];
+            $itemLog->save();
+
+            // Log any flags that occurred
+            foreach ($flagDetails as $flagDetail) {
+                $flagLog = new $this->modelLogClass;
+                $flagLog->item_id = $item->id;
+                $flagLog->action = 'Flagged';
+                $flagLog->details = $flagDetail;
+                $flagLog->user_id = $tokenCheck['id'];
+                $flagLog->save();
+            }
+
+            return $item;
+        }
+        else {
+            throw new \yii\web\HttpException(500, 'You do not have permission to add items.');
+        }
+    }
+
     public function actionDeleteItem()
     {
         // All we should get is the ID of the item to delete / make inactive.
