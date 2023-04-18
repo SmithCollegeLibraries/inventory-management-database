@@ -570,4 +570,53 @@ class TrayApiController extends ActiveController
         }
     }
 
+    public function actionFindGaps()
+    {
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+        $problems = [];
+
+        if ($tokenCheck['level'] >= 40) {
+            $allTrays = $this->modelClass::find()
+                ->where(['active' => 1])
+                ->andWhere(['not', ['depth' => null]])
+                ->andWhere(['not', ['position' => null]])
+                ->orderBy([
+                    'shelf_id' => SORT_ASC,
+                    'depth' => SORT_DESC,
+                    'position' => SORT_ASC,
+                ])
+                ->asArray()
+                ->all();
+            for ($i = 0; $i <= 10; $i++) {
+                if ($allTrays[$i]['position'] == 1) {
+                    continue;
+                }
+                else {
+                    $previousTray = $allTrays[$i-1];
+                    $currentTray = $allTrays[$i];
+                    if ($previousTray['shelf_id'] == $currentTray['shelf_id']) {
+                        if ($previousTray['depth'] == $currentTray['depth']) {
+                            if ($previousTray['position'] != $currentTray['position'] - 1) {
+                                $shelfId = $currentTray['shelf_id'];
+                                $shelfBarcode = Shelf::find()->where(['id' => $shelfId])->one()->barcode;
+                                $thisProblem = [
+                                    'tray' => $currentTray['barcode'],
+                                    'shelf' => $shelfBarcode,
+                                    'depth' => $currentTray['depth'],
+                                    'position' => $currentTray['position'] - 1,
+                                ];
+                                $problems[] = $thisProblem;
+                            }
+                        }
+                    }
+                }
+            }
+            return $problems;
+        }
+        else {
+            throw new \yii\web\HttpException(500, 'You do not have permission to do this operation');
+        }
+    }
+
 }
