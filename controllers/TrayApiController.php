@@ -588,26 +588,28 @@ class TrayApiController extends ActiveController
                 ])
                 ->asArray()
                 ->all();
-            for ($i = 0; $i <= 10; $i++) {
+            for ($i = 1; $i < count($allTrays); $i++) {
                 if ($allTrays[$i]['position'] == 1) {
                     continue;
                 }
                 else {
                     $previousTray = $allTrays[$i-1];
                     $currentTray = $allTrays[$i];
-                    if ($previousTray['shelf_id'] == $currentTray['shelf_id']) {
-                        if ($previousTray['depth'] == $currentTray['depth']) {
-                            if ($previousTray['position'] != $currentTray['position'] - 1) {
-                                $shelfId = $currentTray['shelf_id'];
-                                $shelfBarcode = Shelf::find()->where(['id' => $shelfId])->one()->barcode;
-                                $thisProblem = [
-                                    'tray' => $currentTray['barcode'],
-                                    'shelf' => $shelfBarcode,
-                                    'depth' => $currentTray['depth'],
-                                    'position' => $currentTray['position'] - 1,
-                                ];
-                                $problems[] = $thisProblem;
-                            }
+                    if ($previousTray['shelf_id'] != $currentTray['shelf_id'] || $previousTray['depth'] != $currentTray['depth'] || $previousTray['position'] != $currentTray['position'] - 1) {
+                        // Don't add to problem list if the shelf is empty.
+                        // That represents an unshelved tray -- or rather a
+                        // tray that is not marked as shelved in the system --
+                        // and that is a separate problem to worry about.
+                        if ($currentTray['shelf_id']) {
+                            $shelfId = $currentTray['shelf_id'];
+                            $shelfBarcode = Shelf::find()->where(['id' => $shelfId])->one()->barcode;
+                            $thisProblem = [
+                                'tray' => $currentTray['barcode'],
+                                'shelf' => $shelfBarcode,
+                                'depth' => $currentTray['depth'],
+                                'position' => $currentTray['position'] - 1,
+                            ];
+                            $problems[] = $thisProblem;
                         }
                     }
                 }
