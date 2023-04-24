@@ -595,20 +595,16 @@ class TrayApiController extends ActiveController
                 else {
                     $previousTray = $allTrays[$i-1];
                     $currentTray = $allTrays[$i];
-                    if ($previousTray['shelf_id'] == $currentTray['shelf_id']) {
-                        if ($previousTray['depth'] == $currentTray['depth']) {
-                            if ($previousTray['position'] != $currentTray['position'] - 1) {
-                                $shelfId = $currentTray['shelf_id'];
-                                $shelfBarcode = Shelf::find()->where(['id' => $shelfId])->one()->barcode;
-                                $thisProblem = [
-                                    'tray' => $currentTray['barcode'],
-                                    'shelf' => $shelfBarcode,
-                                    'depth' => $currentTray['depth'],
-                                    'position' => $currentTray['position'] - 1,
-                                ];
-                                $problems[] = $thisProblem;
-                            }
-                        }
+                    if ($previousTray['shelf_id'] != $currentTray['shelf_id'] || $previousTray['depth'] != $currentTray['depth'] || $previousTray['position'] != $currentTray['position'] - 1) {
+                        $shelfId = $currentTray['shelf_id'];
+                        $shelfBarcode = Shelf::find()->where(['id' => $shelfId])->one()->barcode;
+                        $thisProblem = [
+                            'tray' => $currentTray['barcode'],
+                            'shelf' => $shelfBarcode,
+                            'depth' => $currentTray['depth'],
+                            'position' => $currentTray['position'] - 1,
+                        ];
+                        $problems[] = $thisProblem;
                     }
                 }
             }
