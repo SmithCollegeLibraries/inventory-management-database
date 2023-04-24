@@ -596,15 +596,21 @@ class TrayApiController extends ActiveController
                     $previousTray = $allTrays[$i-1];
                     $currentTray = $allTrays[$i];
                     if ($previousTray['shelf_id'] != $currentTray['shelf_id'] || $previousTray['depth'] != $currentTray['depth'] || $previousTray['position'] != $currentTray['position'] - 1) {
-                        $shelfId = $currentTray['shelf_id'];
-                        $shelfBarcode = Shelf::find()->where(['id' => $shelfId])->one()->barcode;
-                        $thisProblem = [
-                            'tray' => $currentTray['barcode'],
-                            'shelf' => $shelfBarcode,
-                            'depth' => $currentTray['depth'],
-                            'position' => $currentTray['position'] - 1,
-                        ];
-                        $problems[] = $thisProblem;
+                        // Don't add to problem list if the shelf is empty.
+                        // That represents an unshelved tray -- or rather a
+                        // tray that is not marked as shelved in the system --
+                        // and that is a separate problem to worry about.
+                        if ($currentTray['shelf_id']) {
+                            $shelfId = $currentTray['shelf_id'];
+                            $shelfBarcode = Shelf::find()->where(['id' => $shelfId])->one()->barcode;
+                            $thisProblem = [
+                                'tray' => $currentTray['barcode'],
+                                'shelf' => $shelfBarcode,
+                                'depth' => $currentTray['depth'],
+                                'position' => $currentTray['position'] - 1,
+                            ];
+                            $problems[] = $thisProblem;
+                        }
                     }
                 }
             }
