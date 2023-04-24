@@ -588,7 +588,7 @@ class TrayApiController extends ActiveController
                 ])
                 ->asArray()
                 ->all();
-            for ($i = 1; $i <= count($allTrays); $i++) {
+            for ($i = 1; $i < count($allTrays); $i++) {
                 if ($allTrays[$i]['position'] == 1) {
                     continue;
                 }
