@@ -98,6 +98,7 @@ class TrayLogApiController extends ActiveController
                     ->joinWith('user', 'tray_log.user_id = user.id')
                     ->where(['tray_log.action' => 'Updated'])
                     ->andWhere(['like', 'tray_log.timestamp', $date])
+                    ->andWhere(['flag' => 0])
                     ->groupBy(['user.name'])
                     ->createCommand();
                 if ($queryCommand->queryAll() != []) {
