@@ -90,16 +90,21 @@ class TrayLogApiController extends ActiveController
             $data = array();
             $startDate = strtotime("2023-03-20");
             $numberOfDays = round((strtotime("now") - $startDate) / (60 * 60 * 24));
+            $omitTemporaryShelves = [
+                'AND',
+                ['not like', 'tray_log.details', 'shelf 00'],
+                ['not like', 'tray_log.details', 'shelf BR'],
+                ['not like', 'tray_log.details', 'shelf 99'],
+            ];
 
             for ($count = 0; $count < $numberOfDays; $count++) {
                 $date = date('Y-m-d', strtotime('-' . $count . ' days'));
                 $queryCommand = $this->modelClass::find()
                     ->select('user.name, count(*) as count')
                     ->joinWith('user', 'tray_log.user_id = user.id')
-                    ->joinWith('tray', 'tray_log.tray_id = tray.id')
                     ->where(['tray_log.action' => 'Updated'])
                     ->andWhere(['like', 'tray_log.timestamp', $date])
-                    ->andWhere(['tray.flag' => 0])
+                    ->andWhere($omitTemporaryShelves)
                     ->groupBy(['user.name'])
                     ->createCommand();
                 if ($queryCommand->queryAll() != []) {
