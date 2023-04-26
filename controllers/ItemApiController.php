@@ -10,6 +10,7 @@ use yii\filters\auth\QueryParamAuth;
 use app\models\Collection;
 use app\models\Tray;
 use app\models\User;
+use app\models\OldBarcodeTray;
 
 class ItemApiController extends ActiveController
 {
@@ -383,6 +384,13 @@ class ItemApiController extends ActiveController
             $itemLog->details = sprintf("Added item %s manually: %s", $item->barcode, implode(', ', $logDetails));
             $itemLog->user_id = $tokenCheck['id'];
             $itemLog->save();
+
+            // Mark the item in the old database as retrayed
+            $oldBarcodeTray = OldBarcodeTray::find()->where(['barcode' => $item->barcode])->one();
+            if ($oldBarcodeTray) {
+                $oldBarcodeTray->status = "Retrayed";
+                $oldBarcodeTray->save();
+            }
 
             // Log any flags that occurred
             foreach ($flagDetails as $flagDetail) {
