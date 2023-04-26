@@ -217,6 +217,17 @@ class ItemApiController extends ActiveController
             $item->status = $status;
             $logDetails[] = sprintf("status %s", $data['status'] == "" ? "null" : $data['status']);
         }
+        // Active/inactive
+        if (!$item->active) {
+            $item->active = 1;
+            // Make separate log entry for reactivating the item
+            $reactivatedItemLog = new $this->modelLogClass;
+            $reactivatedItemLog->item_id = $item->id;
+            $reactivatedItemLog->action = 'Restored';
+            $reactivatedItemLog->details = sprintf("Restored item %s", $item->barcode);
+            $reactivatedItemLog->user_id = $userId;
+            $reactivatedItemLog->save();
+        }
         // Flag
         if ($flag == true) {
             $item->flag = 1;
@@ -276,10 +287,16 @@ class ItemApiController extends ActiveController
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
         if ($tokenCheck['level'] >= 60) {
+            // If the item is in the database but inactive
+            $existingItem = $this->modelClass::find()->where(['barcode' => $data['barcode']])->andWhere(['active' => false])->one();
+            if ($existingItem) {
+                $item = $this->handleItemUpdate($data, $tokenCheck['id'], true);
+                return $item;
+            }
+
             $item = new $this->modelClass;
             $itemLog = new $this->modelLogClass;
             $logDetails = [];
-            $flag = false;
             $flagDetails = [];
 
             // Item barcode
