@@ -8,7 +8,7 @@ use Yii;
  * This is the model class for table "OldBarcodeTray".
  *
  * @property int $id
- * @property string $boxbarcode
+ * @property string $tray
  * @property string $barcode
  * @property string $stream
  * @property string $initials
@@ -34,25 +34,10 @@ class OldBarcodeTray extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['boxbarcode'], 'string', 'max' => 8],
             [['barcode'], 'string', 'max' => 15],
             [['stream'], 'string'],
             [['initials'], 'string', 'max' => 5],
             [['status'], 'string', 'max' => 25],
-        ];
-    }
-
-    public function fields()
-    {
-        return [
-            'id',
-            'boxbarcode',
-            'barcode',
-            'stream',
-            'initials',
-            'status',
-            'added',
-            'timestamp',
         ];
     }
 
@@ -63,7 +48,7 @@ class OldBarcodeTray extends \yii\db\ActiveRecord
     {
         return [
             'id' => 'Tray ID',
-            'boxbarcode' => 'Tray barcode',
+            'tray' => 'Tray',
             'barcode' => 'Item barcode',
             'stream' => 'Collection',
             'initials' => 'Initials',

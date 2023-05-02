@@ -611,7 +611,6 @@ class TrayApiController extends ActiveController
                             $shelfId = $currentTray['shelf_id'];
                             $shelfBarcode = Shelf::find()->where(['id' => $shelfId])->one()->barcode;
                             $thisProblem = [
-                                'tray' => $currentTray['barcode'],
                                 'shelf' => $shelfBarcode,
                                 'depth' => $currentTray['depth'],
                                 'position' => $currentTray['position'] - 1,
