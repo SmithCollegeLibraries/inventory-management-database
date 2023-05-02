@@ -28,6 +28,14 @@ class User extends \yii\db\ActiveRecord implements \yii\web\IdentityInterface
         ];
     }
 
+    public function fields()
+    {
+        return [
+            'id',
+            'name',
+        ];
+    }
+
     /**
      * {@inheritdoc}
      */
