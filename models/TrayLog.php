@@ -43,6 +43,20 @@ class TrayLog extends \yii\db\ActiveRecord
         ];
     }
 
+    public function fields()
+    {
+        return [
+            'id',
+            'tray_id',
+            'action',
+            'details',
+            'timestamp',
+            'user' => function ($tray_log) {
+                return 'app\models\User'::find()->where(['id' => $tray_log["user_id"]])->one();
+            },
+        ];
+    }
+
     /**
      * {@inheritdoc}
      */

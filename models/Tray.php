@@ -71,6 +71,15 @@ class Tray extends \yii\db\ActiveRecord
                 }
                 return $itemArray;
             },
+            'trayer' => function ($tray) {
+                $trayLog = 'app\models\TrayLog'::find()->where(['tray_id' => $tray["id"], 'action' => ["Added", "Restored"]])->orderBy(['id' => SORT_DESC])->one();
+                if ($trayLog) {
+                    return $trayLog->user->name;
+                }
+                else {
+                    return null;
+                }
+            },
             'created',
             'updated',
         ];
