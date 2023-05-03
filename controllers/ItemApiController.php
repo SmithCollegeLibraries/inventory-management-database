@@ -105,7 +105,7 @@ class ItemApiController extends ActiveController
                 'position' => $oldTableResults[$i]['oldTrayShelf'] ? $oldTableResults[$i]['oldTrayShelf']['shelf_position'] : null,
                 // 'collection' => $newTableResults[$i]['stream'],
                 'status' => $oldTableResults[$i]['status'],
-                'system' => 'old',
+                'system' => 'Old',
             ];
         }
         // Add the new table results
@@ -113,12 +113,12 @@ class ItemApiController extends ActiveController
             $results[$newTableResults[$i]['barcode']] = [
                 'barcode' => $newTableResults[$i]['barcode'],
                 'tray' => $newTableResults[$i]['tray'] ? $newTableResults[$i]['tray']['barcode'] : null,
-                'shelf' => $newTableResults[$i]['tray'] ? $newTableResults[$i]['tray']['shelf'] : null,
+                'shelf' => $newTableResults[$i]['tray'] ? (isset($newTableResults[$i]['tray']['shelf']['barcode']) ? $newTableResults[$i]['tray']['shelf']['barcode'] : $newTableResults[$i]['tray']['shelf']) : null,
                 'depth' => $newTableResults[$i]['tray'] ? $newTableResults[$i]['tray']['depth'] : null,
                 'position' => $newTableResults[$i]['tray'] ? $newTableResults[$i]['tray']['position'] : null,
                 // 'collection' => $newTableResults[$i]['collection'],
                 'status' => $newTableResults[$i]['status'],
-                'system' => 'new',
+                'system' => 'New',
             ];
         }
         return $results;
