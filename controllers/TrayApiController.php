@@ -180,6 +180,10 @@ class TrayApiController extends ActiveController
                     $itemLog->user_id = $tokenCheck['id'];
                     $itemLog->save();
                 }
+                // Regardless of whether the item already existed, check
+                // it in FOLIO to make sure it was Available and in the Annex.
+                // If not, flag it.
+                \app\components\Folio::handleMarkFolioAnomaly($item, $tokenCheck['id']);
             }
 
             // Return the barcode of the new tray as confirmation, after
