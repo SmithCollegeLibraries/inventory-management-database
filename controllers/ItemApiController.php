@@ -12,6 +12,8 @@ use app\models\Tray;
 use app\models\User;
 use app\models\OldBarcodeTray;
 
+
+
 class ItemApiController extends ActiveController
 {
     public $modelClass = 'app\models\Item';
@@ -159,7 +161,7 @@ class ItemApiController extends ActiveController
     {
         $json = file_get_contents('php://input');
         $data = json_decode($json, true);
-        $results = \app\components\Folio::barcodeLookup($data["barcode"]);
+        $results = \app\components\Folio::fullLookup($data["barcode"]);
         try {
             return $results["data"]["totalRecords"] > 0;
         } catch (\Exception $e) {
@@ -173,30 +175,7 @@ class ItemApiController extends ActiveController
     {
         $json = file_get_contents('php://input');
         $data = json_decode($json, true);
-        $results = \app\components\Folio::barcodeLookup($data["barcode"]);
-        try {
-            // If the item is in FOLIO, there should be exactly one result
-            // for this barcode.
-            $instance = reset($results["data"]["instances"]);
-            // The title is located on the instance record
-            $title = $instance["title"];
-            // To get the call number, we will have to look at the items,
-            // find the item that matches on the barcode, and then get the
-            // call number from effectiveCallNumberComponents.
-            $items = $instance["items"];
-            $item = array_filter($items, function($item) use ($data) {
-                return isset($item["barcode"]) && $item["barcode"] == $data["barcode"];
-            });
-            $firstItem = reset($item);
-            $callNumber = $firstItem["effectiveCallNumberComponents"]["callNumber"];
-            return [
-                "barcode" => $data["barcode"],
-                "title" => $title,
-                "callNumber" => $callNumber,
-            ];
-        } catch (\Exception $e) {
-            return [];
-        }
+        return \app\components\Folio::partialLookup($data["barcode"]);
     }
 
     private function handleItemUpdate($data, $userId)
@@ -360,115 +339,120 @@ class ItemApiController extends ActiveController
             $existingItem = $this->modelClass::find()->where(['barcode' => $data['barcode']])->andWhere(['active' => false])->one();
             if ($existingItem) {
                 $item = $this->handleItemUpdate($data, $tokenCheck['id'], true);
-                return $item;
-            }
-
-            $item = new $this->modelClass;
-            $itemLog = new $this->modelLogClass;
-            $logDetails = [];
-            $flagDetails = [];
-
-            // Item barcode
-            if (isset($data['new_barcode'])) {
-                $itemBarcode = $data['new_barcode'];
-            }
-            else if (isset($data['barcode'])) {
-                $itemBarcode = $data['barcode'];
             }
             else {
-                throw new \yii\web\HttpException(500, 'No barcode provided.');
-            }
-            // Check that the barcode is not already in use
-            $itemCheck = $this->modelClass::find()->where(['barcode' => $itemBarcode])->one();
-            if ($itemCheck != null) {
-                if ($itemCheck->active == false) {
-                    throw new \yii\web\HttpException(500, sprintf('Item %s used to exist, and was deleted. Please re-add that item instead of changing this one.', $itemBarcode));
+                $item = new $this->modelClass;
+                $itemLog = new $this->modelLogClass;
+                $logDetails = [];
+                $flagDetails = [];
+
+                // Item barcode
+                if (isset($data['new_barcode'])) {
+                    $itemBarcode = $data['new_barcode'];
+                }
+                else if (isset($data['barcode'])) {
+                    $itemBarcode = $data['barcode'];
                 }
                 else {
-                    throw new \yii\web\HttpException(500, sprintf('Item %s already exists', $itemBarcode));
+                    throw new \yii\web\HttpException(500, 'No barcode provided.');
                 }
-            }
-            $item->barcode = $itemBarcode;
-            $logDetails[] = sprintf("barcode %s", $itemBarcode);
-
-            // Tray barcode
-            $trayBarcode = isset($data['tray']) && $data['tray'] != '' ? $data['tray'] : null;
-            if ($trayBarcode) {
-                $tray = Tray::find()->where(['barcode' => $trayBarcode])->andWhere(['active' => true])->one();
-                if ($tray == null) {
-                    if (Tray::find()->where(['barcode' => $trayBarcode])->andWhere(['active' => false])->one()) {
-                        throw new \yii\web\HttpException(500, sprintf('Tray %s has been deleted.', $trayBarcode));
+                // Check that the barcode is not already in use
+                $itemCheck = $this->modelClass::find()->where(['barcode' => $itemBarcode])->one();
+                if ($itemCheck != null) {
+                    if ($itemCheck->active == false) {
+                        throw new \yii\web\HttpException(500, sprintf('Item %s used to exist, and was deleted. Please re-add that item instead of changing this one.', $itemBarcode));
                     }
                     else {
-                        throw new \yii\web\HttpException(500, sprintf('Tray %s does not exist.', $trayBarcode));
+                        throw new \yii\web\HttpException(500, sprintf('Item %s already exists', $itemBarcode));
                     }
                 }
-                $item->tray_id = $tray->id;
-                $logDetails[] = sprintf("tray %s", $trayBarcode);
-            }
-            else {
-                $item->tray_id = null;
-                $logDetails[] = "null tray";
-            }
+                $item->barcode = $itemBarcode;
+                $logDetails[] = sprintf("barcode %s", $itemBarcode);
 
-            // Collection
-            if (isset($data['collection']) && $data['collection'] != '') {
-                $collection = Collection::find()->where(['name' => $data['collection']])->andWhere(['active' => true])->one();
-                if ($collection == null) {
-                    if (Collection::find()->where(['name' => $collection])->andWhere(['active' => false])->one()) {
-                        throw new \yii\web\HttpException(500, sprintf('Collection %s has been deleted.', $data['collection']));
+                // Tray barcode
+                $trayBarcode = isset($data['tray']) && $data['tray'] != '' ? $data['tray'] : null;
+                if ($trayBarcode) {
+                    $tray = Tray::find()->where(['barcode' => $trayBarcode])->andWhere(['active' => true])->one();
+                    if ($tray == null) {
+                        if (Tray::find()->where(['barcode' => $trayBarcode])->andWhere(['active' => false])->one()) {
+                            throw new \yii\web\HttpException(500, sprintf('Tray %s has been deleted.', $trayBarcode));
+                        }
+                        else {
+                            throw new \yii\web\HttpException(500, sprintf('Tray %s does not exist.', $trayBarcode));
+                        }
+                    }
+                    $item->tray_id = $tray->id;
+                    $logDetails[] = sprintf("tray %s", $trayBarcode);
+                }
+                else {
+                    $item->tray_id = null;
+                    $logDetails[] = "null tray";
+                }
+
+                // Collection
+                if (isset($data['collection']) && $data['collection'] != '') {
+                    $collection = Collection::find()->where(['name' => $data['collection']])->andWhere(['active' => true])->one();
+                    if ($collection == null) {
+                        if (Collection::find()->where(['name' => $collection])->andWhere(['active' => false])->one()) {
+                            throw new \yii\web\HttpException(500, sprintf('Collection %s has been deleted.', $data['collection']));
+                        }
+                        else {
+                            throw new \yii\web\HttpException(500, sprintf('Collection %s does not exist.', $data['collection']));
+                        }
                     }
                     else {
-                        throw new \yii\web\HttpException(500, sprintf('Collection %s does not exist.', $data['collection']));
+                        $item->collection_id = $collection->id;
+                        $logDetails[] = sprintf("collection %s", $data['collection']);
                     }
                 }
                 else {
-                    $item->collection_id = $collection->id;
-                    $logDetails[] = sprintf("collection %s", $data['collection']);
+                    throw new \yii\web\HttpException(500, 'Collection cannot be blank.');
+                }
+
+                // Status
+                if (isset($data['status']) && $data['status'] != '') {
+                    $item->status = $data['status'];
+                    $logDetails[] = sprintf("status %s", $data['status'] == "" ? "null" : $data['status']);
+                }
+                else {
+                    throw new \yii\web\HttpException(500, 'Status cannot be blank.');
+                }
+
+                // Flag
+                $item->flag = isset($data['flag']) && $data['flag'] == true ? 1 : 0;
+
+                $item->active = 1;
+                $item->save();
+
+                // Log the update
+                $itemLog->item_id = $item->id;
+                $itemLog->action = 'Added';
+                $itemLog->details = sprintf("Added item %s manually: %s", $item->barcode, implode(', ', $logDetails));
+                $itemLog->user_id = $tokenCheck['id'];
+                $itemLog->save();
+
+                // Mark the item in the old database as retrayed
+                $oldBarcodeTray = OldBarcodeTray::find()->where(['barcode' => $item->barcode])->one();
+                if ($oldBarcodeTray) {
+                    $oldBarcodeTray->status = "Retrayed";
+                    $oldBarcodeTray->save();
+                }
+
+                // Log any flags that occurred
+                foreach ($flagDetails as $flagDetail) {
+                    $flagLog = new $this->modelLogClass;
+                    $flagLog->item_id = $item->id;
+                    $flagLog->action = 'Flagged';
+                    $flagLog->details = $flagDetail;
+                    $flagLog->user_id = $tokenCheck['id'];
+                    $flagLog->save();
                 }
             }
-            else {
-                throw new \yii\web\HttpException(500, 'Collection cannot be blank.');
-            }
 
-            // Status
-            if (isset($data['status']) && $data['status'] != '') {
-                $item->status = $data['status'];
-                $logDetails[] = sprintf("status %s", $data['status'] == "" ? "null" : $data['status']);
-            }
-            else {
-                throw new \yii\web\HttpException(500, 'Status cannot be blank.');
-            }
-
-            // Flag
-            $item->flag = isset($data['flag']) && $data['flag'] == true ? 1 : 0;
-
-            $item->active = 1;
-            $item->save();
-
-            // Log the update
-            $itemLog->item_id = $item->id;
-            $itemLog->action = 'Added';
-            $itemLog->details = sprintf("Added item %s manually: %s", $item->barcode, implode(', ', $logDetails));
-            $itemLog->user_id = $tokenCheck['id'];
-            $itemLog->save();
-
-            // Mark the item in the old database as retrayed
-            $oldBarcodeTray = OldBarcodeTray::find()->where(['barcode' => $item->barcode])->one();
-            if ($oldBarcodeTray) {
-                $oldBarcodeTray->status = "Retrayed";
-                $oldBarcodeTray->save();
-            }
-
-            // Log any flags that occurred
-            foreach ($flagDetails as $flagDetail) {
-                $flagLog = new $this->modelLogClass;
-                $flagLog->item_id = $item->id;
-                $flagLog->action = 'Flagged';
-                $flagLog->details = $flagDetail;
-                $flagLog->user_id = $tokenCheck['id'];
-                $flagLog->save();
-            }
+            // Look up the item in FOLIO to see if it is somewhere other
+            // than the Annex, or marked as something other than Available.
+            // If so, flag it.
+            \app\components\Folio::handleMarkFolioAnomaly($item, $tokenCheck['id']);
 
             return $item;
         }
