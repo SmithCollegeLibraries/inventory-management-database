@@ -319,6 +319,12 @@ class ItemApiController extends ActiveController
 
         if ($tokenCheck['level'] >= 60) {
             $item = $this->handleItemUpdate($data, $tokenCheck['id'], false);
+
+            // Look up the item in FOLIO to see if it is somewhere other
+            // than the Annex, or marked as something other than Available.
+            // If so, flag it.
+            \app\components\Folio::handleMarkFolioAnomaly($item, $tokenCheck['id']);
+
             return $item;
         }
         else {
