@@ -72,38 +72,44 @@ class Folio
     public static function handleMarkFolioAnomaly($item, $userId)
     {
         $folioInfo = \app\components\Folio::partialLookup($item["barcode"]);
-        $anomalous = false;
+        $notAvailable = false;
+        $notAnnex = false;
         if (isset($folioInfo["status"]) && $folioInfo["status"] != "Available") {
-            $anomalous = true;
-            // Flag the item and add a log
-            if ($item->flag != 1) {
-                $item->flag = 1;
-                $item->save();
-            }
-
-            $itemLog = new \app\models\ItemLog;
-            $itemLog->item_id = $item->id;
-            $itemLog->action = 'Flagged';
-            $itemLog->details = sprintf("Flagged item %s because it has a status other than Available in FOLIO", $item->barcode);
-            $itemLog->user_id = $userId;
-            $itemLog->save();
+            $notAvailable = true;
         }
         if (isset($folioInfo["annex"]) && !$folioInfo["annex"]) {
-            $anomalous = true;
+            $notAnnex = true;
+        }
+
+        if ($notAvailable || $notAnnex) {
             // Flag the item and add a log
             if ($item->flag != 1) {
                 $item->flag = 1;
                 $item->save();
             }
 
+            if ($notAvailable && $notAnnex) {
+                $flagReason = "it is not in the Annex in FOLIO and also has a status other than Available in FOLIO";
+            }
+            else if ($notAvailable) {
+                $flagReason = "it has a status other than Available in FOLIO";
+            }
+            else if ($notAnnex) {
+                $flagReason = "it is not in the Annex in FOLIO";
+            }
+
             $itemLog = new \app\models\ItemLog;
             $itemLog->item_id = $item->id;
             $itemLog->action = 'Flagged';
-            $itemLog->details = sprintf("Flagged item %s because it is not marked with location Annex in FOLIO", $item->barcode);
+            $itemLog->details = sprintf("Flagged item %s because %s", $item->barcode, $flagReason);
             $itemLog->user_id = $userId;
             $itemLog->save();
+
+            return true;
         }
-        return $anomalous;
+        else {
+            return false;
+        }
     }
 
 }
