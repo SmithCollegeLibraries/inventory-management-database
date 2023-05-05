@@ -52,13 +52,16 @@ class Folio
                 $correctItem = reset($items);
                 $callNumber = $correctItem["effectiveCallNumberComponents"]["callNumber"];
                 $status = isset($correctItem["status"]) ? $correctItem["status"]["name"] : null;
-                $ANNEX_LOCATION_ID = "5eb79fcc-af08-4ae1-9ab3-dde11e330a01";
+                $ANNEX_LOCATION_IDS = [
+                    "5eb79fcc-af08-4ae1-9ab3-dde11e330a01",
+                    "ed12a1d9-33e7-4c62-8daf-485e7d2369c3",
+                ];
                 return [
                     "barcode" => $barcode,
                     "title" => $title,
                     "callNumber" => $callNumber,
                     "status" => $status,
-                    "annex" => $correctItem["effectiveLocationId"] == $ANNEX_LOCATION_ID,
+                    "annex" => in_array($correctItem["effectiveLocationId"], $ANNEX_LOCATION_IDS),
                 ];
             } catch (\Exception $e) {
                 return [];
@@ -108,6 +111,12 @@ class Folio
             return true;
         }
         else {
+            // Unflag the item
+            if ($item->flag != 0) {
+                $item->flag = 0;
+                $item->save();
+            }
+
             return false;
         }
     }
