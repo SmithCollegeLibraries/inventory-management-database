@@ -52,13 +52,16 @@ class Folio
                 $correctItem = reset($items);
                 $callNumber = $correctItem["effectiveCallNumberComponents"]["callNumber"];
                 $status = isset($correctItem["status"]) ? $correctItem["status"]["name"] : null;
-                $ANNEX_LOCATION_ID = "5eb79fcc-af08-4ae1-9ab3-dde11e330a01";
+                $ANNEX_LOCATION_IDS = [
+                    "5eb79fcc-af08-4ae1-9ab3-dde11e330a01",
+                    "ed12a1d9-33e7-4c62-8daf-485e7d2369c3",
+                ];
                 return [
                     "barcode" => $barcode,
                     "title" => $title,
                     "callNumber" => $callNumber,
                     "status" => $status,
-                    "annex" => $correctItem["effectiveLocationId"] == $ANNEX_LOCATION_ID,
+                    "annex" => in_array($correctItem["effectiveLocationId"], $ANNEX_LOCATION_IDS),
                 ];
             } catch (\Exception $e) {
                 return [];
@@ -82,32 +85,40 @@ class Folio
         }
 
         if ($notAvailable || $notAnnex) {
-            // Flag the item and add a log
-            if ($item->flag != 1) {
-                $item->flag = 1;
-                $item->save();
-            }
+            // If the item isn't already on Colin's backlog list, flag it and log
+            if (\app\models\ColinBacklog::find()->where(['barcode' => $item->barcode])->count() == 0) {
+                if ($item->flag != 1) {
+                    $item->flag = 1;
+                    $item->save();
+                }
 
-            if ($notAvailable && $notAnnex) {
-                $flagReason = "it is not in the Annex in FOLIO and also has a status other than Available in FOLIO";
-            }
-            else if ($notAvailable) {
-                $flagReason = "it has a status other than Available in FOLIO";
-            }
-            else if ($notAnnex) {
-                $flagReason = "it is not in the Annex in FOLIO";
-            }
+                if ($notAvailable && $notAnnex) {
+                    $flagReason = "it is not in the Annex in FOLIO and also has a status other than Available in FOLIO";
+                }
+                else if ($notAvailable) {
+                    $flagReason = "it has a status other than Available in FOLIO";
+                }
+                else if ($notAnnex) {
+                    $flagReason = "it is not in the Annex in FOLIO";
+                }
 
-            $itemLog = new \app\models\ItemLog;
-            $itemLog->item_id = $item->id;
-            $itemLog->action = 'Flagged';
-            $itemLog->details = sprintf("Flagged item %s because %s", $item->barcode, $flagReason);
-            $itemLog->user_id = $userId;
-            $itemLog->save();
+                $itemLog = new \app\models\ItemLog;
+                $itemLog->item_id = $item->id;
+                $itemLog->action = 'Flagged';
+                $itemLog->details = sprintf("Flagged item %s because %s", $item->barcode, $flagReason);
+                $itemLog->user_id = $userId;
+                $itemLog->save();
+            }
 
             return true;
         }
         else {
+            // Unflag the item
+            if ($item->flag != 0) {
+                $item->flag = 0;
+                $item->save();
+            }
+
             return false;
         }
     }
