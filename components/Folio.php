@@ -85,28 +85,30 @@ class Folio
         }
 
         if ($notAvailable || $notAnnex) {
-            // Flag the item and add a log
-            if ($item->flag != 1) {
-                $item->flag = 1;
-                $item->save();
-            }
+            // If the item isn't already on Colin's backlog list, flag it and log
+            if (\app\models\ColinBacklog::find()->where(['barcode' => $item->barcode])->count() == 0) {
+                if ($item->flag != 1) {
+                    $item->flag = 1;
+                    $item->save();
+                }
 
-            if ($notAvailable && $notAnnex) {
-                $flagReason = "it is not in the Annex in FOLIO and also has a status other than Available in FOLIO";
-            }
-            else if ($notAvailable) {
-                $flagReason = "it has a status other than Available in FOLIO";
-            }
-            else if ($notAnnex) {
-                $flagReason = "it is not in the Annex in FOLIO";
-            }
+                if ($notAvailable && $notAnnex) {
+                    $flagReason = "it is not in the Annex in FOLIO and also has a status other than Available in FOLIO";
+                }
+                else if ($notAvailable) {
+                    $flagReason = "it has a status other than Available in FOLIO";
+                }
+                else if ($notAnnex) {
+                    $flagReason = "it is not in the Annex in FOLIO";
+                }
 
-            $itemLog = new \app\models\ItemLog;
-            $itemLog->item_id = $item->id;
-            $itemLog->action = 'Flagged';
-            $itemLog->details = sprintf("Flagged item %s because %s", $item->barcode, $flagReason);
-            $itemLog->user_id = $userId;
-            $itemLog->save();
+                $itemLog = new \app\models\ItemLog;
+                $itemLog->item_id = $item->id;
+                $itemLog->action = 'Flagged';
+                $itemLog->details = sprintf("Flagged item %s because %s", $item->barcode, $flagReason);
+                $itemLog->user_id = $userId;
+                $itemLog->save();
+            }
 
             return true;
         }
