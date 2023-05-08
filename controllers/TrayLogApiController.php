@@ -54,7 +54,7 @@ class TrayLogApiController extends ActiveController
             // Get data by date and user
             $data = array();
             // TODO: make this a setting in the database
-            $startDate = date('Y-m-d', strtotime('last sunday -7 days'));
+            $startDate = strtotime("previous week Monday");
             $numberOfDays = round((strtotime("now") - $startDate) / (60 * 60 * 24));
 
             for ($count = 0; $count < $numberOfDays; $count++) {
@@ -90,7 +90,7 @@ class TrayLogApiController extends ActiveController
             // Get data by date and user
             $data = array();
             // TODO: make this a setting in the database
-            $startDate = date('Y-m-d', strtotime('last sunday -7 days'));
+            $startDate = strtotime("previous week Monday");
             $numberOfDays = round((strtotime("now") - $startDate) / (60 * 60 * 24));
             $omitTemporaryShelves = [
                 'AND',
