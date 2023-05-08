@@ -52,7 +52,8 @@ class ItemLogApiController extends ActiveController
         if ($tokenCheck['level'] >= 35) {
             // Get data by date and user
             $data = array();
-            $startDate = strtotime("2023-03-20");
+            // TODO: make this a setting in the database
+            $startDate = strtotime("previous week Monday");
             $numberOfDays = round((strtotime("now") - $startDate) / (60 * 60 * 24));
 
             for ($count = 0; $count < $numberOfDays; $count++) {
