@@ -178,6 +178,27 @@ class ItemApiController extends ActiveController
         return \app\components\Folio::partialLookup($data["barcode"]);
     }
 
+    public function actionMarkFolioAnomalies()
+    {
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if ($tokenCheck['level'] < 80) {
+            throw new \yii\web\HttpException(401, 'You do not have permission to do this operation');
+        }
+
+        $allItems = $this->modelClass::find()->where(['active' => 1])->all();
+        $anomalousItems = [];
+        // Go through each item and check it against FOLIO
+        foreach ($allItems as $item) {
+            $anomalous = \app\components\Folio::handleMarkFolioAnomaly($item, $tokenCheck['id']);
+            if ($anomalous) {
+                $anomalousItems[] = $item["barcode"];
+            }
+        }
+        return $anomalousItems;
+    }
+
     private function handleItemUpdate($data, $userId)
     {
         $itemLog = new $this->modelLogClass;
