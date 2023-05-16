@@ -251,11 +251,14 @@ class TrayApiController extends ActiveController
         $oldShelf = \app\models\Shelf::find()->where(['id' => $tray->shelf_id])->one();
         if ($tray && $tray->shelf_id != null) {
             if ($flagsAllowed == true) {
-                $flag = true;
                 $oldShelfBarcode = $oldShelf->barcode;
                 $oldPosition = $tray->position == null ? 'null' : $tray->position;
                 $oldDepth = $tray->depth == null ? 'null' : $tray->depth;
-                $flagDetails[] = sprintf('Tray %s was already on shelf %s, depth %s, position %s', $trayBarcode, $oldShelfBarcode, $oldDepth, $oldPosition);
+                // Don't worry about it unless it's actually a different location
+                if ($oldShelfBarcode != $dataShelf || $oldPosition != $dataPosition || $oldDepth != $dataDepth) {
+                    $flag = true;
+                    $flagDetails[] = sprintf('Tray %s was already on shelf %s, depth %s, position %s', $trayBarcode, $oldShelfBarcode, $oldDepth, $oldPosition);
+                }
             }
             else {
                 // This isn't an issue when using the non-rapid shelve form:
