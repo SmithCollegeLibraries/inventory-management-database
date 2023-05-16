@@ -117,6 +117,48 @@ CREATE TABLE IF NOT EXISTS `user` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `old_barcode_tray`
+--
+
+CREATE TABLE IF NOT EXISTS `old_barcode_tray` (
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `boxbarcode` varchar(255) NOT NULL,
+  `barcode` varchar(20) NOT NULL,
+  `stream` varchar(255) NOT NULL,
+  `initials` varchar(10) NOT NULL,
+  `status` varchar(25) NOT NULL,
+  `added` varchar(100) NOT NULL,
+  `timestamp` varchar(30) NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE (barcode)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `old_tray_shelf`
+--
+
+CREATE TABLE IF NOT EXISTS `old_tray_shelf` (
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `boxbarcode` varchar(255) NOT NULL,
+  `shelf` varchar(255) NOT NULL,
+  `row` varchar(2),
+  `side` varchar(1),
+  `ladder` varchar(2),
+  `shelf_number` varchar(2),
+  `shelf_depth` varchar(5),
+  `shelf_position` varchar(3),
+  `initials` varchar(10),
+  `added` varchar(100) NOT NULL,
+  `timestamp` varchar(30) NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE (boxbarcode)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `collection_log`
 --
 
@@ -240,6 +282,11 @@ CREATE INDEX idx_tray_updated ON tray (updated);
 
 CREATE INDEX idx_shelf_barcode ON shelf (barcode);
 CREATE INDEX idx_shelf_row ON shelf (row);
+
+-- Create indexes for old tables
+
+CREATE INDEX idx_old_item_barcode ON old_barcode_tray (barcode);
+CREATE INDEX idx_old_tray_barcode ON old_tray_shelf (boxbarcode);
 
 -- Create indexes for logs
 
