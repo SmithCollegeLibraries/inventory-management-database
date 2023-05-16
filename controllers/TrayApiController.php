@@ -9,7 +9,6 @@ use yii\filters\auth\QueryParamAuth;
 
 use app\models\Shelf;
 use app\models\User;
-use app\models\OldBarcodeTray;
 
 class TrayApiController extends ActiveController
 {
@@ -165,13 +164,6 @@ class TrayApiController extends ActiveController
                     $item->barcode = $barcode;
                     $item->collection_id = $collectionId;
                     $item->save();
-
-                    // Mark the item in the old tables as retrayed
-                    $oldBarcodeTray = OldBarcodeTray::find()->where(['barcode' => $barcode])->one();
-                    if ($oldBarcodeTray) {
-                        $oldBarcodeTray->status = "Retrayed";
-                        $oldBarcodeTray->save();
-                    }
 
                     $itemLog = new $this->itemLogClass;
                     $itemLog->item_id = $item->id;
