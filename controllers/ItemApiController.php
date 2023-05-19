@@ -500,7 +500,6 @@ class ItemApiController extends ActiveController
             else {
                 $oldLocation = sprintf("was in tray %s", $item->tray->barcode);
             }
-            $item->tray_id = null;
             $item->status = "Deleted";
             $item->active = 0;
             $item->save();
