@@ -465,7 +465,6 @@ class TrayApiController extends ActiveController
 
             $items = $this->itemClass::find()->where(['tray_id' => $tray->id])->all();
             foreach ($items as $item) {
-                $item->status = 'Deleted';
                 $item->active = 0;
                 $item->save();
 
