@@ -58,7 +58,7 @@ class TrayApiController extends ActiveController
     {
         // If the tray already exists and is active, throw an error
         if (\app\models\Tray::find()->where(['barcode' => $trayBarcode])->andWhere(['active' => true])->all() != []) {
-            throw new \yii\web\HttpException(500, sprintf('Tray %s already exists', $trayBarcode));
+            throw new \yii\web\HttpException(400, sprintf('Tray %s already exists', $trayBarcode));
         }
         // If the tray used to exist but has been deactivated, reactivate
         // it instead of creating a new object
@@ -111,18 +111,18 @@ class TrayApiController extends ActiveController
             try {
                 $collectionId = \app\models\Collection::find()->where(['name' => $collectionName])->one()->id;
             } catch (\Exception $e) {
-                throw new \yii\web\HttpException(500, sprintf('Collection %s does not exist', $collectionName));
+                throw new \yii\web\HttpException(400, sprintf('Collection %s does not exist', $collectionName));
             }
 
             // If tray already exists, return error
             if (\app\models\Tray::find()->where(['barcode' => $trayBarcode])->andWhere(['active' => true])->all() != []) {
-                throw new \yii\web\HttpException(500, sprintf('Tray %s already exists', $trayBarcode));
+                throw new \yii\web\HttpException(400, sprintf('Tray %s already exists', $trayBarcode));
             }
 
             // If any of the items already exist, return error
             foreach ($barcodes as $barcode) {
                 if (\app\models\Item::find()->where(['barcode' => $barcode])->andWhere(['active' => true])->all() != []) {
-                    throw new \yii\web\HttpException(500, sprintf('Item %s already exists', $barcode));
+                    throw new \yii\web\HttpException(400, sprintf('Item %s already exists', $barcode));
                 }
             }
 
@@ -132,7 +132,7 @@ class TrayApiController extends ActiveController
                 if ($shelf) {
                     $shelfId = \app\models\Shelf::find()->where(['barcode' => $data['shelf']])->one()->id;
                     if (count($this->alreadyOccupyingTray($shelfId, $data['depth'], $data['position'], null)) != null) {
-                        throw new \yii\web\HttpException(500, sprintf('Shelf %s, depth %s, position %s is already occupied by tray', $data['shelf'], $data['depth'], $data['position']));
+                        throw new \yii\web\HttpException(400, sprintf('Shelf %s, depth %s, position %s is already occupied by tray', $data['shelf'], $data['depth'], $data['position']));
                     }
                 }
             }
@@ -197,7 +197,7 @@ class TrayApiController extends ActiveController
         }
 
         else {
-            throw new \yii\web\HttpException(500, 'You do not have permission to add new trays');
+            throw new \yii\web\HttpException(403, 'You do not have permission to add new trays');
         }
     }
 
@@ -230,7 +230,7 @@ class TrayApiController extends ActiveController
                 $flagDetails[] = sprintf('Tray %s did not exist before being shelved', $trayBarcode);
             }
             else {
-                throw new \yii\web\HttpException(500, sprintf('Tray %s does not exist', $trayBarcode));
+                throw new \yii\web\HttpException(400, sprintf('Tray %s does not exist', $trayBarcode));
             }
         }
 
@@ -293,7 +293,7 @@ class TrayApiController extends ActiveController
                 // You can clear the shelf field in the manual tray edit form,
                 // so it's not an error if this is a null string
                 if ($dataShelf != "") {
-                    throw new \yii\web\HttpException(500, sprintf('Shelf %s does not exist', $dataShelf));
+                    throw new \yii\web\HttpException(400, sprintf('Shelf %s does not exist', $dataShelf));
                 }
             }
         }
@@ -308,7 +308,7 @@ class TrayApiController extends ActiveController
                     $flagDetails[] = sprintf('Tray %s was assigned to shelf %s, depth %s, position %s, which was already occupied by tray %s', $trayBarcode, $dataShelf, $dataDepth, $dataPosition, $existingTray->barcode);
                 }
                 else {
-                    throw new \yii\web\HttpException(500, sprintf('Shelf %s, depth %s, position %s is already occupied by tray %s', $dataShelf, $dataDepth, $dataPosition, $existingTray->barcode));
+                    throw new \yii\web\HttpException(400, sprintf('Shelf %s, depth %s, position %s is already occupied by tray %s', $dataShelf, $dataDepth, $dataPosition, $existingTray->barcode));
                 }
             }
         }
@@ -319,7 +319,7 @@ class TrayApiController extends ActiveController
         if (isset($data['new_barcode']) && $data['new_barcode'] != $data['barcode']) {
             $trayCheck = $this->modelClass::find()->where(['barcode' => $data["new_barcode"]])->one();
             if ($trayCheck != null) {
-                throw new \yii\web\HttpException(500, sprintf('Tray %s already exists', $data['new_barcode']));
+                throw new \yii\web\HttpException(400, sprintf('Tray %s already exists', $data['new_barcode']));
             }
             $tray->barcode = $data['new_barcode'];
             $logDetails[] = sprintf("barcode %s", $data['new_barcode']);
@@ -395,7 +395,7 @@ class TrayApiController extends ActiveController
             return $tray;
         }
         else {
-            throw new \yii\web\HttpException(500, 'You do not have permission to update trays.');
+            throw new \yii\web\HttpException(403, 'You do not have permission to update trays.');
         }
     }
 
@@ -422,7 +422,7 @@ class TrayApiController extends ActiveController
             return $tray;
         }
         else {
-            throw new \yii\web\HttpException(500, 'You do not have permission to shelve trays');
+            throw new \yii\web\HttpException(403, 'You do not have permission to shelve trays');
         }
     }
 
@@ -480,7 +480,7 @@ class TrayApiController extends ActiveController
         }
 
         else {
-            throw new \yii\web\HttpException(500, 'You do not have permission to delete trays');
+            throw new \yii\web\HttpException(403, 'You do not have permission to delete trays');
         }
     }
 
@@ -493,7 +493,7 @@ class TrayApiController extends ActiveController
     //         return $trays;
     //     }
     //     else {
-    //         throw new \yii\web\HttpException(500, 'You do not have permission to view trays');
+    //         throw new \yii\web\HttpException(403, 'You do not have permission to view trays');
     //     }
     // }
 
@@ -522,7 +522,7 @@ class TrayApiController extends ActiveController
             return $provider->getModels();
         }
         else {
-            throw new \yii\web\HttpException(500, 'You do not have permission to view trays');
+            throw new \yii\web\HttpException(403, 'You do not have permission to view trays');
         }
     }
 
@@ -555,7 +555,7 @@ class TrayApiController extends ActiveController
             }
         }
         else {
-            throw new \yii\web\HttpException(500, 'You do not have permission to view trays');
+            throw new \yii\web\HttpException(403, 'You do not have permission to view trays');
         }
     }
 
@@ -576,7 +576,7 @@ class TrayApiController extends ActiveController
             return $tray;
         }
         else {
-            throw new \yii\web\HttpException(500, 'You do not have permission to view trays');
+            throw new \yii\web\HttpException(403, 'You do not have permission to view trays');
         }
     }
 
@@ -626,7 +626,7 @@ class TrayApiController extends ActiveController
             return $problems;
         }
         else {
-            throw new \yii\web\HttpException(500, 'You do not have permission to do this operation');
+            throw new \yii\web\HttpException(403, 'You do not have permission to do this operation');
         }
     }
 
@@ -640,7 +640,7 @@ class TrayApiController extends ActiveController
             return $totalCount;
         }
         else {
-            throw new \yii\web\HttpException(401, 'You do not have permission to view the total count.');
+            throw new \yii\web\HttpException(403, 'You do not have permission to view the total count.');
         }
     }
 
