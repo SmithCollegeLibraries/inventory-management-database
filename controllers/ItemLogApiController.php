@@ -75,7 +75,7 @@ class ItemLogApiController extends ActiveController
             return $data;
         }
         else {
-            throw new \yii\web\HttpException(500, "You do not have permission to view this data.");
+            throw new \yii\web\HttpException(403, "You do not have permission to view this data.");
         }
     }
 }
