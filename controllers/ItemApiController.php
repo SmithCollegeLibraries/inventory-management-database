@@ -305,7 +305,7 @@ class ItemApiController extends ActiveController
 
         // Log the update
         $itemLog->item_id = $item->id;
-        $itemLog->action = 'Updated';
+        $itemLog->action = $actionIndicator;
         if (count($logDetails) > 0) {
             $itemLog->details = sprintf("Updated item %s: %s", $item->barcode, implode(', ', $logDetails));
         }
@@ -339,13 +339,46 @@ class ItemApiController extends ActiveController
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
         if ($tokenCheck['level'] >= 60) {
-            $item = $this->handleItemUpdate($data, $tokenCheck['id'], false);
+            $item = $this->handleItemUpdate($data, $tokenCheck['id'], "Updated");
             return $item;
         }
         else {
             throw new \yii\web\HttpException(500, 'You do not have permission to update items.');
+
+    public function actionMarkPicked()
+    {
+        // We need the item id in the data
+        $json = file_get_contents('php://input');
+        $data = ["status" => "Circulated"];
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if ($tokenCheck['level'] >= 50) {
+            $item = $this->handleItemUpdate($data, $tokenCheck['id'], "Picked");
+            return $item;
+        }
+        else {
+            throw new \yii\web\HttpException(403, 'You do not have permission to page items.');
         }
     }
+
+    public function actionMarkMissing()
+    {
+        // We need the item id in the data
+        $json = file_get_contents('php://input');
+        $data = ["status" => "Missing"];
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if ($tokenCheck['level'] >= 50) {
+            $item = $this->handleItemUpdate($data, $tokenCheck['id'], "Marked missing");
+            return $item;
+        }
+        else {
+            throw new \yii\web\HttpException(403, 'You do not have permission to page items.');
+        }
+    }
+
 
     // Receive new item info and update the database
     public function actionNewItem()
@@ -359,7 +392,7 @@ class ItemApiController extends ActiveController
             // If the item is in the database but inactive
             $existingItem = $this->modelClass::find()->where(['barcode' => $data['barcode']])->andWhere(['active' => false])->one();
             if ($existingItem) {
-                $item = $this->handleItemUpdate($data, $tokenCheck['id'], true);
+                $item = $this->handleItemUpdate($data, $tokenCheck['id'], "Updated");
             }
             else {
                 $item = new $this->modelClass;

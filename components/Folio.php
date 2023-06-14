@@ -6,7 +6,6 @@ use yii\httpclient\Client;
 
 class Folio
 {
-
     public static function fullLookup($barcode)
     {
         $client = new Client(['baseUrl' => "http://libtools2.smith.edu/folio/web/search/search-inventory"]);
@@ -66,6 +65,79 @@ class Folio
             } catch (\Exception $e) {
                 return [];
             }
+        }
+        else {
+            return null;
+        }
+    }
+
+    public static function getTitleAndVolume($barcode)
+    {
+        $client = new Client(['baseUrl' => "http://libtools2.smith.edu/folio/web/search/search-inventory"]);
+        $response = $client->createRequest()
+            ->setMethod('get')
+            ->setFormat(Client::FORMAT_JSON)
+            ->setUrl([
+                'type' => 'inventory',
+                'query' => sprintf("barcode==%s", $barcode),
+            ])
+            ->send();
+        if ($response->isOk) {
+            $results = $response->data;
+            try {
+                // If the item is in FOLIO, there should be exactly one result
+                // for this barcode.
+                $itemsList = $results["data"]["items"];
+                $matchingItems = array_filter($itemsList, function($item) use ($barcode) {
+                    return isset($item["barcode"]) && $item["barcode"] == $barcode;
+                });
+                $correctItem = reset($matchingItems);
+                $title = isset($correctItem["title"]) ? $correctItem["title"] : null;
+                $volume = isset($correctItem["volume"]) ? $correctItem["volume"] : "";
+                $copy = isset($correctItem["copyNumber"]) && $correctItem["copyNumber"] != 1 ? "c." . $correctItem["copyNumber"] : "";
+                if ($volume && $copy) {
+                    $volumeAndCopy = $volume . " " . $copy;
+                }
+                else {
+                    $volumeAndCopy = $volume . $copy;
+                }
+                return [
+                    "barcode" => $barcode,
+                    "title" => $title,
+                    "volume" => $volumeAndCopy ? $volumeAndCopy : null,
+                ];
+            } catch (\Exception $e) {
+                return [];
+            }
+        }
+        else {
+            return null;
+        }
+    }
+
+    // TODO: If performance is slow, modify this to get titles and volumes
+    // in this report, instead of separately
+    public static function getPicklist($location)
+    {
+        static $locationList = [
+            "FC_ANNEX" => "c0250137-9c4a-4c4c-be9b-61f5bb8f645c",
+            "SC_ANNEX" => "9e4b06c8-0cb0-4011-ab1d-a23af57d190c",
+            "HILLYER" => "25d98f21-ef4d-4846-955e-17840062b1f0",
+            "JOSTEN" => "602aba21-73ae-4e43-a92e-91f2dee34c8f",
+            "NEILSON" => "2c0764b7-63b3-4254-9950-0c730b7e438b",
+            "SELF_CHECK" => "6b6b9f00-aac7-4e20-a819-fb24386e48bb",
+            "SPECIAL_COLLECTIONS" => "83f25b2e-49d8-44ae-956b-91060d819b07",
+            "WEST_STREET" => "b13c7bb4-278e-4592-9a0d-3dcb600f8a1e",
+        ];
+        $locationId = $locationList[$location];
+        $client = new Client(['baseUrl' => "https://libtools2.smith.edu/folio/web/search/search-circulation?id=" . $locationId]);
+        $response = $client->createRequest()
+            ->setMethod('get')
+            ->setFormat(Client::FORMAT_JSON)
+            ->send();
+        if ($response->isOk) {
+            $results = $response->data;
+            return $results["data"];
         }
         else {
             return null;
