@@ -88,7 +88,7 @@ class CollectionApiController extends ActiveController
             // Finally, if the collection already exists and is active,
             // do nothing
             else {
-                throw new \yii\web\HttpException(500, sprintf('Collection %s already exists', $data['name']));
+                throw new \yii\web\HttpException(400, sprintf('Collection %s already exists', $data['name']));
             }
         } else {
             throw new \yii\web\ForbiddenHttpException('You are not authorized to update collections');
@@ -147,7 +147,7 @@ class CollectionApiController extends ActiveController
                 return true;
             }
             catch (\Exception $e) {
-                throw new \yii\web\HttpException(500, sprintf('Collection %s does not exist', $data['name']));
+                throw new \yii\web\HttpException(400, sprintf('Collection %s does not exist', $data['name']));
             }
         } else {
             throw new \yii\web\ForbiddenHttpException('You are not authorized to delete collections');

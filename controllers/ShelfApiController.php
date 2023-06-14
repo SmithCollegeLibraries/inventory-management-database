@@ -63,7 +63,7 @@ class ShelfApiController extends ActiveController
             return $tray;
         }
         else {
-            throw new \yii\web\HttpException(500, 'You do not have permission to view shelves');
+            throw new \yii\web\HttpException(403, 'You do not have permission to view shelves');
         }
     }
 
@@ -104,12 +104,12 @@ class ShelfApiController extends ActiveController
 
             // If shelf already exists, return error
             if (\app\models\Shelf::find()->where(['barcode' => $shelfBarcode])->andWhere(['active' => true])->all() != []) {
-                throw new \yii\web\HttpException(500, sprintf('Shelf %s already exists', $shelfBarcode));
+                throw new \yii\web\HttpException(400, sprintf('Shelf %s already exists', $shelfBarcode));
             }
 
             // Ensure that the barcode matches the row, side, ladder, and rung
             if ($shelfBarcode != sprintf('%s%s%s%s', $shelfRow, $shelfSide, $shelfLadder, $shelfRung)) {
-                throw new \yii\web\HttpException(500, sprintf('Barcode %s does not match row, side, ladder and rung information', $shelfBarcode));
+                throw new \yii\web\HttpException(400, sprintf('Barcode %s does not match row, side, ladder and rung information', $shelfBarcode));
             }
 
             // If the shelf used to exist, reactivate it instead of
@@ -152,7 +152,7 @@ class ShelfApiController extends ActiveController
             return $shelf;
         }
         else {
-            throw new \yii\web\HttpException(500, 'You do not have permission to create shelves');
+            throw new \yii\web\HttpException(403, 'You do not have permission to create shelves');
         }
     }
 
