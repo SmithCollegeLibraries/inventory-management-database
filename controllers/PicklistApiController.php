@@ -150,7 +150,11 @@ class PicklistApiController extends ActiveController
         if ($tokenCheck['level'] >= 40) {
             $barcodeList = \app\components\Folio::getPicklist("SC_ANNEX");
             $newPicklist = $this->handleAddItems($barcodeList, $tokenCheck, false);
-            return $newPicklist;
+            $notInSystem = array_diff($barcodeList, array_map(
+                function($i) { return $i['barcode']; },
+                \app\models\Item::find()->where(['barcode' => $barcodeList])->all(),
+            ));
+            return ['newPicklist' => $newPicklist, 'notInSystem' => $notInSystem];
         }
         else {
             throw new \yii\web\HttpException(403, "You do not have permission to add items to the picklist.");
