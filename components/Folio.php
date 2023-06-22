@@ -177,7 +177,7 @@ class Folio
                 $itemLog = new \app\models\ItemLog;
                 $itemLog->item_id = $item->id;
                 $itemLog->action = 'Flagged';
-                $itemLog->details = sprintf("Flagged item %s because %s", $item->barcode, $flagReason);
+                $itemLog->details = sprintf("Flagged item because %s: %s", $flagReason, $item->barcode);
                 $itemLog->user_id = $userId;
                 $itemLog->save();
             }

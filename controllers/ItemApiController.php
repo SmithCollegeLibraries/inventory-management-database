@@ -431,10 +431,10 @@ class ItemApiController extends ActiveController
                     $tray = Tray::find()->where(['barcode' => $trayBarcode])->andWhere(['active' => true])->one();
                     if ($tray == null) {
                         if (Tray::find()->where(['barcode' => $trayBarcode])->andWhere(['active' => false])->one()) {
-                            throw new \yii\web\HttpException(400, sprintf('Tray %s has been deleted.', $trayBarcode));
+                            throw new \yii\web\HttpException(400, sprintf('Tray %s has been deleted', $trayBarcode));
                         }
                         else {
-                            throw new \yii\web\HttpException(400, sprintf('Tray %s does not exist.', $trayBarcode));
+                            throw new \yii\web\HttpException(400, sprintf('Tray %s does not exist', $trayBarcode));
                         }
                     }
                     $item->tray_id = $tray->id;
@@ -483,7 +483,7 @@ class ItemApiController extends ActiveController
                 // Log the update
                 $itemLog->item_id = $item->id;
                 $itemLog->action = 'Added';
-                $itemLog->details = sprintf("Added item %s manually: %s", $item->barcode, implode(', ', $logDetails));
+                $itemLog->details = sprintf("Added item manually: %s", $item->barcode, implode(', ', $logDetails));
                 $itemLog->user_id = $tokenCheck['id'];
                 $itemLog->save();
 
