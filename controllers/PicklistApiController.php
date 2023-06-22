@@ -72,7 +72,7 @@ class PicklistApiController extends ActiveController
         if ($notInSystemErrors) {
             $barcodesInSystem = array_map(
                 function($i) { return $i['barcode']; },
-                $items,
+                $items
             );
             $barcodesNotInSystem = array_diff($barcodeList, $barcodesInSystem);
             if (count($barcodesNotInSystem) == 1) {
@@ -85,14 +85,14 @@ class PicklistApiController extends ActiveController
 
         $picklistItemIds = array_map(
             function($p) { return $p['item_id']; },
-            $picklist,
+            $picklist
         );
 
         $itemsNotInPicklist = array_filter(
             $items,
             function($i) use ($picklistItemIds) {
                 return !in_array($i['id'], $picklistItemIds);
-            },
+            }
         );
 
         // For items NOT already in the picklist:
@@ -107,7 +107,7 @@ class PicklistApiController extends ActiveController
                     $volume = isset($infoFromFolio['volume']) ? $this->truncate($infoFromFolio['volume'], 31) : null;
                     return [$i['id'], null, $title, $volume];
                 },
-                $itemsNotInPicklist,
+                $itemsNotInPicklist
             )
         )->execute();
         // Add to the item log in batch
@@ -118,7 +118,7 @@ class PicklistApiController extends ActiveController
                 function($i) use ($user) {
                     return [$i['id'], $user['id'], 'Requested', sprintf('Item %s added to picklist', $i['barcode'])];
                 },
-                $itemsNotInPicklist,
+                $itemsNotInPicklist
             )
         )->execute();
 
@@ -152,7 +152,7 @@ class PicklistApiController extends ActiveController
             $newPicklist = $this->handleAddItems($barcodeList, $tokenCheck, false);
             $notInSystem = array_diff($barcodeList, array_map(
                 function($i) { return $i['barcode']; },
-                \app\models\Item::find()->where(['barcode' => $barcodeList])->all(),
+                \app\models\Item::find()->where(['barcode' => $barcodeList])->all()
             ));
             return ['newPicklist' => $newPicklist, 'notInSystem' => $notInSystem];
         }
@@ -181,7 +181,7 @@ class PicklistApiController extends ActiveController
                     function($p) use ($tokenCheck) {
                         return $p['user_id'] != $tokenCheck['id'];
                     }
-                ),
+                )
             );
             $picklistItemIdsAssignedNotMine = array_map(
                 function($p) { return $p['item_id']; },
@@ -190,7 +190,7 @@ class PicklistApiController extends ActiveController
                     function($p) use ($tokenCheck) {
                         return $p['user_id'] != $tokenCheck['id'] && $p['user_id'] != null;
                     }
-                ),
+                )
             );
             $picklistItemIdsUnassigned = array_map(
                 function($p) { return $p['item_id']; },
@@ -199,11 +199,11 @@ class PicklistApiController extends ActiveController
                     function($p) use ($tokenCheck) {
                         return $p['user_id'] == null;
                     }
-                ),
+                )
             );
             $allPicklistItemIds = array_map(
                 function($p) { return $p['item_id']; },
-                $picklist,
+                $picklist
             );
 
 
@@ -211,25 +211,25 @@ class PicklistApiController extends ActiveController
                 $items,
                 function($i) use ($allPicklistItemIds) {
                     return !in_array($i['id'], $allPicklistItemIds);
-                },
+                }
             );
             $itemsInPicklistNotMine = array_filter(
                 $items,
                 function($i) use ($picklistItemIdsExceptMine) {
                     return in_array($i['id'], $picklistItemIdsExceptMine);
-                },
+                }
             );
             $itemsAssignedInPicklistNotMine = array_filter(
                 $items,
                 function($i) use ($picklistItemIdsAssignedNotMine) {
                     return in_array($i['id'], $picklistItemIdsAssignedNotMine);
-                },
+                }
             );
             $itemsUnassignedInPicklist = array_filter(
                 $items,
                 function($i) use ($picklistItemIdsUnassigned) {
                     return in_array($i['id'], $picklistItemIdsUnassigned);
-                },
+                }
             );
 
             // For items NOT already in the picklist:
@@ -244,7 +244,7 @@ class PicklistApiController extends ActiveController
                         $volume = isset($infoFromFolio['volume']) ? $this->truncate($infoFromFolio['volume'], 31) : null;
                         return [$i['id'], $tokenCheck['id'], $title, $volume];
                     },
-                    $itemsNotInPicklist,
+                    $itemsNotInPicklist
                 )
             )->execute();
             // Add to the item log in batch
@@ -255,7 +255,7 @@ class PicklistApiController extends ActiveController
                     function($i) use ($tokenCheck) {
                         return [$i['id'], $tokenCheck['id'], 'Requested', sprintf('Item %s added to picklist and assigned to user', $i['barcode'])];
                     },
-                    $itemsNotInPicklist,
+                    $itemsNotInPicklist
                 )
             )->execute();
 
@@ -273,7 +273,7 @@ class PicklistApiController extends ActiveController
                     function($i) use ($tokenCheck) {
                         return [$i['id'], $tokenCheck['id'], 'Assigned', sprintf('Item %s assigned on the picklist', $i['barcode'])];
                     },
-                    $itemsUnassignedInPicklist,
+                    $itemsUnassignedInPicklist
                 )
             )->execute();
             Yii::$app->db->createCommand()->batchInsert(
@@ -283,7 +283,7 @@ class PicklistApiController extends ActiveController
                     function($i) use ($tokenCheck) {
                         return [$i['id'], $tokenCheck['id'], 'Reassigned', sprintf('Item %s reassigned on the picklist', $i['barcode'])];
                     },
-                    $itemsAssignedInPicklistNotMine,
+                    $itemsAssignedInPicklistNotMine
                 )
             )->execute();
 
@@ -313,7 +313,7 @@ class PicklistApiController extends ActiveController
                 $items,
                 function($i) use ($picklistItemIdsUnassigned) {
                     return in_array($i['id'], $picklistItemIdsUnassigned);
-                },
+                }
             );
 
             // For items which ARE already in the picklist:
@@ -330,7 +330,7 @@ class PicklistApiController extends ActiveController
                     function($i) use ($tokenCheck) {
                         return [$i['id'], $tokenCheck['id'], 'Assigned', sprintf('Item %s assigned on the picklist', $i['barcode'])];
                     },
-                    $itemsUnassignedInPicklist,
+                    $itemsUnassignedInPicklist
                 )
             )->execute();
 
@@ -361,14 +361,14 @@ class PicklistApiController extends ActiveController
                     function($p) use ($tokenCheck) {
                         return $p['user_id'] != null;
                     }
-                ),
+                )
             );
 
             $itemsAssigned = array_filter(
                 $items,
                 function($i) use ($picklistItemIdsAlreadyAssigned) {
                     return in_array($i['id'], $picklistItemIdsAlreadyAssigned);
-                },
+                }
             );
 
             // For items which ARE already in the picklist:
@@ -385,7 +385,7 @@ class PicklistApiController extends ActiveController
                     function($i) use ($tokenCheck) {
                         return [$i['id'], $tokenCheck['id'], 'Unassigned', sprintf('Item %s unassigned on the picklist', $i['barcode'])];
                     },
-                    $itemsAssigned,
+                    $itemsAssigned
                 )
             )->execute();
 
@@ -411,7 +411,7 @@ class PicklistApiController extends ActiveController
                     ->all();
             $itemIdsToRemove = array_map(
                 function($i) { return $i['id']; },
-                $itemsToRemove,
+                $itemsToRemove
             );
 
             $this->modelClass::deleteAll(['item_id' => $itemIdsToRemove]);
@@ -424,7 +424,7 @@ class PicklistApiController extends ActiveController
                     function($i) use ($tokenCheck) {
                         return [$i['id'], $tokenCheck['id'], 'Removed from picklist', sprintf("Item %s removed from picklist", $i['barcode'])];
                     },
-                    $itemsToRemove,
+                    $itemsToRemove
                 )
             )->execute();
 
@@ -447,7 +447,7 @@ class PicklistApiController extends ActiveController
                     ->all();
             $itemIdsToUpdate = array_map(
                 function($i) { return $i['id']; },
-                $myItems,
+                $myItems
             );
 
             $this->modelClass::updateAll(
@@ -463,7 +463,7 @@ class PicklistApiController extends ActiveController
                     function($i) use ($tokenCheck) {
                         return [$i['id'], $tokenCheck['id'], 'Unassigned', sprintf("Item %s unassigned from user's own picklist", $i['barcode'])];
                     },
-                    $myItems,
+                    $myItems
                 )
             )->execute();
 
