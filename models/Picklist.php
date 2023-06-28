@@ -69,6 +69,10 @@ class Picklist extends \yii\db\ActiveRecord
                 $item = $this->item;
                 return $item && $item->tray ? $item->tray->position : null;
             },
+            'status' => function () {
+                $item = $this->item;
+                return $item && $item->status ? $item->status : null;
+            },
             'timestamp',
         ];
     }
