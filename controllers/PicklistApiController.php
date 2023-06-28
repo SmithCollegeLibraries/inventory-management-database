@@ -236,7 +236,7 @@ class PicklistApiController extends ActiveController
             // Add items to the picklist table in batch
             Yii::$app->db->createCommand()->batchInsert(
                 'picklist',
-                ['item_id', 'user_id'],
+                ['item_id', 'user_id', 'title', 'volume'],
                 array_map(
                     function($i) use ($tokenCheck) {
                         $infoFromFolio = \app\components\Folio::getTitleAndVolume($i['barcode']);
