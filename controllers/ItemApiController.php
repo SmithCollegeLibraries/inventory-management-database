@@ -347,6 +347,64 @@ class ItemApiController extends ActiveController
         }
     }
 
+    public function actionBulkUpdate()
+    {
+        $json = file_get_contents('php://input');
+        $data = json_decode($json, true);
+        // Data should be in the form:
+        // {
+        //     "barcodes": ["3101...", ...]
+        //     "status": "Circulating",
+        // }
+
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if ($tokenCheck['level'] >= 50) {
+            try {
+                $itemList = $this->modelClass::find()->where(['barcode' => $data["barcodes"]])->all();
+
+                if ($data["status"] == "Missing") {
+                    $logAction = "Marked missing";
+                    $logDetails = "Marked item as missing: ";
+                }
+                else if ($data["status"] == "Circulating") {
+                    $logAction = "Circulated";
+                    $logDetails = "Marked item as circulating: ";
+                }
+                else {
+                    $logAction = "Updated";
+                    $logDetails = sprintf("Updated item with status %s: ", $data["status"]);
+                }
+
+                $this->modelClass::updateAll(
+                    ['status' => $data["status"]],
+                    ['id' => array_map(function($i) { return $i['id']; }, $itemList)]
+                );
+                return $data["barcodes"];
+                // Add logs for all the new items
+                Yii::$app->db->createCommand()->batchInsert(
+                    'item_log',
+                    ['item_id', 'user_id', 'action', 'details'],
+                    array_map(
+                        function($i) use ($tokenCheck, $logAction, $logDetails) {
+                            return [$i['id'], $tokenCheck['id'], $logAction, $logDetails . $i['barcode']];
+                        },
+                        $data["barcodes"]
+                    )
+                )->execute();
+
+                return modelClass::find()->where(['barcode' => $data["barcodes"]])->all();
+            }
+            catch (Exception $e) {
+                throw new \yii\web\HttpException(400, 'Error updating items.');
+            }
+        }
+        else {
+            throw new \yii\web\HttpException(403, 'You do not have permission to page items.');
+        }
+    }
+
     public function actionMarkPicked()
     {
         // We need the item id in the data
