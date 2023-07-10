@@ -65,7 +65,7 @@ class ItemApiController extends ActiveController
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
         if ($tokenCheck['level'] < 20) {
-            throw new \yii\web\HttpException(500, 'You do not have permission to search items');
+            throw new \yii\web\HttpException(403, 'You do not have permission to search items');
         }
 
         $json = file_get_contents('php://input');
@@ -151,7 +151,7 @@ class ItemApiController extends ActiveController
             return $provider->getModels();
         }
         else {
-            throw new \yii\web\HttpException(500, 'You do not have permission to browse items');
+            throw new \yii\web\HttpException(403, 'You do not have permission to browse items');
         }
     }
 
@@ -184,7 +184,7 @@ class ItemApiController extends ActiveController
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
         if ($tokenCheck['level'] < 80) {
-            throw new \yii\web\HttpException(401, 'You do not have permission to do this operation');
+            throw new \yii\web\HttpException(403, 'You do not have permission to do this operation');
         }
 
         $allItems = $this->modelClass::find()->where(['active' => 1])->all();
@@ -199,7 +199,7 @@ class ItemApiController extends ActiveController
         return $anomalousItems;
     }
 
-    private function handleItemUpdate($data, $userId)
+    private function handleItemUpdate($data, $userId, $actionIndicator)
     {
         $itemLog = new $this->modelLogClass;
         $logDetails = [];
@@ -217,7 +217,7 @@ class ItemApiController extends ActiveController
 
         // If the item doesn't exist
         if ($item == null) {
-            throw new \yii\web\HttpException(500, sprintf('Item %s does not exist', $itemBarcode));
+            throw new \yii\web\HttpException(400, sprintf('Item %s does not exist', $itemBarcode));
         }
 
         // If a barcode was provided and it's not the same as the current
@@ -228,10 +228,10 @@ class ItemApiController extends ActiveController
             $itemCheck = $this->modelClass::find()->where(['barcode' => $data["new_barcode"]])->one();
             if ($itemCheck != null) {
                 if ($itemCheck->active == false) {
-                    throw new \yii\web\HttpException(500, sprintf('Item %s used to exist, and was deleted. Please re-add that item instead of changing this one.', $data['new_barcode']));
+                    throw new \yii\web\HttpException(400, sprintf('Item %s used to exist, and was deleted. Please re-add that item instead of changing this one.', $data['new_barcode']));
                 }
                 else {
-                    throw new \yii\web\HttpException(500, sprintf('Item %s already exists', $data['new_barcode']));
+                    throw new \yii\web\HttpException(400, sprintf('Item %s already exists', $data['new_barcode']));
                 }
             }
             $item->barcode = $data['new_barcode'];
@@ -255,10 +255,10 @@ class ItemApiController extends ActiveController
             $newTray = Tray::find()->where(['barcode' => $trayBarcode])->andWhere(['active' => true])->one();
             if ($newTray == null) {
                 if (Tray::find()->where(['barcode' => $trayBarcode])->andWhere(['active' => false])->one()) {
-                    throw new \yii\web\HttpException(500, sprintf('Tray %s has been deleted.', $trayBarcode));
+                    throw new \yii\web\HttpException(400, sprintf('Tray %s has been deleted.', $trayBarcode));
                 }
                 else {
-                    throw new \yii\web\HttpException(500, sprintf('Tray %s does not exist.', $trayBarcode));
+                    throw new \yii\web\HttpException(400, sprintf('Tray %s does not exist.', $trayBarcode));
                 }
             }
             $item->tray_id = $newTray->id;
@@ -269,10 +269,10 @@ class ItemApiController extends ActiveController
             $newCollection = Collection::find()->where(['name' => $collection])->andWhere(['active' => true])->one();
             if ($newCollection == null) {
                 if (Collection::find()->where(['name' => $collection])->andWhere(['active' => false])->one()) {
-                    throw new \yii\web\HttpException(500, sprintf('Collection %s has been deleted.', $data['collection']));
+                    throw new \yii\web\HttpException(400, sprintf('Collection %s has been deleted.', $data['collection']));
                 }
                 else {
-                    throw new \yii\web\HttpException(500, sprintf('Collection %s does not exist.', $data['collection']));
+                    throw new \yii\web\HttpException(400, sprintf('Collection %s does not exist.', $data['collection']));
                 }
             }
             else if ($item->collection_id != $newCollection->id) {
@@ -305,7 +305,7 @@ class ItemApiController extends ActiveController
 
         // Log the update
         $itemLog->item_id = $item->id;
-        $itemLog->action = 'Updated';
+        $itemLog->action = $actionIndicator;
         if (count($logDetails) > 0) {
             $itemLog->details = sprintf("Updated item %s: %s", $item->barcode, implode(', ', $logDetails));
         }
@@ -339,13 +339,106 @@ class ItemApiController extends ActiveController
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
         if ($tokenCheck['level'] >= 60) {
-            $item = $this->handleItemUpdate($data, $tokenCheck['id'], false);
+            $item = $this->handleItemUpdate($data, $tokenCheck['id'], "Updated");
             return $item;
         }
         else {
-            throw new \yii\web\HttpException(500, 'You do not have permission to update items.');
+            throw new \yii\web\HttpException(403, 'You do not have permission to update items.');
         }
     }
+
+    public function actionBulkUpdate()
+    {
+        $json = file_get_contents('php://input');
+        $data = json_decode($json, true);
+        // Data should be in the form:
+        // {
+        //     "barcodes": ["3101...", ...]
+        //     "status": "Circulating",
+        // }
+
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if ($tokenCheck['level'] >= 50) {
+            try {
+                $itemList = $this->modelClass::find()->where(['barcode' => $data["barcodes"]])->all();
+
+                if ($data["status"] == "Missing") {
+                    $logAction = "Marked missing";
+                    $logDetails = "Marked item as missing: ";
+                }
+                else if ($data["status"] == "Circulating") {
+                    $logAction = "Circulated";
+                    $logDetails = "Marked item as circulating: ";
+                }
+                else {
+                    $logAction = "Updated";
+                    $logDetails = sprintf("Updated item with status %s: ", $data["status"]);
+                }
+
+                $this->modelClass::updateAll(
+                    ['status' => $data["status"]],
+                    ['id' => array_map(function($i) { return $i['id']; }, $itemList)]
+                );
+                return $data["barcodes"];
+                // Add logs for all the new items
+                Yii::$app->db->createCommand()->batchInsert(
+                    'item_log',
+                    ['item_id', 'user_id', 'action', 'details'],
+                    array_map(
+                        function($i) use ($tokenCheck, $logAction, $logDetails) {
+                            return [$i['id'], $tokenCheck['id'], $logAction, $logDetails . $i['barcode']];
+                        },
+                        $data["barcodes"]
+                    )
+                )->execute();
+
+                return modelClass::find()->where(['barcode' => $data["barcodes"]])->all();
+            }
+            catch (Exception $e) {
+                throw new \yii\web\HttpException(400, 'Error updating items.');
+            }
+        }
+        else {
+            throw new \yii\web\HttpException(403, 'You do not have permission to page items.');
+        }
+    }
+
+    public function actionMarkPicked()
+    {
+        // We need the item id in the data
+        $json = file_get_contents('php://input');
+        $data = ["status" => "Circulated"];
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if ($tokenCheck['level'] >= 50) {
+            $item = $this->handleItemUpdate($data, $tokenCheck['id'], "Picked");
+            return $item;
+        }
+        else {
+            throw new \yii\web\HttpException(403, 'You do not have permission to page items.');
+        }
+    }
+
+    public function actionMarkMissing()
+    {
+        // We need the item id in the data
+        $json = file_get_contents('php://input');
+        $data = ["status" => "Missing"];
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if ($tokenCheck['level'] >= 50) {
+            $item = $this->handleItemUpdate($data, $tokenCheck['id'], "Marked missing");
+            return $item;
+        }
+        else {
+            throw new \yii\web\HttpException(403, 'You do not have permission to page items.');
+        }
+    }
+
 
     // Receive new item info and update the database
     public function actionNewItem()
@@ -359,7 +452,7 @@ class ItemApiController extends ActiveController
             // If the item is in the database but inactive
             $existingItem = $this->modelClass::find()->where(['barcode' => $data['barcode']])->andWhere(['active' => false])->one();
             if ($existingItem) {
-                $item = $this->handleItemUpdate($data, $tokenCheck['id'], true);
+                $item = $this->handleItemUpdate($data, $tokenCheck['id'], "Updated");
             }
             else {
                 $item = new $this->modelClass;
@@ -375,16 +468,16 @@ class ItemApiController extends ActiveController
                     $itemBarcode = $data['barcode'];
                 }
                 else {
-                    throw new \yii\web\HttpException(500, 'No barcode provided.');
+                    throw new \yii\web\HttpException(400, 'No barcode provided.');
                 }
                 // Check that the barcode is not already in use
                 $itemCheck = $this->modelClass::find()->where(['barcode' => $itemBarcode])->one();
                 if ($itemCheck != null) {
                     if ($itemCheck->active == false) {
-                        throw new \yii\web\HttpException(500, sprintf('Item %s used to exist, and was deleted. Please re-add that item instead of changing this one.', $itemBarcode));
+                        throw new \yii\web\HttpException(400, sprintf('Item %s used to exist, and was deleted. Please re-add that item instead of changing this one.', $itemBarcode));
                     }
                     else {
-                        throw new \yii\web\HttpException(500, sprintf('Item %s already exists', $itemBarcode));
+                        throw new \yii\web\HttpException(400, sprintf('Item %s already exists', $itemBarcode));
                     }
                 }
                 $item->barcode = $itemBarcode;
@@ -396,10 +489,10 @@ class ItemApiController extends ActiveController
                     $tray = Tray::find()->where(['barcode' => $trayBarcode])->andWhere(['active' => true])->one();
                     if ($tray == null) {
                         if (Tray::find()->where(['barcode' => $trayBarcode])->andWhere(['active' => false])->one()) {
-                            throw new \yii\web\HttpException(500, sprintf('Tray %s has been deleted.', $trayBarcode));
+                            throw new \yii\web\HttpException(400, sprintf('Tray %s has been deleted', $trayBarcode));
                         }
                         else {
-                            throw new \yii\web\HttpException(500, sprintf('Tray %s does not exist.', $trayBarcode));
+                            throw new \yii\web\HttpException(400, sprintf('Tray %s does not exist', $trayBarcode));
                         }
                     }
                     $item->tray_id = $tray->id;
@@ -415,10 +508,10 @@ class ItemApiController extends ActiveController
                     $collection = Collection::find()->where(['name' => $data['collection']])->andWhere(['active' => true])->one();
                     if ($collection == null) {
                         if (Collection::find()->where(['name' => $collection])->andWhere(['active' => false])->one()) {
-                            throw new \yii\web\HttpException(500, sprintf('Collection %s has been deleted.', $data['collection']));
+                            throw new \yii\web\HttpException(400, sprintf('Collection %s has been deleted.', $data['collection']));
                         }
                         else {
-                            throw new \yii\web\HttpException(500, sprintf('Collection %s does not exist.', $data['collection']));
+                            throw new \yii\web\HttpException(400, sprintf('Collection %s does not exist.', $data['collection']));
                         }
                     }
                     else {
@@ -427,7 +520,7 @@ class ItemApiController extends ActiveController
                     }
                 }
                 else {
-                    throw new \yii\web\HttpException(500, 'Collection cannot be blank.');
+                    throw new \yii\web\HttpException(400, 'Collection cannot be blank.');
                 }
 
                 // Status
@@ -436,7 +529,7 @@ class ItemApiController extends ActiveController
                     $logDetails[] = sprintf("status %s", $data['status'] == "" ? "null" : $data['status']);
                 }
                 else {
-                    throw new \yii\web\HttpException(500, 'Status cannot be blank.');
+                    throw new \yii\web\HttpException(400, 'Status cannot be blank.');
                 }
 
                 // Flag
@@ -448,7 +541,7 @@ class ItemApiController extends ActiveController
                 // Log the update
                 $itemLog->item_id = $item->id;
                 $itemLog->action = 'Added';
-                $itemLog->details = sprintf("Added item %s manually: %s", $item->barcode, implode(', ', $logDetails));
+                $itemLog->details = sprintf("Added item manually: %s", $item->barcode, implode(', ', $logDetails));
                 $itemLog->user_id = $tokenCheck['id'];
                 $itemLog->save();
 
@@ -478,7 +571,7 @@ class ItemApiController extends ActiveController
             return $item;
         }
         else {
-            throw new \yii\web\HttpException(500, 'You do not have permission to add items.');
+            throw new \yii\web\HttpException(403, 'You do not have permission to add items.');
         }
     }
 
@@ -519,7 +612,7 @@ class ItemApiController extends ActiveController
         }
 
         else {
-            throw new \yii\web\HttpException(500, 'You do not have permission to delete items');
+            throw new \yii\web\HttpException(403, 'You do not have permission to delete items');
         }
     }
 
@@ -533,7 +626,7 @@ class ItemApiController extends ActiveController
             return $totalCount;
         }
         else {
-            throw new \yii\web\HttpException(401, 'You do not have permission to view the total count.');
+            throw new \yii\web\HttpException(403, 'You do not have permission to view the total count.');
         }
     }
 

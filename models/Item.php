@@ -17,6 +17,7 @@ use Yii;
  *
  * @property Collection $collection
  * @property ItemLog[] $itemLogs
+ * @property Picklist[] $itemLogs
  * @property Tray $tray
  */
 class Item extends \yii\db\ActiveRecord
@@ -119,5 +120,15 @@ class Item extends \yii\db\ActiveRecord
     public function getTray()
     {
         return $this->hasOne(Tray::class, ['id' => 'tray_id']);
+    }
+
+    /**
+     * Gets query for [[Picklist]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getPicklist()
+    {
+        return $this->hasOne(Picklist::class, ['item_id' => 'id']);
     }
 }

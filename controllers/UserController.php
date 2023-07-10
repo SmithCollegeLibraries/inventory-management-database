@@ -74,6 +74,7 @@ class UserController extends Controller
             if ($account->save()) {
                 $loggedin = User::find()->where(['email' => $data["email"]])->one();
                 return [
+                    "id" => $loggedin->id,
                     "name" => $loggedin->name,
                     "access_token" => $loggedin->access_token
                 ];
@@ -108,6 +109,7 @@ class UserController extends Controller
         }
         if (Yii::$app->getSecurity()->validatePassword($data['password'], $user->passwordhash)) {
             return [
+                "id" => $user->id,
                 "name" => $user->name,
                 "access_token" => $user->access_token,
                 "level" => $user->level
