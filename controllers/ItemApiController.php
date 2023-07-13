@@ -64,7 +64,7 @@ class ItemApiController extends ActiveController
     {
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
-        if ($tokenCheck['level'] < 20) {
+        if ($tokenCheck['level'] < 10) {
             throw new \yii\web\HttpException(403, 'You do not have permission to search items');
         }
 
