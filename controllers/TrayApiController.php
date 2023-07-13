@@ -137,7 +137,7 @@ class TrayApiController extends ActiveController
                 }
             }
 
-            // Create new tray
+            // Create new tray (or reactivate existing one)
             $tray = $this->handleCreateTray($trayBarcode, $tokenCheck['id']);
 
             // Create new items and add them to tray; add logs as well
