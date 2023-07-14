@@ -150,10 +150,11 @@ class PicklistApiController extends ActiveController
         if ($tokenCheck['level'] >= 40) {
             $barcodeList = \app\components\Folio::getPicklist("SC_ANNEX");
             $newPicklist = $this->handleAddItems($barcodeList, $tokenCheck, false);
-            $notInSystem = array_diff($barcodeList, array_map(
+            $existingBarcodes = array_map(
                 function($i) { return $i['barcode']; },
                 \app\models\Item::find()->where(['barcode' => $barcodeList])->asArray()->all()
-            ));
+            );
+            $notInSystem = array_values(array_diff($barcodeList, $existingBarcodes));
             return ['newPicklist' => $newPicklist, 'notInSystem' => $notInSystem];
         }
         else {
