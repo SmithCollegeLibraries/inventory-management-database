@@ -152,7 +152,7 @@ class PicklistApiController extends ActiveController
             $newPicklist = $this->handleAddItems($barcodeList, $tokenCheck, false);
             $notInSystem = array_diff($barcodeList, array_map(
                 function($i) { return $i['barcode']; },
-                \app\models\Item::find()->where(['barcode' => $barcodeList])->all()
+                \app\models\Item::find()->where(['barcode' => $barcodeList])->asArray()->all()
             ));
             return ['newPicklist' => $newPicklist, 'notInSystem' => $notInSystem];
         }
