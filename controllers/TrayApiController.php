@@ -215,7 +215,7 @@ class TrayApiController extends ActiveController
         $trayBarcode = $data['barcode'];
         $dataShelf = isset($data['shelf']) ? $data['shelf'] : null;
         $dataDepth = isset($data['depth']) ? $data['depth'] : null;
-        $dataPosition = isset($data['position']) ? $data['position'] : null;
+        $dataPosition = isset($data['position']) ? intval($data['position']) : 0;
         $tray = $this->modelClass::find()->where(['barcode' => $trayBarcode])->one();
         $shelf = \app\models\Shelf::find()->where(['barcode' => $dataShelf])->one();
 
@@ -316,8 +316,8 @@ class TrayApiController extends ActiveController
         // If a barcode was provided and it's not the same as the current
         // one, check that it's not already in use (this doesn't happen with
         // the rapid shelve form)
-        if (isset($data['new_barcode']) && $data['new_barcode'] != $data['barcode']) {
-            $trayCheck = $this->modelClass::find()->where(['barcode' => $data["new_barcode"]])->one();
+        if (isset($data['new_barcode']) && $data['new_barcode'] != $trayBarcode) {
+            $trayCheck = $this->modelClass::find()->where(['barcode' => $data['new_barcode']])->one();
             if ($trayCheck != null) {
                 throw new \yii\web\HttpException(400, sprintf('Tray %s already exists', $data['new_barcode']));
             }
@@ -325,29 +325,34 @@ class TrayApiController extends ActiveController
             $logDetails[] = sprintf("barcode %s", $data['new_barcode']);
         }
         // Shelf
-        if (!isset($tray->shelf) || $data['shelf'] != $tray->shelf->barcode) {
-            $tray->shelf_id = $shelf == null ? null : $shelf->id;
-            $logDetails[] = sprintf("shelf %s", $shelf == null ? "null" : $data['shelf']);
+        if (isset($tray->shelf)) {
+            // Don't do anything if the shelf is unchanged
+            if ($dataShelf != $tray->shelf->barcode) {
+                $tray->shelf_id = $shelf == null ? null : $shelf->id;
+                $logDetails[] = sprintf("shelf %s", $shelf == null ? "null" : $dataShelf);
+            }
+        }
+        else {
+            // Don't do anything if the new shelf is null and the shelf was already null
+            if ($shelf) {
+                $tray->shelf_id = $shelf->id;
+                $logDetails[] = sprintf("shelf %s", $dataShelf);
+            }
         }
         // Depth
-        if (isset($data['depth']) && $data['depth'] != $tray->depth) {
-            $tray->depth = $data['depth'] == "" ? null : $data['depth'];
-            $logDetails[] = sprintf("depth %s", $data['depth'] == "" ? "null" : $data['depth']);
+        if ($dataDepth != $tray->depth) {
+            $tray->depth = $dataDepth;
+            $logDetails[] = sprintf("depth %s", $dataDepth ? $dataDepth : "null");
         }
         // Position
-        if (isset($data['position']) && $data['position'] != $tray->position) {
-            if ($data['position'] == "" || $data['position'] == "0" || $data['position'] == 0) {
+        if ($dataPosition != $tray->position) {
+            if (!$dataPosition) {
                 $tray->position = null;
                 $logDetails[] = sprintf("position null");
             }
             else {
-                if (gettype($data['position']) != 'integer') {
-                    $tray->position = intval($data['position']);
-                }
-                else {
-                    $tray->position = $data['position'];
-                }
-                $logDetails[] = sprintf("position %s", $data['position']);
+                $tray->position = $dataPosition;
+                $logDetails[] = sprintf("position %s", $dataPosition);
             }
         }
         // Flag
