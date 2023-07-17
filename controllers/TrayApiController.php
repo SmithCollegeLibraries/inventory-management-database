@@ -316,8 +316,8 @@ class TrayApiController extends ActiveController
         // If a barcode was provided and it's not the same as the current
         // one, check that it's not already in use (this doesn't happen with
         // the rapid shelve form)
-        if (isset($data['new_barcode']) && $data['new_barcode'] != $data['barcode']) {
-            $trayCheck = $this->modelClass::find()->where(['barcode' => $data["new_barcode"]])->one();
+        if (isset($data['new_barcode']) && $data['new_barcode'] != $trayBarcode) {
+            $trayCheck = $this->modelClass::find()->where(['barcode' => $data['new_barcode']])->one();
             if ($trayCheck != null) {
                 throw new \yii\web\HttpException(400, sprintf('Tray %s already exists', $data['new_barcode']));
             }
@@ -325,9 +325,19 @@ class TrayApiController extends ActiveController
             $logDetails[] = sprintf("barcode %s", $data['new_barcode']);
         }
         // Shelf
-        if (!isset($tray->shelf) || $data['shelf'] != $tray->shelf->barcode) {
-            $tray->shelf_id = $shelf == null ? null : $shelf->id;
-            $logDetails[] = sprintf("shelf %s", $shelf == null ? "null" : $data['shelf']);
+        if (isset($tray->shelf)) {
+            // Don't do anything if the shelf is unchanged
+            if ($dataShelf != $tray->shelf->barcode) {
+                $tray->shelf_id = $shelf == null ? null : $shelf->id;
+                $logDetails[] = sprintf("shelf %s", $shelf == null ? "null" : $dataShelf);
+            }
+        }
+        else {
+            // Don't do anything if the new shelf is null and the shelf was already null
+            if ($shelf) {
+                $tray->shelf_id = $shelf->id;
+                $logDetails[] = sprintf("shelf %s", $dataShelf);
+            }
         }
         // Depth
         if ($dataDepth != $tray->depth) {
