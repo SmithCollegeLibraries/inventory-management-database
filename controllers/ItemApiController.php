@@ -381,7 +381,7 @@ class ItemApiController extends ActiveController
                     ['status' => $data["status"]],
                     ['id' => array_map(function($i) { return $i['id']; }, $itemList)]
                 );
-                return $data["barcodes"];
+
                 // Add logs for all the new items
                 Yii::$app->db->createCommand()->batchInsert(
                     'item_log',
