@@ -330,13 +330,13 @@ class TrayApiController extends ActiveController
             $logDetails[] = sprintf("shelf %s", $shelf == null ? "null" : $data['shelf']);
         }
         // Depth
-        if (isset($data['depth']) && $data['depth'] != $tray->depth) {
-            $tray->depth = $data['depth'] == "" ? null : $data['depth'];
-            $logDetails[] = sprintf("depth %s", $data['depth'] == "" ? "null" : $data['depth']);
+        if ($dataDepth != $tray->depth) {
+            $tray->depth = $dataDepth;
+            $logDetails[] = sprintf("depth %s", $dataDepth ? $dataDepth : "null");
         }
         // Position
-        if (isset($data['position']) && $data['position'] != $tray->position) {
-            if ($data['position'] == "" || $data['position'] == "0" || $data['position'] == 0) {
+        if ($dataPosition != $tray->position) {
+            if (!$dataPosition) {
                 $tray->position = null;
                 $logDetails[] = sprintf("position null");
             }
