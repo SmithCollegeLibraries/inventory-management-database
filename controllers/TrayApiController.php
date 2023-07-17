@@ -215,7 +215,7 @@ class TrayApiController extends ActiveController
         $trayBarcode = $data['barcode'];
         $dataShelf = isset($data['shelf']) ? $data['shelf'] : null;
         $dataDepth = isset($data['depth']) ? $data['depth'] : null;
-        $dataPosition = isset($data['position']) ? $data['position'] : null;
+        $dataPosition = isset($data['position']) ? intval($data['position']) : 0;
         $tray = $this->modelClass::find()->where(['barcode' => $trayBarcode])->one();
         $shelf = \app\models\Shelf::find()->where(['barcode' => $dataShelf])->one();
 
@@ -341,13 +341,8 @@ class TrayApiController extends ActiveController
                 $logDetails[] = sprintf("position null");
             }
             else {
-                if (gettype($data['position']) != 'integer') {
-                    $tray->position = intval($data['position']);
-                }
-                else {
-                    $tray->position = $data['position'];
-                }
-                $logDetails[] = sprintf("position %s", $data['position']);
+                $tray->position = $dataPosition;
+                $logDetails[] = sprintf("position %s", $dataPosition);
             }
         }
         // Flag
