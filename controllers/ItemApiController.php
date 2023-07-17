@@ -390,11 +390,11 @@ class ItemApiController extends ActiveController
                         function($i) use ($tokenCheck, $logAction, $logDetails) {
                             return [$i['id'], $tokenCheck['id'], $logAction, $logDetails . $i['barcode']];
                         },
-                        $data["barcodes"]
+                        $itemList
                     )
                 )->execute();
 
-                return modelClass::find()->where(['barcode' => $data["barcodes"]])->all();
+                return $this->modelClass::find()->where(['barcode' => $data["barcodes"]])->all();
             }
             catch (Exception $e) {
                 throw new \yii\web\HttpException(400, 'Error updating items.');
