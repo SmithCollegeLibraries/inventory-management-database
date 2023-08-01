@@ -282,10 +282,11 @@ class ItemApiController extends ActiveController
         }
 
         // Status
-        if ($status) {
-            // Don't do anything if the status isn't changing.
-            if (($status == "Picked" && $item->status == "Returned to campus") || $status == $item->status) {
-                // pass
+        if ($status && $status != $item->status) {
+            // Mark "To return to campus" items differently
+            if ($status == "Picked" && $item->status == "Returned to campus") {
+                $item->status = "Returned to campus";
+                $logDetails[] = sprintf("status Returned to campus");
             }
             else {
                 $item->status = $status;
