@@ -128,7 +128,6 @@ CREATE TABLE IF NOT EXISTS `user` (
   `passwordhash` varchar(255) NOT NULL,
   `access_token` varchar(255),
   `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `active` boolean NOT NULL DEFAULT TRUE,
   PRIMARY KEY (id),
   UNIQUE (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

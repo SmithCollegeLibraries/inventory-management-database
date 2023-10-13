@@ -107,7 +107,10 @@ class UserController extends Controller
         if (empty($user)) {
             throw new \yii\web\NotFoundHttpException('User not found');
         }
-        if (Yii::$app->getSecurity()->validatePassword($data['password'], $user->passwordhash)) {
+        else if ($user->level == 0) {
+            throw new \yii\web\ForbiddenHttpException('User account is disabled');
+        }
+        else if (Yii::$app->getSecurity()->validatePassword($data['password'], $user->passwordhash)) {
             return [
                 "id" => $user->id,
                 "name" => $user->name,
@@ -126,7 +129,7 @@ class UserController extends Controller
         $token = $_REQUEST["access-token"];
         $tokenCheck = $modelClass::find()->where(['access_token' => $token])->one();
         if ($tokenCheck['level'] >= 100) {
-            $users = $modelClass::find()->where(['active' => true])->asArray()->all();
+            $users = $modelClass::find()->where(['>', 'level', 0])->asArray()->all();
             // We need to add a blank password field in order to
             // manage the password using controlled form
             for ($i = 0; $i < count($users); $i++) {
@@ -146,7 +149,7 @@ class UserController extends Controller
         $user_id = $_REQUEST["id"];
         $tokenCheck = $modelClass::find()->where(['access_token' => $token])->one();
         if ($tokenCheck['level'] >= 35) {
-            $result = $modelClass::find()->where(['id' => $user_id, 'active' => true])->one();
+            $result = $modelClass::find()->where(['id' => $user_id])->andWhere(['>', 'level', 0])->one();
             return array('id'=>$user_id, 'name'=>$result ? $result['name'] : null);
         } else {
             throw new \yii\web\ForbiddenHttpException('You are not authorized to see users');
@@ -162,8 +165,8 @@ class UserController extends Controller
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
         if ($tokenCheck['level'] >= 100) {
             $user = User::findOne($data["id"]);
-            // Mark user as inactive instead of deleting from database
-            $user->active = false;
+            // Set level to 0 instead of deleting from database
+            $user->level = 0;
             $user->save();
             return true;
         } else {
