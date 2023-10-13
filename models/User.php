@@ -48,7 +48,6 @@ class User extends \yii\db\ActiveRecord implements \yii\web\IdentityInterface
             'level' => 'Level (0 = Viewer, 40 = Staff, 100 = Admin)',
             'passwordhash' => 'Password hash',
             'access_token' => 'Access token',
-            'active' => 'Active',
         ];
     }
 
