@@ -80,6 +80,11 @@ class ItemApiController extends ActiveController
                     }
                 ])
                 ->where(['barcode' => $query])
+                ->orderBy([
+                    'shelf' => SORT_ASC,
+                    'shelf_depth'=>SORT_ASC,
+                    'shelf_position'=>SORT_ASC,
+                  ])
                 ->asArray()
                 ->all();
         $results = [];
@@ -134,7 +139,7 @@ class ItemApiController extends ActiveController
 
         if ($tokenCheck['level'] >= 20) {
             // If a barcode has been provided, search by barcode and return
-            // a liminted number of results
+            // a limited number of results
             $provider = new ActiveDataProvider([
                 'query' => $this->modelClass::find()
                     ->where(['like', 'barcode', $barcode])
