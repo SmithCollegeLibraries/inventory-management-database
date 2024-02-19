@@ -54,7 +54,7 @@ class PicklistApiController extends ActiveController
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
-        if ($tokenCheck['level'] >= 10) {
+        if ($tokenCheck['level'] >= 20) {
             $picklist = $this->modelClass::find()->all();
             return $picklist;
         }
