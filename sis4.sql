@@ -125,10 +125,12 @@ CREATE TABLE IF NOT EXISTS `user` (
   `email` varchar(255) NOT NULL,
   `name` varchar(31) NOT NULL,
   `level` int(3) NOT NULL DEFAULT 0,
+  `default_collection` int(11) UNSIGNED,
   `passwordhash` varchar(255) NOT NULL,
   `access_token` varchar(255),
   `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
+  FOREIGN KEY (default_collection) REFERENCES collection(id),
   UNIQUE (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
