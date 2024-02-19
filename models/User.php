@@ -36,9 +36,14 @@ class User extends \yii\db\ActiveRecord implements \yii\web\IdentityInterface
         return [
             'id',
             'name',
+            'email',
             'default_collection' => function ($model) {
                 $collection = Collection::find()->where(['id' => $model["default_collection"]])->one();
                 return $collection ? $collection["name"] : null;
+            },
+            'level',
+            'password' => function () {
+                return "";  /* Hide password; let field be present for updating within interface */
             },
         ];
     }

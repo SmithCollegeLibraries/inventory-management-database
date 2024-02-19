@@ -129,12 +129,7 @@ class UserController extends Controller
         $token = $_REQUEST["access-token"];
         $tokenCheck = $modelClass::find()->where(['access_token' => $token])->one();
         if ($tokenCheck['level'] >= 100) {
-            $users = $modelClass::find()->where(['>', 'level', 0])->asArray()->all();
-            // We need to add a blank password field in order to
-            // manage the password using controlled form
-            for ($i = 0; $i < count($users); $i++) {
-                $users[$i]['password'] = "";
-            }
+            $users = $modelClass::find()->where(['>', 'level', 0])->all();
             return $users;
         } else {
             throw new \yii\web\ForbiddenHttpException('You are not authorized to see users');
