@@ -56,6 +56,13 @@ class CollectionApiController extends ActiveController
         }
     }
 
+    public function actionGetDefault()
+    {
+        $token = $_REQUEST["access-token"];
+        $currentUser = User::find()->where(['access_token' => $token])->one();
+        return Collection::find()->where(['id' => $currentUser['default_collection'], 'active' => 1])->one();
+    }
+
     public function actionNewCollection()
     {
         $json = file_get_contents('php://input');
