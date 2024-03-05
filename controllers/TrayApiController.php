@@ -186,13 +186,19 @@ class TrayApiController extends ActiveController
                 \app\components\Folio::handleMarkFolioAnomaly($item, $tokenCheck['id']);
             }
 
-            // Return the barcode of the new tray as confirmation, after
-            // double-checking that it was actually added to the database
-            if (\app\models\Tray::find()->where(['barcode' => $trayBarcode])->andWhere(['active' => true])->all() != []) {
-                return $trayBarcode;
+            // Return the new tray as confirmation, after double-checking
+            // that it was actually added to the database
+            $trays = \app\models\Tray::find()->where(['barcode' => $trayBarcode])->andWhere(['active' => true])->all();
+            if (count($trays) == 1) {
+                return $trays[0];
             }
             else {
-                throw new \yii\web\HttpException(500, sprintf('Tray %s was not added to the database', $trayBarcode));
+                if (count($trays) > 1) {
+                    throw new \yii\web\HttpException(500, sprintf('Cannot have more than one tray with barcode %s', $trayBarcode));
+                }
+                else {
+                    throw new \yii\web\HttpException(500, sprintf('Tray %s was not added to the database', $trayBarcode));
+                }
             }
         }
 

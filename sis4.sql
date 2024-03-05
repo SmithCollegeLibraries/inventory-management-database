@@ -117,6 +117,20 @@ CREATE TABLE IF NOT EXISTS `picklist` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `folio_validation`
+--
+
+CREATE TABLE IF NOT EXISTS `folio_validation` (
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `barcode` varchar(20) NOT NULL,
+  `item_in_folio` boolean DEFAULT NULL,
+  PRIMARY KEY (id),
+  UNIQUE (barcode)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `user`
 --
 
