@@ -433,7 +433,7 @@ class ItemApiController extends ActiveController
                 }
             }
             else {
-                throw new \yii\web\HttpException(400, 'Collection cannot be blank.');
+                $logDetails[] = "collection blank";
             }
 
             // Status
