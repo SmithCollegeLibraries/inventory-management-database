@@ -249,7 +249,7 @@ class ItemApiController extends ActiveController
 
         // Add flags if information is changing on return that we expect
         // to be the same
-        if ($currentCollection && $currentCollection->name != $collection) {
+        if ($currentCollection && $collection && $currentCollection->name != $collection) {
             $flagDetails[] = sprintf("Item returned with collection %s but was previously in %s", $collection, $currentCollection->name);
         }
         if ($currentTray && $currentTray->barcode != $trayBarcode) {
@@ -434,6 +434,7 @@ class ItemApiController extends ActiveController
             }
             else {
                 $logDetails[] = "collection blank";
+                $flagDetails[] = "Item added with no collection";
             }
 
             // Status
@@ -446,8 +447,13 @@ class ItemApiController extends ActiveController
             }
 
             // Flag
-            $item->flag = isset($data['flag']) && $data['flag'] == true ? 1 : 0;
+            if (isset($data['flag']) && $data['flag'] == true) {
+                $flagDetails[] = "User specified flag";
+            }
 
+            if ($flagDetails) {
+                $item->flag = 1;
+            }
             $item->active = 1;
             $item->save();
 
