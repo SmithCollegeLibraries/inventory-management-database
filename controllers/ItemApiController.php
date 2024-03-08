@@ -74,7 +74,7 @@ class ItemApiController extends ActiveController
         $query = $data["barcodes"] ? $data["barcodes"] : [];
         $newTableResults = $this->modelClass::find()->where(['barcode' => $query, 'active' => 1])->all();
         $oldTableResults = OldBarcodeTray::find()
-                ->with([
+                ->joinWith([
                     'oldTrayShelf' => function ($q) {
                         $q->select('boxbarcode, shelf, shelf_depth, shelf_position');
                     }
