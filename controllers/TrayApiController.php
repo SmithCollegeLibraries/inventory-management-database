@@ -98,7 +98,7 @@ class TrayApiController extends ActiveController
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
         if ($tokenCheck['level'] >= 30) {
             // We expect barcodes in the form of an array, but if it's not, we'll make it one
-            if (!is_array($data["items"])) {
+            if (!isset($data["items"]) || !is_array($data["items"])) {
                 $barcodes = explode(PHP_EOL, $data['items']);
             } else {
                 $barcodes = $data["items"];
@@ -109,7 +109,8 @@ class TrayApiController extends ActiveController
 
             // Get collection ID, while making sure that a collection of that name exists
             try {
-                $collectionId = \app\models\Collection::find()->where(['name' => $collectionName])->one()->id;
+                $collection = \app\models\Collection::find()->where(['name' => $collectionName])->one();
+                $collectionId = $collection ? $collection->id : null;
             } catch (\Exception $e) {
                 throw new \yii\web\HttpException(400, sprintf('Collection %s does not exist', $collectionName));
             }
@@ -127,18 +128,37 @@ class TrayApiController extends ActiveController
             }
 
             // If the tray location is already occupied, return error
+            $shelfId = null;
             if (isset($data['shelf'])) {
                 $shelf = \app\models\Shelf::find()->where(['barcode' => $data['shelf']])->one();
                 if ($shelf) {
-                    $shelfId = \app\models\Shelf::find()->where(['barcode' => $data['shelf']])->one()->id;
-                    if (count($this->alreadyOccupyingTray($shelfId, $data['depth'], $data['position'], null)) != null) {
-                        throw new \yii\web\HttpException(400, sprintf('Shelf %s, depth %s, position %s is already occupied by tray', $data['shelf'], $data['depth'], $data['position']));
+                    $shelfId = $shelf->id;
+                    // If a shelf is provided, depth and position must also be provided
+                    if (isset($data['depth']) && isset($data['position'])) {
+                        $trayInTheWay = $this->alreadyOccupyingTray($shelfId, $data['depth'], $data['position'], null);
+                        if ($trayInTheWay != null) {
+                            throw new \yii\web\HttpException(400, sprintf('Shelf %s, depth %s, position %s is already occupied by tray %s', $data['shelf'], $data['depth'], $data['position'], $trayInTheWay->barcode));
+                        }
                     }
                 }
             }
+            $depth = isset($data['depth']) && $data['depth'] ? $data['depth'] : null;
+            $position = isset($data['position']) && $data['position'] ? $data['position'] : null;
 
             // Create new tray (or reactivate existing one)
             $tray = $this->handleCreateTray($trayBarcode, $tokenCheck['id']);
+
+            // If necessary, update the tray
+            $depth = isset($data['depth']) && $data['depth'] ? $data['depth'] : null;
+            $position = isset($data['position']) && $data['position'] ? $data['position'] : null;
+            if ($tray->shelf_id != $shelfId || $tray->depth != $depth || $tray->position != $position) {
+                $this->handleTrayUpdate([
+                    'barcode' => $trayBarcode,
+                    'shelf' => $data['shelf'],
+                    'depth' => $depth,
+                    'position' => $position
+                ], $tokenCheck['id'], false);
+            }
 
             // Create new items and add them to tray; add logs as well
             foreach ($barcodes as $barcode) {
@@ -232,7 +252,6 @@ class TrayApiController extends ActiveController
         if ($tray == null) {
             if ($flagsAllowed == true) {
                 $tray = $this->handleCreateTray($trayBarcode, $userId);
-                $flag = true;
                 $flagDetails[] = sprintf('Tray %s did not exist before being shelved', $trayBarcode);
             }
             else {
@@ -243,7 +262,6 @@ class TrayApiController extends ActiveController
         // 2. If the tray is empty
         if ($tray->items == []) {
             if ($flagsAllowed == true) {
-                $flag = true;
                 $flagDetails[] = sprintf('Tray %s was shelved when empty', $trayBarcode);
             }
             else {
@@ -262,7 +280,6 @@ class TrayApiController extends ActiveController
                 $oldDepth = $tray->depth == null ? 'null' : $tray->depth;
                 // Don't worry about it unless it's actually a different location
                 if ($oldShelfBarcode != $dataShelf || $oldPosition != $dataPosition || $oldDepth != $dataDepth) {
-                    $flag = true;
                     $flagDetails[] = sprintf('Tray %s was already on shelf %s, depth %s, position %s', $trayBarcode, $oldShelfBarcode, $oldDepth, $oldPosition);
                 }
             }
@@ -310,7 +327,6 @@ class TrayApiController extends ActiveController
             $existingTray = $this->alreadyOccupyingTray($shelfId, $dataDepth, $dataPosition, $trayBarcode);
             if ($existingTray != null) {
                 if ($flagsAllowed == true) {
-                    $flag = true;
                     $flagDetails[] = sprintf('Tray %s was assigned to shelf %s, depth %s, position %s, which was already occupied by tray %s', $trayBarcode, $dataShelf, $dataDepth, $dataPosition, $existingTray->barcode);
                 }
                 else {
@@ -378,6 +394,18 @@ class TrayApiController extends ActiveController
         }
         $trayLog->user_id = $userId;
         $trayLog->save();
+
+        // If the tray update results in partial location information,
+        // flag it
+        if (($tray->shelf_id == null || $tray->depth == null || $tray->position == null) &&
+                !($tray->shelf_id == null && $tray->depth == null && $tray->position == null)) {
+            $flagDetails[] = sprintf('Tray %s was shelved with incomplete location information', $tray->barcode);
+        }
+
+        if ($flagDetails) {
+            $tray->flag = 1;
+            $tray->save();
+        }
 
         // Log any flags that occurred
         foreach ($flagDetails as $flagDetail) {
@@ -555,9 +583,8 @@ class TrayApiController extends ActiveController
             }
             else {
                 // Use the shelf ID, depth, and position to search for trays
-                $shelfId = $shelf->id;
                 $trays = $this->modelClass::find()
-                    ->where(['shelf_id' => $shelfId])
+                    ->where(['shelf_id' =>  $shelf->id])
                     ->andWhere(['depth' => $depth])
                     ->andWhere(['position' => $position])
                     ->andWhere(['active' => true])
