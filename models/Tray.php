@@ -40,6 +40,7 @@ class Tray extends \yii\db\ActiveRecord
             [['barcode'], 'string', 'max' => 20],
             [['depth'], 'string', 'max' => 6],
             [['position'], 'integer', 'max' => 20],
+            [['full_count'], 'integer', 'max' => 9999],
             [['barcode'], 'unique'],
             [['shelf_id'], 'exist', 'skipOnError' => true, 'targetClass' => Shelf::class, 'targetAttribute' => ['shelf_id' => 'id']],
         ];
@@ -52,6 +53,7 @@ class Tray extends \yii\db\ActiveRecord
             'barcode',
             'depth',
             'position',
+            'full_count',
             'active',
             'flag',
             'shelf' => function ($tray) {
@@ -96,6 +98,7 @@ class Tray extends \yii\db\ActiveRecord
             'shelf_id' => 'Shelf ID',
             'depth' => 'Depth',
             'position' => 'Position from left',
+            'full_count' => 'Number of items when full',
             'active' => 'Active',
             'flag' => 'Flag',
         ];

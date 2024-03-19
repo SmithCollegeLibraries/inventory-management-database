@@ -54,7 +54,7 @@ class TrayApiController extends ActiveController
         }
     }
 
-    private function handleCreateTray($trayBarcode, $userId)
+    private function handleCreateTray($trayBarcode, $userId, $fullCount=null)
     {
         // If the tray already exists and is active, throw an error
         if (\app\models\Tray::find()->where(['barcode' => $trayBarcode])->andWhere(['active' => true])->all() != []) {
@@ -65,6 +65,7 @@ class TrayApiController extends ActiveController
         else if (\app\models\Tray::find()->where(['barcode' => $trayBarcode])->all() != []) {
             $tray = \app\models\Tray::find()->where(['barcode' => $trayBarcode])->one();
             $tray->active = 1;
+            $tray->full_count = $fullCount;
             $tray->save();
             // Log the reactivation
             $trayLog = new $this->modelLogClass;
@@ -77,6 +78,7 @@ class TrayApiController extends ActiveController
         else {
             $tray = new $this->modelClass;
             $tray->barcode = $trayBarcode;
+            $tray->full_count = $fullCount;
             $tray->save();
             // Log the new tray
             $trayLog = new $this->modelLogClass;
@@ -146,7 +148,7 @@ class TrayApiController extends ActiveController
             $position = isset($data['position']) && $data['position'] ? $data['position'] : null;
 
             // Create new tray (or reactivate existing one)
-            $tray = $this->handleCreateTray($trayBarcode, $tokenCheck['id']);
+            $tray = $this->handleCreateTray($trayBarcode, $tokenCheck['id'], count($barcodes));
 
             // If necessary, update the tray
             $depth = isset($data['depth']) && $data['depth'] ? $data['depth'] : null;
@@ -377,6 +379,11 @@ class TrayApiController extends ActiveController
                 $logDetails[] = sprintf("position %s", $dataPosition);
             }
         }
+        // Full Count
+        if (isset($data['full_count'])) {
+            $tray->full_count = $data['full_count'];
+            $logDetails[] = sprintf("full count %s", $data['full_count']);
+        }
         // Flag
         if ($flag == true) {
             $tray->flag = 1;
@@ -423,7 +430,7 @@ class TrayApiController extends ActiveController
     public function actionUpdateTray()
     {
         // We want the id, as well as the following optional fields:
-        // new tray barcode, shelf barcode, depth, position.
+        // new tray barcode, shelf barcode, depth, position, full count.
         $json = file_get_contents('php://input');
         $data = json_decode($json, true);
         $token = $_REQUEST["access-token"];
@@ -444,7 +451,7 @@ class TrayApiController extends ActiveController
     {
         // We will calculate the ID from the barcode given. A tray's
         // barcode will not be changed using this function. We will also
-        // get the shelf barcode, depth, and position.
+        // get the shelf barcode, depth, position, and full count.
         $json = file_get_contents('php://input');
         $data = json_decode($json, true);
         $token = $_REQUEST["access-token"];
