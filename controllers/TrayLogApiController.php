@@ -7,6 +7,7 @@ use yii\rest\ActiveController;
 use yii\data\ActiveDataProvider;
 use yii\filters\auth\QueryParamAuth;
 
+use app\models\Tray;
 use app\models\User;
 
 class TrayLogApiController extends ActiveController
@@ -44,6 +45,45 @@ class TrayLogApiController extends ActiveController
         return $dataProvider;
     }
 
+    public function actionBrowse()
+    {
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        $json = file_get_contents('php://input');
+        $data = json_decode($json, true);
+        if (isset($data['barcode'])) {
+            $tray_id = Tray::find()->where(['barcode' => $data['barcode']])->one()->id;
+        }
+        else {
+            $tray_id = '';
+        }
+        $action = isset($data['action']) ? $data['action'] : null;
+        $details = isset($data['details']) ? $data['details'] : '';
+
+        if ($tokenCheck['level'] >= 60) {
+            // If a barcode has been provided, search by barcode and return
+            // a liminted number of results
+            $provider = new ActiveDataProvider([
+                'query' => $this->modelClass::find()
+                    ->filterWhere(['tray_id' => $tray_id])
+                    ->andFilterWhere(['action' => $action])
+                    ->andWhere(['like', 'details', $details]),
+                'sort' => [
+                    'defaultOrder' => [
+                        'timestamp' => SORT_DESC,
+                    ]
+                ],
+                'pagination' => [
+                    'pageSize' => 20,
+                ],
+            ]);
+            return $provider->getModels();
+        }
+        else {
+            throw new \yii\web\HttpException(403, 'You do not have permission to view logs');
+        }
+    }
 
     public function actionAddedStatistics()
     {
