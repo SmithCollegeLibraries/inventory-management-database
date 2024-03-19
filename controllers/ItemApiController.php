@@ -327,7 +327,7 @@ class ItemApiController extends ActiveController
             $reactivatedItemLog->save();
         }
         // Flag
-        if ($flag == true) {
+        if ($flag == true || count($flagDetails) > 0) {
             $item->flag = 1;
         }
         $item->save();
