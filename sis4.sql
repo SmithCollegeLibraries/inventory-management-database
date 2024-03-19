@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS `tray` (
   `shelf_id` int(11) UNSIGNED,
   `depth` varchar(6) DEFAULT NULL,
   `position` tinyint(2) UNSIGNED DEFAULT NULL,
+  `full_count` int(4) UNSIGNED DEFAULT NULL,
   `active` boolean NOT NULL DEFAULT TRUE,
   `flag` boolean NOT NULL DEFAULT FALSE,
   `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -86,7 +87,7 @@ CREATE TABLE IF NOT EXISTS `item` (
   `barcode` varchar(20) NOT NULL,
   `status` varchar(25) NOT NULL,
   `tray_id` int(11) UNSIGNED,
-  `collection_id` int(11) UNSIGNED NOT NULL,
+  `collection_id` int(11) UNSIGNED,
   `active` boolean NOT NULL DEFAULT TRUE,
   `flag` boolean NOT NULL DEFAULT FALSE,
   PRIMARY KEY (id),
@@ -117,6 +118,20 @@ CREATE TABLE IF NOT EXISTS `picklist` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `folio_validation`
+--
+
+CREATE TABLE IF NOT EXISTS `folio_validation` (
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `barcode` varchar(20) NOT NULL,
+  `item_in_folio` boolean DEFAULT NULL,
+  PRIMARY KEY (id),
+  UNIQUE (barcode)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `user`
 --
 
@@ -125,10 +140,12 @@ CREATE TABLE IF NOT EXISTS `user` (
   `email` varchar(255) NOT NULL,
   `name` varchar(31) NOT NULL,
   `level` int(3) NOT NULL DEFAULT 0,
+  `default_collection` int(11) UNSIGNED,
   `passwordhash` varchar(255) NOT NULL,
   `access_token` varchar(255),
   `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
+  FOREIGN KEY (default_collection) REFERENCES collection(id),
   UNIQUE (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

@@ -45,6 +45,24 @@ class CollectionApiController extends ActiveController
         return $dataProvider;
     }
 
+    public function actionGetAllCollections()
+    {
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+        if ($tokenCheck['level'] >= 10) {
+            return Collection::find()->where(['active' => 1])->all();
+        } else {
+            throw new \yii\web\ForbiddenHttpException('You are not authorized to view collections');
+        }
+    }
+
+    public function actionGetDefault()
+    {
+        $token = $_REQUEST["access-token"];
+        $currentUser = User::find()->where(['access_token' => $token])->one();
+        return Collection::find()->where(['id' => $currentUser['default_collection'], 'active' => 1])->one();
+    }
+
     public function actionNewCollection()
     {
         $json = file_get_contents('php://input');

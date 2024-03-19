@@ -8,6 +8,7 @@ use yii\data\ActiveDataProvider;
 use yii\filters\auth\QueryParamAuth;
 
 use app\models\Setting;
+use app\models\User;
 
 class SettingApiController extends ActiveController
 {
@@ -46,19 +47,33 @@ class SettingApiController extends ActiveController
 
     public function actionGetSetting()
     {
-        $name = $_REQUEST["name"];
-        $setting = Setting::find()->where(['name' => $name])->one();
-        return $setting;
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+        if ($tokenCheck['level'] >= 10) {
+            $name = $_REQUEST["name"];
+            $setting = Setting::find()->where(['name' => $name])->one();
+            return $setting;
+        }
+        else {
+            throw new \yii\web\ForbiddenHttpException('You are not authorized to view settings');
+        }
     }
 
     public function actionGetAllSettings()
     {
-        $settingsDict = [];
-        $settings = Setting::find()->all();
-        foreach ($settings as $setting) {
-            $processedValue = is_numeric($setting->value) ? intval($setting->value) : $setting->value;
-            $settingsDict[$setting->name] = $processedValue;
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+        if ($tokenCheck['level'] >= 10) {
+            $settingsDict = [];
+            $settings = Setting::find()->all();
+            foreach ($settings as $setting) {
+                $processedValue = is_numeric($setting->value) ? intval($setting->value) : $setting->value;
+                $settingsDict[$setting->name] = $processedValue;
+            }
+            return $settingsDict;
         }
-        return $settingsDict;
+        else {
+            throw new \yii\web\ForbiddenHttpException('You are not authorized to view settings');
+        }
     }
 }

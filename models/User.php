@@ -2,6 +2,8 @@
 
 namespace app\models;
 
+use app\models\Collection;
+
 class User extends \yii\db\ActiveRecord implements \yii\web\IdentityInterface
 {
     /**
@@ -25,6 +27,7 @@ class User extends \yii\db\ActiveRecord implements \yii\web\IdentityInterface
             [['name'], 'string', 'max' => 31],
             [['level'], 'integer', 'max' => 100],
             [['email'], 'unique'],
+            [['default_collection'], 'skipOnError' => true, 'targetClass' => Collection::class, 'targetAttribute' => ['collection_id' => 'id']],
         ];
     }
 
@@ -33,6 +36,15 @@ class User extends \yii\db\ActiveRecord implements \yii\web\IdentityInterface
         return [
             'id',
             'name',
+            'email',
+            'default_collection' => function ($model) {
+                $collection = Collection::find()->where(['id' => $model["default_collection"]])->one();
+                return $collection ? $collection["name"] : null;
+            },
+            'level',
+            'password' => function () {
+                return "";  /* Hide password; let field be present for updating within interface */
+            },
         ];
     }
 
@@ -48,6 +60,7 @@ class User extends \yii\db\ActiveRecord implements \yii\web\IdentityInterface
             'level' => 'Level (0 = Viewer, 40 = Staff, 100 = Admin)',
             'passwordhash' => 'Password hash',
             'access_token' => 'Access token',
+            'default_collection' => 'Default collection',
         ];
     }
 

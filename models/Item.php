@@ -36,7 +36,7 @@ class Item extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['barcode', 'collection_id'], 'required'],
+            [['barcode'], 'required'],
             [['tray_id', 'collection_id', 'active', 'flag'], 'integer'],
             [['barcode'], 'string', 'max' => 20],
             [['status'], 'string', 'max' => 25],
