@@ -247,16 +247,18 @@ class ItemApiController extends ActiveController
             $logDetails[] = sprintf("barcode %s", $data['new_barcode']);
         }
 
-        // Add flags if information is changing on return that we expect
-        // to be the same
-        if ($currentCollection && $collection && $currentCollection->name != $collection) {
-            $flagDetails[] = sprintf("Item returned with collection %s but was previously in %s", $collection, $currentCollection->name);
-        }
-        if ($currentTray && $currentTray->barcode != $trayBarcode) {
-            $flagDetails[] = sprintf("Item returned to tray %s but was previously in tray %s", $trayBarcode, $currentTray->barcode);
-        }
-        if ($item->status != "Circulating") {
-            $flagDetails[] = sprintf("Item did not have status Circulating at the time of return");
+        if ($actionIndicator == "Returned") {
+            // Add flags if information is changing on return that we expect
+            // to be the same
+            if ($currentCollection && $collection && $currentCollection->name != $collection) {
+                $flagDetails[] = sprintf("Item returned with collection %s but was previously in %s", $collection, $currentCollection->name);
+            }
+            if ($currentTray && $currentTray->barcode != $trayBarcode) {
+                $flagDetails[] = sprintf("Item returned to tray %s but was previously in tray %s", $trayBarcode, $currentTray->barcode);
+            }
+            if ($item->status != "Circulating") {
+                $flagDetails[] = sprintf("Item did not have status Circulating at the time of return");
+            }
         }
 
         // Tray
