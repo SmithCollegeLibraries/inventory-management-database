@@ -8,9 +8,9 @@ use yii\data\ActiveDataProvider;
 use yii\filters\auth\QueryParamAuth;
 
 
-class OldBarcodeTrayApiController extends ActiveController
+class FolioValidationApiController extends ActiveController
 {
-    public $modelClass = 'app\models\OldBarcodeTray';
+    public $modelClass = 'app\models\FolioValidation';
 
     public function init()
     {
@@ -51,35 +51,6 @@ class OldBarcodeTrayApiController extends ActiveController
         return $results;
     }
 
-    public function actionBrowse()
-    {
-        $barcode = isset($_REQUEST["query"]) ? $_REQUEST["query"] : null;
-        $token = $_REQUEST["access-token"];
-        $tokenCheck = User::find()->where(['access_token' => $token])->one();
-
-        if ($tokenCheck['level'] >= 20) {
-            // If a barcode has been provided, search by barcode and return
-            // a limited number of results
-            $provider = new ActiveDataProvider([
-                'query' => $this->modelClass::find()
-                    ->where(['like', 'barcode', $barcode])
-                    ->andWhere(['active' => 1]),
-                'sort' => [
-                    'defaultOrder' => [
-                        'id' => SORT_DESC,
-                    ]
-                ],
-                'pagination' => [
-                    'pageSize' => 10,
-                ],
-            ]);
-            return $provider->getModels();
-        }
-        else {
-            throw new \yii\web\HttpException(403, 'You do not have permission to browse items');
-        }
-    }
-
     // Expects a single barcode in data under "barcode". Returns a single
     // true/false value whether the item is in FOLIO.
     public function handleCheckFolio($barcode)
@@ -95,9 +66,9 @@ class OldBarcodeTrayApiController extends ActiveController
 
     // Check multiple items in FOLIO and add the results to the `in_folio`
     // column in the database.
-    public function actionBatchCheckFolio()
+    public function actionBatchCheck()
     {
-        $modelClass = 'app\models\OldBarcodeTray';
+        $modelClass = 'app\models\FolioValidation';
         $number = 20;
         if (isset($_REQUEST["number"])) {
             if ($_REQUEST["number"] >= 500) {
@@ -107,10 +78,10 @@ class OldBarcodeTrayApiController extends ActiveController
                 $number = $_REQUEST["number"];
             }
         }
-        $rows = $modelClass::find()->where(['in_folio' => null])->orderBy("id")->limit($number)->all();
+        $rows = $modelClass::find()->where(['item_in_folio' => null])->orderBy("id")->limit($number)->all();
         foreach ($rows as $row) {
             $inFolio = $this->handleCheckFolio($row->barcode);
-            $row->in_folio = $inFolio;
+            $row->item_in_folio = $inFolio;
             $row->save();
         }
         return true;
