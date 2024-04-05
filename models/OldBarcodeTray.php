@@ -55,6 +55,8 @@ class OldBarcodeTray extends \yii\db\ActiveRecord
             'status' => 'Status',
             'added' => 'Created',
             'timestamp' => 'Updated',
+            'in_folio' => 'In FOLIO?',
+            'folio_collection' => 'FOLIO collection',
         ];
     }
 
