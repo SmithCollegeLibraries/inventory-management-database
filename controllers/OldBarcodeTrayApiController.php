@@ -100,12 +100,19 @@ class OldBarcodeTrayApiController extends ActiveController
         $modelClass = 'app\models\OldBarcodeTray';
         $number = 20;
         if (isset($_REQUEST["number"])) {
-            if ($_REQUEST["number"] >= 500) {
-                $number = 500;
+            if ($_REQUEST["number"] >= 120) {
+                $number = 120;
             }
             else {
                 $number = $_REQUEST["number"];
             }
+        }
+        $status = isset($_REQUEST["status"]) ? $_REQUEST["status"] : null;
+        if (is_null($status)) {
+            $rows = $modelClass::find()->where(['in_folio' => null])->orderBy("id")->limit($number)->all();
+        }
+        else {
+            $rows = $modelClass::find()->where(['in_folio' => null, 'status' => $status])->orderBy("id")->limit($number)->all();
         }
         $rows = $modelClass::find()->where(['in_folio' => null])->orderBy("id")->limit($number)->all();
         foreach ($rows as $row) {
@@ -115,4 +122,5 @@ class OldBarcodeTrayApiController extends ActiveController
         }
         return true;
     }
+
 }

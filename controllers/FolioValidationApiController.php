@@ -71,8 +71,8 @@ class FolioValidationApiController extends ActiveController
         $modelClass = 'app\models\FolioValidation';
         $number = 20;
         if (isset($_REQUEST["number"])) {
-            if ($_REQUEST["number"] >= 500) {
-                $number = 500;
+            if ($_REQUEST["number"] >= 120) {
+                $number = 120;
             }
             else {
                 $number = $_REQUEST["number"];
