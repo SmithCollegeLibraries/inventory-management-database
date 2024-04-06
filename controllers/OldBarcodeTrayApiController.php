@@ -114,7 +114,6 @@ class OldBarcodeTrayApiController extends ActiveController
         else {
             $rows = $modelClass::find()->where(['in_folio' => null, 'status' => $status])->orderBy("id")->limit($number)->all();
         }
-        $rows = $modelClass::find()->where(['in_folio' => null])->orderBy("id")->limit($number)->all();
         foreach ($rows as $row) {
             $inFolio = $this->handleCheckFolio($row->barcode);
             $row->in_folio = $inFolio;
