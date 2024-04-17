@@ -45,6 +45,40 @@ class TrayLogApiController extends ActiveController
         return $dataProvider;
     }
 
+    public function actionSearch()
+    {
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        $json = file_get_contents('php://input');
+        $data = json_decode($json, true);
+
+        $actionQ = isset($data['action']) ? $data['action'] : null;
+        $barcodeQ = isset($data['barcode']) ? $data['barcode'] : null;
+        $detailsQ = isset($data['details']) ? $data['details'] : null;
+        $userQ = isset($data['user']) ? $data['user'] : null;
+        $timestampPost = isset($data['timestampPost']) ? $data['timestampPost'] : null;
+        $timestampAnte = isset($data['timestampAnte']) ? $data['timestampAnte'] : null;
+
+        if ($tokenCheck['level'] >= 60) {
+            $query = $this->modelClass::find()
+                ->joinWith('tray', 'tray_log.tray_id = tray.id')
+                ->joinWith('user', 'tray_log.user_id = user.id')
+                ->andFilterWhere(['tray_log.action' => $actionQ])
+                ->andFilterWhere(['like', 'tray.barcode', $barcodeQ])
+                ->andFilterWhere(['like', 'tray_log.details', $detailsQ])
+                ->andFilterWhere(['like', 'user.name', $userQ])
+                ->andFilterWhere(['>=', 'tray_log.timestamp', $timestampPost])
+                ->andFilterWhere(['<', 'tray_log.timestamp', $timestampAnte])
+                ->orderBy('tray_log.id')
+                ->limit(100)->all();
+            return $query;
+        }
+        else {
+            throw new \yii\web\HttpException(403, 'You do not have permission to view logs');
+        }
+    }
+
     public function actionBrowse()
     {
         $token = $_REQUEST["access-token"];

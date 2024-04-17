@@ -45,6 +45,40 @@ class ItemLogApiController extends ActiveController
         return $dataProvider;
     }
 
+    public function actionSearch()
+    {
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        $json = file_get_contents('php://input');
+        $data = json_decode($json, true);
+
+        $actionQ = isset($data['action']) ? $data['action'] : null;
+        $barcodeQ = isset($data['barcode']) ? $data['barcode'] : null;
+        $detailsQ = isset($data['details']) ? $data['details'] : null;
+        $userQ = isset($data['user']) ? $data['user'] : null;
+        $timestampPost = isset($data['timestampPost']) ? $data['timestampPost'] : null;
+        $timestampAnte = isset($data['timestampAnte']) ? $data['timestampAnte'] : null;
+
+        if ($tokenCheck['level'] >= 60) {
+            $query = $this->modelClass::find()
+                ->joinWith('item', 'item_log.item_id = item.id')
+                ->joinWith('user', 'item_log.user_id = user.id')
+                ->andFilterWhere(['item_log.action' => $actionQ])
+                ->andFilterWhere(['like', 'item.barcode', $barcodeQ])
+                ->andFilterWhere(['like', 'item_log.details', $detailsQ])
+                ->andFilterWhere(['like', 'user.name', $userQ])
+                ->andFilterWhere(['>=', 'item_log.timestamp', $timestampPost])
+                ->andFilterWhere(['<', 'item_log.timestamp', $timestampAnte])
+                ->orderBy('item_log.id')
+                ->limit(100)->all();
+            return $query;
+        }
+        else {
+            throw new \yii\web\HttpException(403, 'You do not have permission to view logs');
+        }
+    }
+
     public function actionBrowse()
     {
         $token = $_REQUEST["access-token"];
