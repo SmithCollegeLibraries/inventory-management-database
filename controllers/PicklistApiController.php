@@ -116,7 +116,7 @@ class PicklistApiController extends ActiveController
             ['item_id', 'user_id', 'action', 'details'],
             array_map(
                 function($i) use ($user) {
-                    return [$i['id'], $user['id'], 'Requested', sprintf('Item %s added to picklist', $i['barcode'])];
+                    return [$i['id'], $user['id'], 'Picklist: Requested', sprintf('Item %s added to picklist', $i['barcode'])];
                 },
                 $itemsNotInPicklist
             )
@@ -254,7 +254,7 @@ class PicklistApiController extends ActiveController
                 ['item_id', 'user_id', 'action', 'details'],
                 array_map(
                     function($i) use ($tokenCheck) {
-                        return [$i['id'], $tokenCheck['id'], 'Requested', sprintf('Item %s added to picklist and assigned to user', $i['barcode'])];
+                        return [$i['id'], $tokenCheck['id'], 'Picklist: Requested', sprintf('Item %s added to picklist and assigned to user', $i['barcode'])];
                     },
                     $itemsNotInPicklist
                 )
@@ -272,7 +272,7 @@ class PicklistApiController extends ActiveController
                 ['item_id', 'user_id', 'action', 'details'],
                 array_map(
                     function($i) use ($tokenCheck) {
-                        return [$i['id'], $tokenCheck['id'], 'Assigned', sprintf('Item %s assigned on the picklist', $i['barcode'])];
+                        return [$i['id'], $tokenCheck['id'], 'Picklist: Assigned', sprintf('Item %s assigned on the picklist', $i['barcode'])];
                     },
                     $itemsUnassignedInPicklist
                 )
@@ -282,7 +282,7 @@ class PicklistApiController extends ActiveController
                 ['item_id', 'user_id', 'action', 'details'],
                 array_map(
                     function($i) use ($tokenCheck) {
-                        return [$i['id'], $tokenCheck['id'], 'Reassigned', sprintf('Item %s reassigned on the picklist', $i['barcode'])];
+                        return [$i['id'], $tokenCheck['id'], 'Picklist: Reassigned', sprintf('Item %s reassigned on the picklist', $i['barcode'])];
                     },
                     $itemsAssignedInPicklistNotMine
                 )
@@ -329,7 +329,7 @@ class PicklistApiController extends ActiveController
                 ['item_id', 'user_id', 'action', 'details'],
                 array_map(
                     function($i) use ($tokenCheck) {
-                        return [$i['id'], $tokenCheck['id'], 'Assigned', sprintf('Item %s assigned on the picklist', $i['barcode'])];
+                        return [$i['id'], $tokenCheck['id'], 'Picklist: Assigned', sprintf('Item %s assigned on the picklist', $i['barcode'])];
                     },
                     $itemsUnassignedInPicklist
                 )
@@ -384,7 +384,7 @@ class PicklistApiController extends ActiveController
                 ['item_id', 'user_id', 'action', 'details'],
                 array_map(
                     function($i) use ($tokenCheck) {
-                        return [$i['id'], $tokenCheck['id'], 'Unassigned', sprintf('Item %s unassigned on the picklist', $i['barcode'])];
+                        return [$i['id'], $tokenCheck['id'], 'Picklist: Unassigned', sprintf('Item %s unassigned on the picklist', $i['barcode'])];
                     },
                     $itemsAssigned
                 )
@@ -423,7 +423,7 @@ class PicklistApiController extends ActiveController
                 ['item_id', 'user_id', 'action', 'details'],
                 array_map(
                     function($i) use ($tokenCheck) {
-                        return [$i['id'], $tokenCheck['id'], 'Removed from picklist', sprintf("Item %s removed from picklist", $i['barcode'])];
+                        return [$i['id'], $tokenCheck['id'], 'Picklist: Removed', sprintf("Item %s removed from picklist", $i['barcode'])];
                     },
                     $itemsToRemove
                 )
@@ -462,7 +462,7 @@ class PicklistApiController extends ActiveController
                 ['item_id', 'user_id', 'action', 'details'],
                 array_map(
                     function($i) use ($tokenCheck) {
-                        return [$i['id'], $tokenCheck['id'], 'Unassigned', sprintf("Item %s unassigned from user's own picklist", $i['barcode'])];
+                        return [$i['id'], $tokenCheck['id'], 'Picklist: Unassigned', sprintf("Item %s unassigned from user's own picklist", $i['barcode'])];
                     },
                     $myItems
                 )
