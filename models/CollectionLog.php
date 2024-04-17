@@ -41,6 +41,43 @@ class CollectionLog extends \yii\db\ActiveRecord
         ];
     }
 
+    public function fields()
+    {
+        return [
+            'id',
+            'name' => function ($collectionLog) {
+                $collection = 'app\models\Collection'::find()->where(['id' => $collectionLog["collection_id"]])->one();
+                if ($collection) {
+                    return $collection->name;
+                }
+                else {
+                    return null;
+                }
+            },
+            'action',
+            'details',
+            'user' => function ($collectionLog) {
+                $user = 'app\models\User'::find()->where(['id' => $collectionLog["user_id"]])->one();
+                if ($user) {
+                    return $user->name;
+                }
+                else {
+                    return null;
+                }
+            },
+            'timestamp',
+            'currentActive' => function ($collectionLog) {
+                $collection = 'app\models\Collection'::find()->where(['id' => $collectionLog["collection_id"]])->one();
+                if ($collection) {
+                    return $collection->active;
+                }
+                else {
+                    return null;
+                }
+            },
+        ];
+    }
+
     /**
      * {@inheritdoc}
      */

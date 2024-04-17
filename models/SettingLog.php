@@ -41,6 +41,33 @@ class SettingLog extends \yii\db\ActiveRecord
         ];
     }
 
+    public function fields()
+    {
+        return [
+            'id',
+            'name' => function ($settingLog) {
+                $setting = 'app\models\Setting'::find()->where(['id' => $settingLog["shelf_id"]])->one();
+                if ($setting) {
+                    return $setting->name;
+                }
+                else {
+                    return null;
+                }
+            },
+            'value',
+            'user' => function ($settingLog) {
+                $user = 'app\models\User'::find()->where(['id' => $settingLog["user_id"]])->one();
+                if ($user) {
+                    return $user->name;
+                }
+                else {
+                    return null;
+                }
+            },
+            'timestamp',
+        ];
+    }
+
     /**
      * {@inheritdoc}
      */

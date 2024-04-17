@@ -43,6 +43,52 @@ class ItemLog extends \yii\db\ActiveRecord
         ];
     }
 
+    public function fields()
+    {
+        return [
+            'id',
+            'barcode' => function ($itemLog) {
+                $item = 'app\models\Item'::find()->where(['id' => $itemLog["item_id"]])->one();
+                if ($item) {
+                    return $item->barcode;
+                }
+                else {
+                    return null;
+                }
+            },
+            'action',
+            'details',
+            'user' => function ($itemLog) {
+                $user = 'app\models\User'::find()->where(['id' => $itemLog["user_id"]])->one();
+                if ($user) {
+                    return $user->name;
+                }
+                else {
+                    return null;
+                }
+            },
+            'timestamp',
+            'currentActive' => function ($itemLog) {
+                $item = 'app\models\Item'::find()->where(['id' => $itemLog["item_id"]])->one();
+                if ($item) {
+                    return $item->active;
+                }
+                else {
+                    return null;
+                }
+            },
+            'currentFlag' => function ($itemLog) {
+                $item = 'app\models\Item'::find()->where(['id' => $itemLog["item_id"]])->one();
+                if ($item) {
+                    return $item->flag;
+                }
+                else {
+                    return null;
+                }
+            },
+        ];
+    }
+
     /**
      * {@inheritdoc}
      */

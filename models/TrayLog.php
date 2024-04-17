@@ -47,12 +47,44 @@ class TrayLog extends \yii\db\ActiveRecord
     {
         return [
             'id',
-            'tray_id',
+            'barcode' => function ($trayLog) {
+                $tray = 'app\models\Tray'::find()->where(['id' => $trayLog["tray_id"]])->one();
+                if ($tray) {
+                    return $tray->barcode;
+                }
+                else {
+                    return null;
+                }
+            },
             'action',
             'details',
+            'user' => function ($trayLog) {
+                $user = 'app\models\User'::find()->where(['id' => $trayLog["user_id"]])->one();
+                if ($user) {
+                    return $user->name;
+                }
+                else {
+                    return null;
+                }
+            },
             'timestamp',
-            'user' => function ($tray_log) {
-                return 'app\models\User'::find()->where(['id' => $tray_log["user_id"]])->one();
+            'currentActive' => function ($trayLog) {
+                $tray = 'app\models\Tray'::find()->where(['id' => $trayLog["tray_id"]])->one();
+                if ($tray) {
+                    return $tray->active;
+                }
+                else {
+                    return null;
+                }
+            },
+            'currentFlag' => function ($trayLog) {
+                $tray = 'app\models\Tray'::find()->where(['id' => $trayLog["tray_id"]])->one();
+                if ($tray) {
+                    return $tray->flag;
+                }
+                else {
+                    return null;
+                }
             },
         ];
     }

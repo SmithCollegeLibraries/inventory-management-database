@@ -43,6 +43,52 @@ class ShelfLog extends \yii\db\ActiveRecord
         ];
     }
 
+    public function fields()
+    {
+        return [
+            'id',
+            'barcode' => function ($shelfLog) {
+                $shelf = 'app\models\Shelf'::find()->where(['id' => $shelfLog["shelf_id"]])->one();
+                if ($shelf) {
+                    return $shelf->barcode;
+                }
+                else {
+                    return null;
+                }
+            },
+            'action',
+            'details',
+            'user' => function ($shelfLog) {
+                $user = 'app\models\User'::find()->where(['id' => $shelfLog["user_id"]])->one();
+                if ($user) {
+                    return $user->name;
+                }
+                else {
+                    return null;
+                }
+            },
+            'timestamp',
+            'currentActive' => function ($shelfLog) {
+                $shelf = 'app\models\Shelf'::find()->where(['id' => $shelfLog["shelf_id"]])->one();
+                if ($shelf) {
+                    return $shelf->active;
+                }
+                else {
+                    return null;
+                }
+            },
+            'currentFlag' => function ($shelfLog) {
+                $shelf = 'app\models\Shelf'::find()->where(['id' => $shelfLog["shelf_id"]])->one();
+                if ($shelf) {
+                    return $shelf->flag;
+                }
+                else {
+                    return null;
+                }
+            },
+        ];
+    }
+
     /**
      * {@inheritdoc}
      */
