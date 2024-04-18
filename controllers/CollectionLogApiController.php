@@ -70,7 +70,7 @@ class CollectionLogApiController extends ActiveController
                 ->andFilterWhere(['like', 'user.name', $userQ])
                 ->andFilterWhere(['>=', 'collection_log.timestamp', $timestampPost])
                 ->andFilterWhere(['<', 'collection_log.timestamp', $timestampAnte])
-                ->orderBy('collection_log.id')
+                ->orderBy(['collection_log.id' => SORT_DESC])
                 ->limit(100)->all();
             return $query;
         }

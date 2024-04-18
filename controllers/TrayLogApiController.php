@@ -70,7 +70,7 @@ class TrayLogApiController extends ActiveController
                 ->andFilterWhere(['like', 'user.name', $userQ])
                 ->andFilterWhere(['>=', 'tray_log.timestamp', $timestampPost])
                 ->andFilterWhere(['<', 'tray_log.timestamp', $timestampAnte])
-                ->orderBy('tray_log.id')
+                ->orderBy(['tray_log.id' => SORT_DESC])
                 ->limit(100)->all();
             return $query;
         }
