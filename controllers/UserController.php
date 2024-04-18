@@ -125,11 +125,10 @@ class UserController extends Controller
     public function actionGetUsers()
     {
         \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-        $modelClass = 'app\models\User';
         $token = $_REQUEST["access-token"];
-        $tokenCheck = $modelClass::find()->where(['access_token' => $token])->one();
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
         if ($tokenCheck['level'] >= 100) {
-            $users = $modelClass::find()->where(['>', 'level', 0])->all();
+            $users = User::find()->where(['>', 'level', 0])->all();
             return $users;
         } else {
             throw new \yii\web\ForbiddenHttpException('You are not authorized to see users');
@@ -139,12 +138,11 @@ class UserController extends Controller
     public function actionGetName()
     {
         \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-        $modelClass = 'app\models\User';
         $token = $_REQUEST["access-token"];
         $user_id = $_REQUEST["id"];
-        $tokenCheck = $modelClass::find()->where(['access_token' => $token])->one();
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
         if ($tokenCheck['level'] >= 35) {
-            $result = $modelClass::find()->where(['id' => $user_id])->andWhere(['>', 'level', 0])->one();
+            $result = User::find()->where(['id' => $user_id])->andWhere(['>', 'level', 0])->one();
             return array('id'=>$user_id, 'name'=>$result ? $result['name'] : null);
         } else {
             throw new \yii\web\ForbiddenHttpException('You are not authorized to see users');
@@ -190,6 +188,30 @@ class UserController extends Controller
             }
         } else {
             throw new \yii\web\ForbiddenHttpException('You are not authorized to delete users');
+        }
+    }
+
+    public function actionNameList()
+    {
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        $json = file_get_contents('php://input');
+        $data = json_decode($json, true);
+
+        if ($tokenCheck['level'] >= 60) {
+            $query = User::find()
+                ->andFilterWhere(['>', 'level', 0])
+                ->orderBy('name')
+                ->all();
+            // Use map/reduce to create just a list of names, no IDs or other info
+            $nameList = array_map(function($item) {
+                return $item->name;
+            }, $query);
+            return $nameList;
+        }
+        else {
+            throw new \yii\web\HttpException(403, 'You do not have permission to view users');
         }
     }
 }
