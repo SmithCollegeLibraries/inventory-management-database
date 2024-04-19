@@ -79,6 +79,27 @@ class TrayLogApiController extends ActiveController
         }
     }
 
+    public function actionActionsList()
+    {
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if ($tokenCheck['level'] >= 60) {
+            $results = $this->modelClass::find()
+                ->select('action')
+                ->distinct()
+                ->all();
+            // Use map/reduce on results and just return a list of the action strings
+            $actions = array_map(function($result) {
+                return $result->action;
+            }, $results);
+            return $actions;
+        }
+        else {
+            throw new \yii\web\HttpException(403, 'You do not have permission to view logs');
+        }
+    }
+
     public function actionBrowse()
     {
         $token = $_REQUEST["access-token"];
