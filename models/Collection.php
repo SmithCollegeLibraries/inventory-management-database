@@ -31,6 +31,7 @@ class Collection extends \yii\db\ActiveRecord
     {
         return [
             [['name'], 'required'],
+            [['folio_validated'], 'integer'],
             [['active'], 'integer'],
             [['name'], 'string', 'max' => 255],
             [['name'], 'unique'],
@@ -45,6 +46,7 @@ class Collection extends \yii\db\ActiveRecord
         return [
             'id' => 'ID',
             'name' => 'Name',
+            'folio_validated' => 'FOLIO-validated',
             'active' => 'Active',
         ];
     }

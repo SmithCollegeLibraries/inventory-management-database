@@ -10,6 +10,7 @@ use Yii;
  * @property int $id
  * @property string $barcode
  * @property string $item_in_folio
+ * @property string $timestamp
  */
 class FolioValidation extends \yii\db\ActiveRecord
 {
@@ -29,6 +30,7 @@ class FolioValidation extends \yii\db\ActiveRecord
         return [
             [['barcode'], 'string', 'max' => 20],
             [['barcode'], 'unique'],
+            [['timestamp'], 'safe'],
         ];
     }
 
@@ -41,6 +43,7 @@ class FolioValidation extends \yii\db\ActiveRecord
             'id' => 'ID',
             'barcode' => 'Item barcode',
             'item_in_folio' => 'Item in FOLIO?',
+            'timestamp' => 'Timestamp',
         ];
     }
 

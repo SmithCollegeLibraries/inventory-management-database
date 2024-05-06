@@ -29,6 +29,7 @@ SET time_zone = "+00:00";
 CREATE TABLE IF NOT EXISTS `collection` (
   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
+  `folio_validated` boolean NOT NULL DEFAULT TRUE,
   `active` boolean NOT NULL DEFAULT TRUE,
   PRIMARY KEY (id),
   UNIQUE (name)
@@ -125,6 +126,7 @@ CREATE TABLE IF NOT EXISTS `folio_validation` (
   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `barcode` varchar(20) NOT NULL,
   `item_in_folio` boolean DEFAULT NULL,
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE (barcode)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
