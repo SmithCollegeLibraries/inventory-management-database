@@ -452,6 +452,16 @@ class TrayApiController extends ActiveController
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
         if ($tokenCheck['level'] >= 30) {
+            // For archival boxes, the item is provided along with the other
+            // data, instead of being a pre-existing item. Create the item
+            // first along with the tray before shelving.
+            if ($data['item']) {
+                $item = $this->itemClass::find()->where(['barcode' => $data['item']])->one();
+                if ($item) {
+                    throw new \yii\web\HttpException(400, sprintf('Item %s already exists', $data['item']));
+                }
+                $this->actionNewTray();
+            }
             $newData = [
                 'barcode' => $data['tray'],
                 'shelf' => $data['shelf'],
