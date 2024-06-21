@@ -21,6 +21,10 @@
         "yiisoft/yii2-httpclient": ">=2.0",
         "yiisoft/yii2-shell": "^2.0"
     },
+    "require-dev": {
+      "yiisoft/yii2-debug": "~2.0",
+      "yiisoft/yii2-gii": "~2.0"
+    },
     "config": {
         "allow-plugins": {
             "yiisoft/yii2-composer" : true

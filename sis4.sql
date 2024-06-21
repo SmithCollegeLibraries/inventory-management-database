@@ -100,25 +100,6 @@ CREATE TABLE IF NOT EXISTS `item` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `picklist`
---
-
-CREATE TABLE IF NOT EXISTS `picklist` (
-  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `item_id` int(11) UNSIGNED NOT NULL,
-  `title` varchar(255),
-  `volume` varchar(31),
-  `user_id` int(11) UNSIGNED,
-  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  FOREIGN KEY (item_id) REFERENCES item(id),
-  FOREIGN KEY (user_id) REFERENCES user(id),
-  UNIQUE (item_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `folio_validation`
 --
 
@@ -149,6 +130,25 @@ CREATE TABLE IF NOT EXISTS `user` (
   PRIMARY KEY (id),
   FOREIGN KEY (default_collection) REFERENCES collection(id),
   UNIQUE (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `picklist`
+--
+
+CREATE TABLE IF NOT EXISTS `picklist` (
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `item_id` int(11) UNSIGNED NOT NULL,
+  `title` varchar(255),
+  `volume` varchar(31),
+  `user_id` int(11) UNSIGNED,
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  FOREIGN KEY (item_id) REFERENCES item(id),
+  FOREIGN KEY (user_id) REFERENCES user(id),
+  UNIQUE (item_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
