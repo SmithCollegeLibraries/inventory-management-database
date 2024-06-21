@@ -98,10 +98,10 @@ class TrayApiController extends ActiveController
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
         if ($tokenCheck['level'] >= 30) {
             // We expect barcodes in the form of an array, but if it's not, we'll make it one
-            if (!isset($data["items"]) || !is_array($data["items"])) {
+            if (!isset($data['items']) || !is_array($data['items'])) {
                 $barcodes = explode(PHP_EOL, $data['items']);
             } else {
-                $barcodes = $data["items"];
+                $barcodes = $data['items'];
             }
 
             $trayBarcode = $data['barcode'];
@@ -228,6 +228,34 @@ class TrayApiController extends ActiveController
         }
     }
 
+    private function findOrCreateShelf($shelfBarcode, $userId)
+    {
+        // If the shelf already exists, return it
+        $possibleShelf = \app\models\Shelf::find()->where(['barcode' => $shelfBarcode])->one();
+        if ($possibleShelf) {
+            return $possibleShelf;
+        }
+        else {
+            $shelf = new \app\models\Shelf;
+            $shelf->barcode = $shelfBarcode;
+            $shelf->row = substr($shelfBarcode, 0, 2);
+            $shelf->side = substr($shelfBarcode, 2, 1);
+            $shelf->ladder = substr($shelfBarcode, 3, 2);
+            $shelf->rung = substr($shelfBarcode, 5, 2);
+            $shelf->active = 1;
+            $shelf->save();
+
+            $shelfLog = new \app\models\ShelfLog;
+            $shelfLog->shelf_id = $shelf->id;
+            $shelfLog->action = 'Created';
+            $shelfLog->details = sprintf('Created shelf %s automatically', $shelf->barcode);
+            $shelfLog->user_id = $userId;
+            $shelfLog->save();
+
+            return $shelf;
+        }
+    }
+
     // If $flagsAllowed is set, certain anomalies will be allowed but
     // flagged and logged. This may happen when vendors are shelving using
     // the rapid shelve form, but aren't connected to the internet.
@@ -291,34 +319,14 @@ class TrayApiController extends ActiveController
         }
 
         // 4. If the shelf doesn't exist: with rapid shelve, this isn't a
-        // problem, though we do need to create the shelf on the fly.
+        // problem, we should have created the shelf on the fly already.
         // When editing a tray manually, we should create the shelf first
         // and confirm it exists, so we throw an error in that case.
         if ($shelf == null) {
-            if ($flagsAllowed == true) {
-                $shelfBarcode = $dataShelf;
-                $shelf = new \app\models\Shelf;
-                $shelf->barcode = $shelfBarcode;
-                $shelf->row = substr($shelfBarcode, 0, 2);
-                $shelf->side = substr($shelfBarcode, 2, 1);
-                $shelf->ladder = substr($shelfBarcode, 3, 2);
-                $shelf->rung = substr($shelfBarcode, 5, 2);
-                $shelf->active = 1;
-                $shelf->save();
-
-                $shelfLog = new \app\models\ShelfLog;
-                $shelfLog->shelf_id = $shelf->id;
-                $shelfLog->action = 'Created';
-                $shelfLog->details = sprintf('Created shelf %s automatically', $shelf->barcode);
-                $shelfLog->user_id = $userId;
-                $shelfLog->save();
-            }
-            else {
-                // You can clear the shelf field in the manual tray edit form,
-                // so it's not an error if this is a null string
-                if ($dataShelf != "") {
-                    throw new \yii\web\HttpException(400, sprintf('Shelf %s does not exist', $dataShelf));
-                }
+            // You can clear the shelf field in the manual tray edit form,
+            // so it's not an error if this is a null string
+            if ($dataShelf != "") {
+                throw new \yii\web\HttpException(400, sprintf('Shelf %s does not exist', $dataShelf));
             }
         }
 
@@ -452,16 +460,9 @@ class TrayApiController extends ActiveController
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
         if ($tokenCheck['level'] >= 30) {
-            // For archival boxes, the item is provided along with the other
-            // data, instead of being a pre-existing item. Create the item
-            // first along with the tray before shelving.
-            if ($data['item']) {
-                $item = $this->itemClass::find()->where(['barcode' => $data['item']])->one();
-                if ($item) {
-                    throw new \yii\web\HttpException(400, sprintf('Item %s already exists', $data['item']));
-                }
-                $this->actionNewTray();
-            }
+            // Create the shelf on the fly if necessary
+            $this->findOrCreateShelf($data['shelf'], $tokenCheck['id']);
+
             $newData = [
                 'barcode' => $data['tray'],
                 'shelf' => $data['shelf'],
@@ -475,6 +476,55 @@ class TrayApiController extends ActiveController
             throw new \yii\web\HttpException(403, 'You do not have permission to shelve trays');
         }
     }
+
+    // Wrapper function for adding and shelving an archival box (which is
+    // a tray with a single item, added via a combined accession/shelve
+    // form) to the system
+    public function actionNewBox()
+    {
+        $json = file_get_contents('php://input');
+        $data = json_decode($json, true);
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if ($tokenCheck['level'] >= 30) {
+            // Create the shelf on the fly if it doesn't exist
+            if ($data['shelf']) {
+                $shelf = $this->findOrCreateShelf($data['shelf'], $tokenCheck['id']);
+            }
+            else {
+                throw new \yii\web\HttpException(400, 'No shelf provided');
+            }
+
+            // For archival boxes, the item is provided along with the other
+            // data, instead of being a pre-existing item. Create the item
+            // first along with the tray before shelving.
+            if ($data['items']) {
+                $itemBarcode = $data['items'][0];
+                $item = $this->itemClass::find()->where(['barcode' => $itemBarcode])->one();
+                if ($item) {
+                    throw new \yii\web\HttpException(400, sprintf('Item %s already exists', $itemBarcode));
+                }
+                $this->actionNewTray();
+            }
+            else {
+                throw new \yii\web\HttpException(400, 'No item provided');
+            }
+
+            $newData = [
+                'barcode' => $data['tray'],
+                'shelf' => $data['shelf'],
+                'depth' => $data['depth'],
+                'position' => $data['position']
+            ];
+            $tray = $this->handleTrayUpdate($newData, $tokenCheck['id'], true);
+            return $tray;
+        }
+        else {
+            throw new \yii\web\HttpException(403, 'You do not have permission to add or shelve trays');
+        }
+    }
+
 
     // Deleting a tray deletes all its items as well. They can be restored
     // or added to the system again, but for the time being they are not
