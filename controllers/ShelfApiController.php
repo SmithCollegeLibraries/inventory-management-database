@@ -75,32 +75,12 @@ class ShelfApiController extends ActiveController
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
         if ($tokenCheck['level'] >= 60) {
             $shelfBarcode = array_key_exists('barcode', $data) ? $data['barcode'] : '';
-            $shelfRow = array_key_exists('row', $data) ? $data['row'] : '';
-            $shelfSide = array_key_exists('side', $data) ? $data['side'] : '';
-            $shelfLadder = array_key_exists('ladder', $data) ? $data['ladder'] : '';
-            $shelfRung = array_key_exists('rung', $data) ? $data['rung'] : '';
 
-            // If the row, side, ladder or rung are not provided, fill them
-            // in from the barcode
-            if ($shelfBarcode != '') {
-                if ($shelfRow == '') {
-                    $shelfRow = substr($shelfBarcode, 0, 2);
-                }
-                if ($shelfSide == '') {
-                    $shelfSide = substr($shelfBarcode, 2, 1);
-                }
-                if ($shelfLadder == '') {
-                    $shelfLadder = substr($shelfBarcode, 3, 2);
-                }
-                if ($shelfRung == '') {
-                    $shelfRung = substr($shelfBarcode, 5, 2);
-                }
-            }
-
-            // And vice versa
-            else if ($data['row'] != '' and $data['side'] != '' and $data['ladder'] != '' and $data['rung'] != '') {
-                $shelfBarcode = sprintf('%s%s%s%s', $data['row'], $data['side'], $data['ladder'], $data['rung']);
-            }
+            // Fill in row, side, ladder and rung from the barcode
+            $shelfRow = substr($shelfBarcode, 0, 2);
+            $shelfSide = substr($shelfBarcode, 2, 1);
+            $shelfLadder = substr($shelfBarcode, 3, 2);
+            $shelfRung = substr($shelfBarcode, 5, 2);
 
             // If shelf already exists, return error
             if (\app\models\Shelf::find()->where(['barcode' => $shelfBarcode])->andWhere(['active' => true])->all() != []) {
