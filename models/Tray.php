@@ -63,23 +63,8 @@ class Tray extends \yii\db\ActiveRecord
                     return null;
                 }
             },
-            'items' => function ($tray) {
-                $items = $this->getItems()->where(["active" => true])->all();
-                $itemArray = [];
-                foreach ($items as $item) {
-                    $itemArray[] = $item->barcode;
-                }
-                return $itemArray;
-            },
-            'trayer' => function ($tray) {
-                $trayLog = 'app\models\TrayLog'::find()->where(['tray_id' => $tray["id"], 'action' => ["Added", "Restored"]])->orderBy(['id' => SORT_DESC])->one();
-                if ($trayLog) {
-                    return $trayLog->user->name;
-                }
-                else {
-                    return null;
-                }
-            },
+            'items' => function ($tray) { return $this->getItemBarcodes(); },
+            'trayer' => function ($tray) { return $this->getTrayer(); },
             'created',
             'updated',
         ];
@@ -108,7 +93,22 @@ class Tray extends \yii\db\ActiveRecord
      */
     public function getItems()
     {
-        return $this->hasMany(Item::class, ['tray_id' => 'id']);
+        return $this->hasMany(Item::class, ['tray_id' => 'id'])->select(['id', 'barcode', 'status', 'collection_id', 'active', 'flag']);
+    }
+
+    /**
+     * Gets query for [[ItemBarcodes]].
+     *
+     * @return array
+     */
+    public function getItemBarcodes()
+    {
+        $items = $this->hasMany(Item::class, ['tray_id' => 'id'])->select(['id', 'barcode', 'status', 'flag'])->where(["active" => true])->all();
+        $itemArray = [];
+        foreach ($items as $item) {
+            $itemArray[] = array("id" => $item->id, "barcode" => $item->barcode, "status" => $item->status, "flag" => $item->flag);
+        }
+        return $itemArray;
     }
 
     /**
@@ -130,4 +130,21 @@ class Tray extends \yii\db\ActiveRecord
     {
         return $this->hasMany(TrayLog::class, ['tray_id' => 'id']);
     }
+
+    /**
+     * Gets query for [[Trayer]].
+     * 
+     * @return string|null
+     */
+
+     public function getTrayer()
+     {
+         $trayLog = TrayLog::find()->where(['tray_id' => $this->id, 'action' => ["Added", "Restored"]])->orderBy(['id' => SORT_DESC])->one();
+         if ($trayLog) {
+             return $trayLog->user->name;
+         }
+         else {
+             return null;
+         }
+     }
 }
