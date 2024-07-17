@@ -165,7 +165,18 @@ class ShelfApiController extends ActiveController
         }
     }
 
+    public function actionTotalCount()
+    {
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if ($tokenCheck['level'] >= 20) {
+            $totalCount = $this->modelClass::find()->where(['active' => 1])->count();
+            return $totalCount;
+        }
+        else {
+            throw new \yii\web\HttpException(403, 'You do not have permission to view the total count.');
+        }
+    }
 
 }
-
-
