@@ -60,7 +60,13 @@ class Shelf extends \yii\db\ActiveRecord
                 $trays = $this->getTrays()->where(["active" => true])->all();
                 $trayArray = [];
                 foreach ($trays as $tray) {
-                    $trayArray[] = $tray->barcode;
+                    $trayArray[] = array(
+                        "depth" => $tray->depth,
+                        "position" => $tray->position,
+                        "barcode" => $tray->barcode,
+                        "trayer" => $tray->getTrayer(),
+                        "items" => $tray->getItemBarcodes(),
+                    );
                 }
                 return $trayArray;
             },

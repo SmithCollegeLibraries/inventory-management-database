@@ -156,6 +156,35 @@ class ShelfApiController extends ActiveController
         }
     }
 
+    public function actionSearch()
+    {
+        $barcode = isset($_REQUEST["query"]) ? $_REQUEST["query"] : "";
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if ($tokenCheck['level'] >= 20) {
+            // If a barcode has been provided, search by barcode and return
+            // up to 20 results
+            $provider = new ActiveDataProvider([
+                'query' => $this->modelClass::find()
+                    ->where(['like', 'barcode', $barcode])
+                    ->andWhere(['active' => true]),
+                'sort' => [
+                    'defaultOrder' => [
+                        'barcode' => SORT_ASC,
+                    ]
+                ],
+                'pagination' => [
+                    'pageSize' => 32,
+                ],
+            ]);
+            return $provider->getModels();
+        }
+        else {
+            throw new \yii\web\HttpException(403, 'You do not have permission to view shelves');
+        }
+    }
+
 
 }
 

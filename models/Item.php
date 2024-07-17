@@ -62,7 +62,6 @@ class Item extends \yii\db\ActiveRecord
                         "position" => $tray->position,
                     ];
                 }
-                return $tray;
             },
             'collection' => function ($item) {
                 $collection = 'app\models\Collection'::find()->where(['id' => $item["collection_id"]])->one();
