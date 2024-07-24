@@ -147,7 +147,7 @@ class ShelfApiController extends ActiveController
             // up to 20 results
             $provider = new ActiveDataProvider([
                 'query' => $this->modelClass::find()
-                    ->where(['like', 'barcode', $barcode])
+                    ->where(['like', 'barcode', $barcode, false])
                     ->andWhere(['active' => true]),
                 'sort' => [
                     'defaultOrder' => [
