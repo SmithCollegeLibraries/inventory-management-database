@@ -143,8 +143,6 @@ class ShelfApiController extends ActiveController
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
         if ($tokenCheck['level'] >= 20) {
-            // If a barcode has been provided, search by barcode and return
-            // up to 20 results
             $provider = new ActiveDataProvider([
                 'query' => $this->modelClass::find()
                     ->where(['like', 'barcode', $barcode, false])
@@ -154,6 +152,7 @@ class ShelfApiController extends ActiveController
                         'barcode' => SORT_ASC,
                     ]
                 ],
+                'pagination' => false,
             ]);
             return $provider->getModels();
         }
