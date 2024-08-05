@@ -152,7 +152,9 @@ class ShelfApiController extends ActiveController
                         'barcode' => SORT_ASC,
                     ]
                 ],
-                'pagination' => false,
+                'pagination' => [
+                    'pageSize' => 60,
+                ],
             ]);
             return $provider->getModels();
         }
