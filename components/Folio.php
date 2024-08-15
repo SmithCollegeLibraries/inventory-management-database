@@ -54,6 +54,8 @@ class Folio
                 $ANNEX_LOCATION_IDS = [
                     "5eb79fcc-af08-4ae1-9ab3-dde11e330a01",
                     "ed12a1d9-33e7-4c62-8daf-485e7d2369c3",
+                    "0bd310b3-17b0-41cd-8ebb-09715ca36958",
+                    "95f387cc-ce27-4243-9c9c-b9bc26412c13",
                 ];
                 return [
                     "barcode" => $barcode,
