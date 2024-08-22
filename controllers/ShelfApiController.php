@@ -138,14 +138,22 @@ class ShelfApiController extends ActiveController
 
     public function actionSearch()
     {
-        $barcode = isset($_REQUEST["query"]) ? $_REQUEST["query"] : "";
+        $shelfBarcode = isset($_REQUEST["shelf"]) ? $_REQUEST["shelf"] : '';
+        $trayBarcode = isset($_REQUEST["tray"]) ? $_REQUEST["tray"] : '';
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
         if ($tokenCheck['level'] >= 20) {
+            $shelfFromTray = \app\models\Tray::find()
+                ->where(['like', 'barcode', $trayBarcode])
+                ->andWhere(['active' => true])
+                ->one() ?? null;
+            $secondShelfBarcode = $shelfFromTray ? $shelfFromTray->shelf->barcode : '';
             $provider = new ActiveDataProvider([
                 'query' => $this->modelClass::find()
-                    ->where(['like', 'barcode', $barcode, false])
+                    ->where(['like', 'barcode', $shelfBarcode, false])
+                    ->andWhere(['active' => true])
+                    ->orWhere(['like', 'barcode', $secondShelfBarcode])
                     ->andWhere(['active' => true]),
                 'sort' => [
                     'defaultOrder' => [
