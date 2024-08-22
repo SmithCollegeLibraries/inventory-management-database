@@ -168,12 +168,27 @@ class ShelfApiController extends ActiveController
                 ]);
                 return $provider->getModels();
             }
+            else if ($trayBarcode == '') {
+                $provider = new ActiveDataProvider([
+                    'query' => $this->modelClass::find()
+                        ->where(['like', 'barcode', $shelfBarcode, false])
+                        ->andWhere(['active' => true]),
+                    'sort' => [
+                        'defaultOrder' => [
+                            'barcode' => SORT_ASC,
+                        ]
+                    ],
+                    'pagination' => [
+                        'pageSize' => 60,
+                    ],
+                ]);
+                return $provider->getModels();
+            }
             else {
                 $provider = new ActiveDataProvider([
                     'query' => $this->modelClass::find()
                         ->where(['like', 'barcode', $shelfBarcode, false])
-                        ->andWhere(['active' => true])
-                        ->orWhere(['barcode' => $secondShelfBarcode])
+                        ->andWhere(['barcode' => $secondShelfBarcode])
                         ->andWhere(['active' => true]),
                     'sort' => [
                         'defaultOrder' => [
