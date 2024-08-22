@@ -138,33 +138,54 @@ class ShelfApiController extends ActiveController
 
     public function actionSearch()
     {
-        $shelfBarcode = isset($_REQUEST["shelf"]) ? $_REQUEST["shelf"] : '';
+        $shelfBarcode = isset($_REQUEST["shelf"]) ? str_replace('-', '_', $_REQUEST["shelf"]) : "_______";
         $trayBarcode = isset($_REQUEST["tray"]) ? $_REQUEST["tray"] : '';
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
         if ($tokenCheck['level'] >= 20) {
             $shelfFromTray = \app\models\Tray::find()
-                ->where(['like', 'barcode', $trayBarcode])
+                ->where(['barcode' => $trayBarcode])
                 ->andWhere(['active' => true])
-                ->one() ?? null;
+                ->one();
             $secondShelfBarcode = $shelfFromTray ? $shelfFromTray->shelf->barcode : '';
-            $provider = new ActiveDataProvider([
-                'query' => $this->modelClass::find()
-                    ->where(['like', 'barcode', $shelfBarcode, false])
-                    ->andWhere(['active' => true])
-                    ->orWhere(['like', 'barcode', $secondShelfBarcode])
-                    ->andWhere(['active' => true]),
-                'sort' => [
-                    'defaultOrder' => [
-                        'barcode' => SORT_ASC,
-                    ]
-                ],
-                'pagination' => [
-                    'pageSize' => 60,
-                ],
-            ]);
-            return $provider->getModels();
+            // If a tray barcode is provided but no shelf barcode,
+            // search just by the tray barcode; otherwise, 60 shelves
+            // will be returned
+            if ($shelfBarcode == "_______" && $trayBarcode != '') {
+                $provider = new ActiveDataProvider([
+                    'query' => $this->modelClass::find()
+                        ->where(['barcode' => $secondShelfBarcode])
+                        ->andWhere(['active' => true]),
+                    'sort' => [
+                        'defaultOrder' => [
+                            'barcode' => SORT_ASC,
+                        ]
+                    ],
+                    'pagination' => [
+                        'pageSize' => 60,
+                    ],
+                ]);
+                return $provider->getModels();
+            }
+            else {
+                $provider = new ActiveDataProvider([
+                    'query' => $this->modelClass::find()
+                        ->where(['like', 'barcode', $shelfBarcode, false])
+                        ->andWhere(['active' => true])
+                        ->orWhere(['barcode' => $secondShelfBarcode])
+                        ->andWhere(['active' => true]),
+                    'sort' => [
+                        'defaultOrder' => [
+                            'barcode' => SORT_ASC,
+                        ]
+                    ],
+                    'pagination' => [
+                        'pageSize' => 60,
+                    ],
+                ]);
+                return $provider->getModels();
+            }
         }
         else {
             throw new \yii\web\HttpException(403, 'You do not have permission to view shelves');
