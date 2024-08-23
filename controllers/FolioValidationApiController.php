@@ -86,4 +86,30 @@ class FolioValidationApiController extends ActiveController
         }
         return true;
     }
+
+    public function actionAddItemsToValidationList()
+    {
+        $flag = false;
+        $modelClass = 'app\models\FolioValidation';
+        $collections = \app\models\Collection::find()
+                ->where(['folio_validated' => 0])
+                ->andWhere(['active' => 1])
+                ->all();
+        foreach ($collections as $collection) {
+            $items = \app\models\Item::find()
+                    ->where(['collection_id' => $collection->id])
+                    ->andWhere(['active' => 1])
+                    ->all();
+            foreach ($items as $item) {
+                // Make sure the item isn't already in the validation list
+                if ($modelClass::find()->where(['barcode' => $item->barcode])->count() == 0) {
+                    $flag = true;
+                    $folioValidation = new $modelClass;
+                    $folioValidation->barcode = $item->barcode;
+                    $folioValidation->save();
+                }
+            }
+        }
+        return $flag;
+    }
 }
