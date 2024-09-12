@@ -63,6 +63,7 @@ class Tray extends \yii\db\ActiveRecord
                     return null;
                 }
             },
+            'full_count',
             'items' => function ($tray) { return $this->getItemBarcodes(); },
             'trayer' => function ($tray) { return $this->getTrayer(); },
             'created',
@@ -81,6 +82,7 @@ class Tray extends \yii\db\ActiveRecord
             'shelf_id' => 'Shelf ID',
             'depth' => 'Depth',
             'position' => 'Position from left',
+            'full_count' => 'Full count',
             'active' => 'Active',
             'flag' => 'Flag',
         ];
@@ -133,7 +135,7 @@ class Tray extends \yii\db\ActiveRecord
 
     /**
      * Gets query for [[Trayer]].
-     * 
+     *
      * @return string|null
      */
 

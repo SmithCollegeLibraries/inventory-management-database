@@ -152,12 +152,14 @@ class TrayApiController extends ActiveController
             $shelf = isset($data['shelf']) ? $data['shelf'] : null;
             $depth = isset($data['depth']) && $data['depth'] ? $data['depth'] : null;
             $position = isset($data['position']) && $data['position'] ? $data['position'] : null;
+            $full_count = isset($data['full_count']) ? $data['full_count'] : null;
             if ($tray->shelf_id != $shelfId || $tray->depth != $depth || $tray->position != $position) {
                 $this->handleTrayUpdate([
                     'barcode' => $trayBarcode,
                     'shelf' => $shelf,
                     'depth' => $depth,
-                    'position' => $position
+                    'position' => $position,
+                    'full_count' => $full_count
                 ], $tokenCheck['id'], false);
             }
 
@@ -271,6 +273,7 @@ class TrayApiController extends ActiveController
         $dataShelf = isset($data['shelf']) ? $data['shelf'] : null;
         $dataDepth = isset($data['depth']) ? $data['depth'] : null;
         $dataPosition = isset($data['position']) ? intval($data['position']) : 0;
+        $dataFullCount = isset($data['full_count']) ? $data['full_count'] : null;
         $tray = $this->modelClass::find()->where(['barcode' => $trayBarcode])->one();
         $shelf = \app\models\Shelf::find()->where(['barcode' => $dataShelf])->one();
 
@@ -385,6 +388,11 @@ class TrayApiController extends ActiveController
                 $tray->position = $dataPosition;
                 $logDetails[] = sprintf("position %s", $dataPosition);
             }
+        }
+        // Full count
+        if ($dataFullCount != $tray->full_count) {
+            $tray->full_count = $dataFullCount;
+            $logDetails[] = sprintf("full count %s", $dataFullCount);
         }
         // Flag
         if ($flag == true) {
