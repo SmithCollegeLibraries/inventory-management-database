@@ -523,7 +523,8 @@ class TrayApiController extends ActiveController
                 'barcode' => $data['tray'],
                 'shelf' => $data['shelf'],
                 'depth' => $data['depth'],
-                'position' => $data['position']
+                'position' => $data['position'],
+                'full_count' => 1
             ];
             $tray = $this->handleTrayUpdate($newData, $tokenCheck['id'], true);
             return $tray;
