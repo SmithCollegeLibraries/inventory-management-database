@@ -152,14 +152,14 @@ class TrayApiController extends ActiveController
             $shelf = isset($data['shelf']) ? $data['shelf'] : null;
             $depth = isset($data['depth']) && $data['depth'] ? $data['depth'] : null;
             $position = isset($data['position']) && $data['position'] ? $data['position'] : null;
-            $full_count = isset($data['full_count']) ? $data['full_count'] : null;
-            if ($tray->shelf_id != $shelfId || $tray->depth != $depth || $tray->position != $position) {
+            $fullCount = isset($data['full_count']) && $data['full_count'] ? $data['full_count'] : null;
+            if ($tray->shelf_id != $shelfId || $tray->depth != $depth || $tray->position != $position || $tray->full_count != $fullCount) {
                 $this->handleTrayUpdate([
                     'barcode' => $trayBarcode,
                     'shelf' => $shelf,
                     'depth' => $depth,
                     'position' => $position,
-                    'full_count' => $full_count
+                    'full_count' => $fullCount
                 ], $tokenCheck['id'], false);
             }
 
