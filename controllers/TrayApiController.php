@@ -600,17 +600,50 @@ class TrayApiController extends ActiveController
 
     public function actionSearch()
     {
-        $barcode = isset($_REQUEST["query"]) ? $_REQUEST["query"] : null;
+        $barcode = isset($_REQUEST["barcode"]) ? $_REQUEST["barcode"] : null;
+        $freeSpace = isset($_REQUEST["free_space"]) ? $_REQUEST["free_space"] : null;
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        // TODO: Get this from settings, or from the average size
+        // defined on each tray/shelf size
+        $averageCount = 16;
 
         if ($tokenCheck['level'] >= 20) {
             // If a barcode has been provided, search by barcode and return
             // up to 20 results
+            $query = $this->modelClass::find()
+                ->select(['tray.*', 'COUNT(item.id) AS total_items', 'full_count - COUNT(item.id) AS free_space'])
+                ->leftJoin('item', 'tray.id = item.tray_id')
+                ->groupBy('tray.id')
+                ->andWhere(['item.active' => true])
+                ->andWhere(['tray.active' => true]);
+            if ($barcode) {
+                $query->andWhere(['like', 'tray.barcode', $barcode]);
+            }
+            // If we're searching for free space at all
+            if ($freeSpace) {
+                // With finding trays with ANY space, include all trays
+                // with a null full count, as well as any that definitely
+                // have room
+                if ($freeSpace <= 1) {
+                    $query->having(['or',
+                        ['>=', 'free_space', $freeSpace],
+                        ['full_count' => null]
+                    ]);
+                }
+                // If we are searching for a more specific amount of space,
+                // only include trays that have that amount of space, or are
+                // likely to do so given tray averages
+                else {
+                    $query->having(['or',
+                        ['>=', 'free_space', $freeSpace],
+                        ['and', ['full_count' => null], ['<=', 'total_items', $averageCount - $freeSpace]]
+                    ]);
+                }
+            }
             $provider = new ActiveDataProvider([
-                'query' => $this->modelClass::find()
-                    ->where(['like', 'barcode', $barcode])
-                    ->andWhere(['active' => true]),
+                'query' => $query,
                 'sort' => [
                     'defaultOrder' => [
                         'updated' => SORT_DESC,

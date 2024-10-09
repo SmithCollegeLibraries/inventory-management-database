@@ -157,7 +157,7 @@ class Tray extends \yii\db\ActiveRecord
      *
      * @return int
      */
-    public function getFreeSpace($tray) {
+    public function getFreeSpace() {
         if ($this->full_count == null) {
             return null;
         }
