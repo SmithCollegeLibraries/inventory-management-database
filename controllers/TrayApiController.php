@@ -434,6 +434,9 @@ class TrayApiController extends ActiveController
             $flagLog->save();
         }
 
+        // If the tray is overfull, flag it
+        $this->flagTrayIfOverfull($tray->barcode, $userId);
+
         return $tray;
     }
 
@@ -593,19 +596,6 @@ class TrayApiController extends ActiveController
         }
     }
 
-    // public function actionViewAllTrays() {
-    //     $token = $_REQUEST["access-token"];
-    //     $tokenCheck = User::find()->where(['access_token' => $token])->one();
-    //
-    //     if ($tokenCheck['level'] >= 20) {
-    //         $trays = $this->modelClass::find()->all();
-    //         return $trays;
-    //     }
-    //     else {
-    //         throw new \yii\web\HttpException(403, 'You do not have permission to view trays');
-    //     }
-    // }
-
     public function actionSearch()
     {
         $barcode = isset($_REQUEST["query"]) ? $_REQUEST["query"] : null;
@@ -749,6 +739,25 @@ class TrayApiController extends ActiveController
         }
         else {
             throw new \yii\web\HttpException(403, 'You do not have permission to view the total count.');
+        }
+    }
+
+    public static function flagTrayIfOverfull($trayBarcode, $userId)
+    {
+        $tray = \app\models\Tray::find()->where(['barcode' => $trayBarcode])->one();
+        if ($tray) {
+            $currentTrayCount = count($tray->getItems()->asArray()->all());
+            if ($currentTrayCount > $tray->full_count) {
+                $tray->flag = 1;
+                $tray->save();
+
+                $trayLog = new \app\models\TrayLog;
+                $trayLog->tray_id = $tray->id;
+                $trayLog->action = 'Flagged';
+                $trayLog->details = sprintf("Tray %s overfilled", $tray->barcode);
+                $trayLog->user_id = $userId;
+                $trayLog->save();
+            }
         }
     }
 

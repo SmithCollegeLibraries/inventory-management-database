@@ -11,7 +11,6 @@ use app\models\Collection;
 use app\models\Tray;
 use app\models\User;
 use app\models\OldBarcodeTray;
-use app\models\FolioValidation;
 
 
 class ItemApiController extends ActiveController
@@ -356,6 +355,9 @@ class ItemApiController extends ActiveController
             $flagLog->save();
         }
 
+        // Check whether the tray is overfull, and if so, flag it.
+        \app\controllers\TrayApiController::flagTrayIfOverfull($item->tray->barcode, $userId);
+
         return $item;
     }
 
@@ -488,6 +490,9 @@ class ItemApiController extends ActiveController
         // than the Annex, or marked as something other than Available.
         // If so, flag it.
         \app\components\Folio::handleMarkFolioAnomaly($item, $userId);
+
+        // Check whether the tray is overfull, and if so, flag it.
+        \app\controllers\TrayApiController::flagTrayIfOverfull($tray->barcode, $userId);
 
         return $item;
     }
