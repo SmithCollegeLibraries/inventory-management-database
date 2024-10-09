@@ -64,6 +64,7 @@ class Tray extends \yii\db\ActiveRecord
                 }
             },
             'full_count',
+            'free_space' => function ($tray) { return $this->getFreeSpace($tray); },
             'items' => function ($tray) { return $this->getItemBarcodes(); },
             'trayer' => function ($tray) { return $this->getTrayer(); },
             'created',
@@ -83,6 +84,7 @@ class Tray extends \yii\db\ActiveRecord
             'depth' => 'Depth',
             'position' => 'Position from left',
             'full_count' => 'Full count',
+            'free_space' => 'Free space',
             'active' => 'Active',
             'flag' => 'Flag',
         ];
@@ -149,4 +151,16 @@ class Tray extends \yii\db\ActiveRecord
              return null;
          }
      }
+
+    /**
+     * Gets query for [[FreeSpace]].
+     *
+     * @return int
+     */
+    public function getFreeSpace($tray) {
+        if ($this->full_count == null) {
+            return null;
+        }
+        return $this->full_count - count($this->getItemBarcodes());
+    }
 }

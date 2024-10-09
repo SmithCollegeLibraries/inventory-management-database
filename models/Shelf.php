@@ -66,6 +66,7 @@ class Shelf extends \yii\db\ActiveRecord
                         "barcode" => $tray->barcode,
                         "trayer" => $tray->getTrayer(),
                         "items" => $tray->getItemBarcodes(),
+                        "freeSpace" => $tray->getFreeSpace($tray),
                         "flag" => $tray->flag,
                     );
                 }
