@@ -272,7 +272,7 @@ class TrayApiController extends ActiveController
         $trayBarcode = $data['barcode'];
         $dataShelf = isset($data['shelf']) ? $data['shelf'] : null;
         $dataDepth = isset($data['depth']) ? $data['depth'] : null;
-        $dataPosition = isset($data['position']) ? intval($data['position']) : 0;
+        $dataPosition = isset($data['position']) ? intval($data['position']) : null;
         $dataFullCount = isset($data['full_count']) ? $data['full_count'] : null;
         $tray = $this->modelClass::find()->where(['barcode' => $trayBarcode])->one();
         $shelf = \app\models\Shelf::find()->where(['barcode' => $dataShelf])->one();
@@ -358,41 +358,43 @@ class TrayApiController extends ActiveController
             $tray->barcode = $data['new_barcode'];
             $logDetails[] = sprintf("barcode %s", $data['new_barcode']);
         }
+
+        // In each case, don't make any changes if a given parameter wasn't
+        // provided -- but do clear to null if an empty string or 0 was provided
+
         // Shelf
-        if (isset($tray->shelf)) {
-            // Don't do anything if the shelf is unchanged
-            if ($dataShelf != $tray->shelf->barcode) {
+        if (!is_null($dataShelf)) {
+            // If there is a current shelf and the new shelf is different/null
+            if (isset($tray->shelf) && $dataShelf != $tray->shelf->barcode) {
                 $tray->shelf_id = $shelf == null ? null : $shelf->id;
                 $logDetails[] = sprintf("shelf %s", $shelf == null ? "null" : $dataShelf);
             }
-        }
-        else {
-            // Don't do anything if the new shelf is null and the shelf was already null
-            if ($shelf) {
+            // If there is no current shelf and there is a new one
+            else if (!isset($tray->shelf) && $shelf) {
                 $tray->shelf_id = $shelf->id;
                 $logDetails[] = sprintf("shelf %s", $dataShelf);
             }
         }
         // Depth
-        if ($dataDepth != $tray->depth) {
-            $tray->depth = $dataDepth;
-            $logDetails[] = sprintf("depth %s", $dataDepth ? $dataDepth : "null");
+        if (!is_null($dataDepth)) {
+            if ($dataDepth != $tray->depth) {
+                $tray->depth = $dataDepth ? $dataDepth : null;
+                $logDetails[] = sprintf("depth %s", $dataDepth ? $dataDepth : "null");
+            }
         }
         // Position
-        if ($dataPosition != $tray->position) {
-            if (!$dataPosition) {
-                $tray->position = null;
-                $logDetails[] = sprintf("position null");
-            }
-            else {
-                $tray->position = $dataPosition;
-                $logDetails[] = sprintf("position %s", $dataPosition);
+        if (!is_null($dataPosition)) {
+            if ($dataPosition != $tray->position) {
+                $tray->position = $dataPosition ? $dataPosition : null;
+                $logDetails[] = sprintf("position %s", $dataPosition ? $dataPosition : "null");
             }
         }
         // Full count
-        if ($dataFullCount != $tray->full_count) {
-            $tray->full_count = $dataFullCount;
-            $logDetails[] = sprintf("full count %s", $dataFullCount);
+        if (!is_null($dataFullCount)) {
+            if ($dataFullCount != $tray->full_count) {
+                $tray->full_count = $dataFullCount ? $dataFullCount : null;
+                $logDetails[] = sprintf("full count %s", $dataFullCount ? $dataFullCount : "null");
+            }
         }
         // Flag
         if ($flag == true) {
