@@ -213,6 +213,7 @@ class ItemApiController extends ActiveController
         // Get the item and related info
         $itemBarcode = $data['barcode'];
         $trayBarcode = isset($data['tray']) ? $data['tray'] : null;
+        $newTrayBarcode = isset($data['new_tray']) ? $data['new_tray'] : null;
         $collection = isset($data['collection']) ? $data['collection'] : null;
         $status = isset($data['status']) ? $data['status'] : null;
         $item = $this->modelClass::find()->where(['barcode' => $itemBarcode])->one();
@@ -230,7 +231,7 @@ class ItemApiController extends ActiveController
         // one, check that it's not already in use (this doesn't happen with
         // the rapid shelve form), and also check that it is in FOLIO --
         // if it isn't in FOLIO, we can change it, but flag it.
-        if (isset($data['new_barcode']) && $data['new_barcode'] != $data['barcode']) {
+        if ($newTrayBarcode && $newTrayBarcode != $data['barcode']) {
             $itemCheck = $this->modelClass::find()->where(['barcode' => $data["new_barcode"]])->one();
             if ($itemCheck != null) {
                 if ($itemCheck->active == false) {
@@ -356,7 +357,7 @@ class ItemApiController extends ActiveController
         }
 
         // Check whether the tray is overfull, and if so, flag it.
-        \app\controllers\TrayApiController::flagTrayIfOverfull($item->tray->barcode, $userId);
+        \app\controllers\TrayApiController::flagTrayIfOverfull($newTrayBarcode ? $newTrayBarcode : $trayBarcode, $userId);
 
         return $item;
     }
@@ -492,7 +493,7 @@ class ItemApiController extends ActiveController
         \app\components\Folio::handleMarkFolioAnomaly($item, $userId);
 
         // Check whether the tray is overfull, and if so, flag it.
-        \app\controllers\TrayApiController::flagTrayIfOverfull($tray->barcode, $userId);
+        \app\controllers\TrayApiController::flagTrayIfOverfull($trayBarcode, $userId);
 
         return $item;
     }
