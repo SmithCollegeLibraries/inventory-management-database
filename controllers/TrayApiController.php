@@ -437,7 +437,7 @@ class TrayApiController extends ActiveController
         }
 
         // If the tray is overfull, flag it
-        $this->flagTrayIfOverfull($tray->barcode, $userId);
+        $tray->flagTrayIfOverfull($userId);
 
         return $tray;
     }
@@ -774,25 +774,6 @@ class TrayApiController extends ActiveController
         }
         else {
             throw new \yii\web\HttpException(403, 'You do not have permission to view the total count.');
-        }
-    }
-
-    public static function flagTrayIfOverfull($trayBarcode, $userId)
-    {
-        $tray = \app\models\Tray::find()->where(['barcode' => $trayBarcode])->one();
-        if ($tray) {
-            $currentTrayCount = count($tray->getItems()->asArray()->all());
-            if ($currentTrayCount > $tray->full_count) {
-                $tray->flag = 1;
-                $tray->save();
-
-                $trayLog = new \app\models\TrayLog;
-                $trayLog->tray_id = $tray->id;
-                $trayLog->action = 'Flagged';
-                $trayLog->details = sprintf("Tray %s overfilled", $tray->barcode);
-                $trayLog->user_id = $userId;
-                $trayLog->save();
-            }
         }
     }
 

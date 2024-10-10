@@ -163,4 +163,20 @@ class Tray extends \yii\db\ActiveRecord
         }
         return $this->full_count - count($this->getItemBarcodes());
     }
+
+    public function flagTrayIfOverfull($userId)
+    {
+        $currentTrayCount = count($this->getItems()->asArray()->all());
+        if ($currentTrayCount > $this->full_count) {
+            $this->flag = 1;
+            $this->save();
+
+            $trayLog = new \app\models\TrayLog;
+            $trayLog->tray_id = $this->id;
+            $trayLog->action = 'Flagged';
+            $trayLog->details = sprintf("Tray %s overfilled", $this->barcode);
+            $trayLog->user_id = $userId;
+            $trayLog->save();
+        }
+    }
 }

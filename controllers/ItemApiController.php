@@ -358,7 +358,8 @@ class ItemApiController extends ActiveController
         }
 
         // Check whether the tray is overfull, and if so, flag it.
-        \app\controllers\TrayApiController::flagTrayIfOverfull($newTrayBarcode ? $newTrayBarcode : $trayBarcode, $userId);
+        $tray = Tray::find()->where(['id' => $item->tray_id])->one();
+        $tray->flagTrayIfOverfull($userId);
 
         return $item;
     }
@@ -494,7 +495,8 @@ class ItemApiController extends ActiveController
         \app\components\Folio::handleMarkFolioAnomaly($item, $userId);
 
         // Check whether the tray is overfull, and if so, flag it.
-        \app\controllers\TrayApiController::flagTrayIfOverfull($trayBarcode, $userId);
+        $tray = Tray::find()->where(['id' => $item->tray_id])->one();
+        $tray->flagTrayIfOverfull($userId);
 
         return $item;
     }
