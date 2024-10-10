@@ -222,7 +222,7 @@ class ItemApiController extends ActiveController
         // Here are the anomalies where we throw an error.
 
         // If the item doesn't exist
-        if ($item == null) {
+        if ($item === null) {
             throw new \yii\web\HttpException(400, sprintf('Item %s does not exist', $itemBarcode));
         }
 
@@ -246,7 +246,7 @@ class ItemApiController extends ActiveController
             $logDetails[] = sprintf("barcode %s", $data['new_barcode']);
         }
 
-        if ($actionIndicator == "Returned") {
+        if ($actionIndicator === "Returned") {
             // Add flags if information is changing on return that we expect
             // to be the same
             if ($currentCollection && $collection && $currentCollection->name != $collection) {
@@ -261,22 +261,22 @@ class ItemApiController extends ActiveController
         }
 
         // Tray
-        if ($trayBarcode == "") {
+        if ($trayBarcode === "") {
             $item->tray_id = null;
             // If the item was previously in a tray, log that it was made null
             if ($item->tray != null) {
                 $logDetails[] = sprintf("tray null");
             }
         }
-        else if ($trayBarcode == null) {
+        else if ($trayBarcode === null) {
             // Do nothing if no tray barcode was provided
         }
         // If a tray barcode was provided (we've already confirmed it's not
         // empty) and either there was no tray previously, or it's different
         // than what was there previously, update it and log it
-        else if ($item->tray == null || $trayBarcode != $item->tray->barcode) {
+        else if ($item->tray === null || $trayBarcode != $item->tray->barcode) {
             $newTray = Tray::find()->where(['barcode' => $trayBarcode])->andWhere(['active' => true])->one();
-            if ($newTray == null) {
+            if ($newTray === null) {
                 if (Tray::find()->where(['barcode' => $trayBarcode])->andWhere(['active' => false])->one()) {
                     throw new \yii\web\HttpException(400, sprintf('Tray %s has been deleted.', $trayBarcode));
                 }
@@ -290,7 +290,7 @@ class ItemApiController extends ActiveController
         // Collection
         if ($collection) {
             $newCollection = Collection::find()->where(['name' => $collection])->andWhere(['active' => true])->one();
-            if ($newCollection == null) {
+            if ($newCollection === null) {
                 if (Collection::find()->where(['name' => $collection])->andWhere(['active' => false])->one()) {
                     throw new \yii\web\HttpException(400, sprintf('Collection %s has been deleted.', $data['collection']));
                 }
@@ -307,13 +307,13 @@ class ItemApiController extends ActiveController
         // Status
         if ($status && $status != $item->status) {
             // Mark "To return to campus" items differently
-            if ($status == "Picked" && ($item->status == "To return to campus" || $item->status == "Returned to campus")) {
+            if ($status === "Picked" && ($item->status === "To return to campus" || $item->status === "Returned to campus")) {
                 $item->status = "Returned to campus";
                 $logDetails[] = sprintf("status Returned to campus");
             }
             else {
                 $item->status = $status;
-                $logDetails[] = sprintf("status %s", $data['status'] == "" ? "null" : $data['status']);
+                $logDetails[] = sprintf("status %s", $data['status'] === "" ? "null" : $data['status']);
             }
         }
         // Active/inactive
@@ -404,7 +404,7 @@ class ItemApiController extends ActiveController
             $trayBarcode = isset($data['tray']) && $data['tray'] != '' ? $data['tray'] : null;
             if ($trayBarcode) {
                 $tray = Tray::find()->where(['barcode' => $trayBarcode])->andWhere(['active' => true])->one();
-                if ($tray == null) {
+                if ($tray === null) {
                     if (Tray::find()->where(['barcode' => $trayBarcode])->andWhere(['active' => false])->one()) {
                         throw new \yii\web\HttpException(400, sprintf('Tray %s has been deleted', $trayBarcode));
                     }
@@ -423,7 +423,7 @@ class ItemApiController extends ActiveController
             // Collection
             if (isset($data['collection']) && $data['collection'] != '') {
                 $collection = Collection::find()->where(['name' => $data['collection']])->andWhere(['active' => true])->one();
-                if ($collection == null) {
+                if ($collection === null) {
                     if (Collection::find()->where(['name' => $collection])->andWhere(['active' => false])->one()) {
                         throw new \yii\web\HttpException(400, sprintf('Collection %s has been deleted.', $data['collection']));
                     }
@@ -444,7 +444,7 @@ class ItemApiController extends ActiveController
             // Status
             if (isset($data['status']) && $data['status'] != '') {
                 $item->status = $data['status'];
-                $logDetails[] = sprintf("status %s", $data['status'] == "" ? "null" : $data['status']);
+                $logDetails[] = sprintf("status %s", $data['status'] === "" ? "null" : $data['status']);
             }
             else {
                 throw new \yii\web\HttpException(400, 'Status cannot be blank.');
@@ -533,11 +533,11 @@ class ItemApiController extends ActiveController
             try {
                 $itemList = $this->modelClass::find()->where(['barcode' => $data["barcodes"]])->all();
 
-                if ($data["status"] == "Missing") {
+                if ($data["status"] === "Missing") {
                     $logAction = "Marked missing";
                     $logDetails = "Marked item as missing: ";
                 }
-                else if ($data["status"] == "Circulating") {
+                else if ($data["status"] === "Circulating") {
                     $logAction = "Circulated";
                     $logDetails = "Marked item as circulating: ";
                 }
@@ -668,7 +668,7 @@ class ItemApiController extends ActiveController
         if ($tokenCheck['level'] >= 60) {
             $item = $this->modelClass::find()->where(['barcode' => $data['barcode']])->one();
             $previousStatus = $item->active;
-            if ($item->tray_id == null) {
+            if ($item->tray_id === null) {
                 $oldLocation = 'was untrayed';
             }
             else {
