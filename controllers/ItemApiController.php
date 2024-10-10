@@ -256,7 +256,7 @@ class ItemApiController extends ActiveController
             if ($currentTray && $currentTray->barcode != $trayBarcode) {
                 $flagDetails[] = sprintf("Item returned to tray %s but was previously in tray %s", $trayBarcode, $currentTray->barcode);
             }
-            if ($item->status != "Circulating") {
+            if ($item->status != "Circulating" && $item->status != "Restored") {
                 $flagDetails[] = sprintf("Item did not have status Circulating at the time of return");
             }
         }
@@ -319,6 +319,7 @@ class ItemApiController extends ActiveController
         }
         // Active/inactive
         if (!$item->active) {
+            $item->status = "Restored";
             $item->active = 1;
             // Make separate log entry for reactivating the item
             $reactivatedItemLog = new $this->modelLogClass;
