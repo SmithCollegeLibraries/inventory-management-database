@@ -26,6 +26,22 @@ SET time_zone = "+00:00";
 -- Table structure for table `collection`
 --
 
+CREATE TABLE IF NOT EXISTS `size` (
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `code` varchar(8) NOT NULL,
+  `height` decimal(12, 4) DEFAULT NULL,
+  `width` decimal(12, 4) DEFAULT NULL,
+  `average_count` int(4) UNSIGNED DEFAULT NULL,
+  PRIMARY KEY (id),
+  UNIQUE (code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `collection`
+--
+
 CREATE TABLE IF NOT EXISTS `collection` (
   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
@@ -48,9 +64,14 @@ CREATE TABLE IF NOT EXISTS `shelf` (
   `side` char(1) DEFAULT NULL,
   `ladder` char(2) DEFAULT NULL,
   `rung` char(2) DEFAULT NULL,
+  `width` decimal(12, 4) DEFAULT NULL,
+  `height` decimal(12, 4) DEFAULT NULL,
+  `size_id` int(11) UNSIGNED,
   `active` boolean NOT NULL DEFAULT TRUE,
   `flag` boolean NOT NULL DEFAULT FALSE,
+  `notes` text,
   PRIMARY KEY (id),
+  FOREIGN KEY (size_id) REFERENCES size(id),
   UNIQUE (barcode),
   CONSTRAINT shelf_label UNIQUE (row, side, ladder, rung)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -68,12 +89,14 @@ CREATE TABLE IF NOT EXISTS `tray` (
   `depth` varchar(6) DEFAULT NULL,
   `position` tinyint(2) UNSIGNED DEFAULT NULL,
   `full_count` int(4) UNSIGNED DEFAULT NULL,
+  `size_id` int(11) UNSIGNED,
   `active` boolean NOT NULL DEFAULT TRUE,
   `flag` boolean NOT NULL DEFAULT FALSE,
   `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   FOREIGN KEY (shelf_id) REFERENCES shelf(id),
+  FOREIGN KEY (size_id) REFERENCES size(id),
   UNIQUE (barcode)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -312,6 +335,7 @@ CREATE INDEX idx_tray_barcode ON tray (barcode);
 CREATE INDEX idx_tray_shelf ON tray (shelf_id);
 CREATE INDEX idx_tray_depth ON tray (depth);
 CREATE INDEX idx_tray_position ON tray (position);
+CREATE INDEX idx_tray_size ON tray (size_id);
 CREATE INDEX idx_tray_flag ON tray (flag);
 CREATE INDEX idx_tray_active ON tray (active);
 CREATE INDEX idx_tray_created ON tray (created);
@@ -319,6 +343,9 @@ CREATE INDEX idx_tray_updated ON tray (updated);
 
 CREATE INDEX idx_shelf_barcode ON shelf (barcode);
 CREATE INDEX idx_shelf_row ON shelf (row);
+CREATE INDEX idx_shelf_width ON shelf (width);
+CREATE INDEX idx_shelf_height ON shelf (height);
+CREATE INDEX idx_shelf_size ON shelf (size_id);
 
 -- Create indexes for old tables
 
