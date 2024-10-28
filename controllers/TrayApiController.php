@@ -531,10 +531,7 @@ class TrayApiController extends ActiveController
 
         if ($tokenCheck['level'] >= 30) {
             // Create the shelf on the fly if it doesn't exist
-            if ($data['shelf']) {
-                $shelf = $this->findOrCreateShelf($data['shelf'], $tokenCheck['id']);
-            }
-            else {
+            if (!$data['shelf']) {
                 throw new \yii\web\HttpException(400, 'No shelf provided');
             }
 
