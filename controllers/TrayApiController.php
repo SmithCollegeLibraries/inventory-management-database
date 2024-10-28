@@ -414,8 +414,7 @@ class TrayApiController extends ActiveController
         $trayLog->user_id = $userId;
         $trayLog->save();
 
-        // If the tray update results in partial location information,
-        // flag it
+        // If the tray update results in partial location information, flag it
         if (($tray->shelf_id == null || $tray->depth == null || $tray->position == null) &&
                 !($tray->shelf_id == null && $tray->depth == null && $tray->position == null)) {
             $flagDetails[] = sprintf('Tray %s was shelved with incomplete location information', $tray->barcode);

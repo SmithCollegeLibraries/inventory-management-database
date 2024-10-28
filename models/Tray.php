@@ -9,6 +9,7 @@ use Yii;
  *
  * @property int $id
  * @property string $barcode
+ * @property int|null $size_id
  * @property int|null $shelf_id
  * @property string|null $depth
  * @property string|null $position
@@ -36,12 +37,13 @@ class Tray extends \yii\db\ActiveRecord
     {
         return [
             [['barcode'], 'required'],
-            [['shelf_id', 'active', 'flag'], 'integer'],
+            [['shelf_id', 'active', 'flag', 'size_id'], 'integer'],
             [['barcode'], 'string', 'max' => 20],
             [['depth'], 'string', 'max' => 6],
             [['position'], 'integer', 'max' => 20],
             [['barcode'], 'unique'],
             [['shelf_id'], 'exist', 'skipOnError' => true, 'targetClass' => Shelf::class, 'targetAttribute' => ['shelf_id' => 'id']],
+            [['size_id'], 'exist', 'skipOnError' => true, 'targetClass' => Size::class, 'targetAttribute' => ['size_id' => 'id']],
         ];
     }
 
@@ -50,6 +52,15 @@ class Tray extends \yii\db\ActiveRecord
         return [
             'id',
             'barcode',
+            'size' => function ($tray) {
+                $size = 'app\models\Size'::find()->where(['id' => $tray["size_id"]])->one();
+                if ($size) {
+                    return $size->code;
+                }
+                else {
+                    return null;
+                }
+            },
             'depth',
             'position',
             'active',
@@ -80,6 +91,8 @@ class Tray extends \yii\db\ActiveRecord
         return [
             'id' => 'ID',
             'barcode' => 'Barcode',
+            'size_id' => 'Size ID',
+            'size' => 'Size',
             'shelf_id' => 'Shelf ID',
             'depth' => 'Depth',
             'position' => 'Position from left',
