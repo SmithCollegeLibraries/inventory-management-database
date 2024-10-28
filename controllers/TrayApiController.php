@@ -97,16 +97,20 @@ class TrayApiController extends ActiveController
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
         if ($tokenCheck['level'] >= 30) {
+            $trayBarcode = $data['barcode'];
+
             // We expect barcodes in the form of an array, but if it's not, we'll make it one
-            if (!isset($data['items']) || !is_array($data['items'])) {
+            if (!isset($data['items'])) {
+                $barcodes = [];
+            }
+            else if (!is_array($data['items'])) {
                 $barcodes = explode(PHP_EOL, $data['items']);
-            } else {
+            }
+            else {
                 $barcodes = $data['items'];
             }
 
-            $trayBarcode = $data['barcode'];
-            $collectionName = $data['collection'];
-
+            $collectionName = isset($data['collection']) ? $data['collection'] : null;
             // Get collection ID, while making sure that a collection of that name exists
             try {
                 $collection = \app\models\Collection::find()->where(['name' => $collectionName])->one();
