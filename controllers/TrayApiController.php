@@ -115,7 +115,8 @@ class TrayApiController extends ActiveController
             try {
                 $collection = \app\models\Collection::find()->where(['name' => $collectionName])->one();
                 $collectionId = $collection ? $collection->id : null;
-            } catch (\Exception $e) {
+            }
+            catch (\Exception $e) {
                 throw new \yii\web\HttpException(400, sprintf('Collection %s does not exist', $collectionName));
             }
 
@@ -146,6 +147,14 @@ class TrayApiController extends ActiveController
                     }
                 }
             }
+            $sizeId = null;
+            if (isset($data['size'])) {
+                $size = \app\models\Size::find()->where(['code' => $data['size']])->one();
+                if ($data['size'] && !$size) {
+                    throw new \yii\web\HttpException(400, sprintf('Size %s does not exist', $data['size']));
+                }
+                $sizeId = $size->id;
+            }
             $depth = isset($data['depth']) && $data['depth'] ? $data['depth'] : null;
             $position = isset($data['position']) && $data['position'] ? $data['position'] : null;
 
@@ -157,9 +166,11 @@ class TrayApiController extends ActiveController
             $depth = isset($data['depth']) && $data['depth'] ? $data['depth'] : null;
             $position = isset($data['position']) && $data['position'] ? $data['position'] : null;
             $fullCount = isset($data['full_count']) && $data['full_count'] ? $data['full_count'] : null;
-            if ($tray->shelf_id != $shelfId || $tray->depth != $depth || $tray->position != $position || $tray->full_count != $fullCount) {
+
+            if ($tray->shelf_id != $shelfId || $tray->depth != $depth || $tray->position != $position || $tray->full_count != $fullCount || $tray->size_id != $sizeId) {
                 $this->handleTrayUpdate([
                     'barcode' => $trayBarcode,
+                    'size' => isset($data['size']) ? $data['size'] : null,
                     'shelf' => $shelf,
                     'depth' => $depth,
                     'position' => $position,
@@ -228,7 +239,6 @@ class TrayApiController extends ActiveController
                 }
             }
         }
-
         else {
             throw new \yii\web\HttpException(403, 'You do not have permission to add new trays');
         }
@@ -274,6 +284,7 @@ class TrayApiController extends ActiveController
 
         // Get the tray and shelf
         $trayBarcode = $data['barcode'];
+        $dataSize = isset($data['size']) ? $data['size'] : null;
         $dataShelf = isset($data['shelf']) ? $data['shelf'] : null;
         $dataDepth = isset($data['depth']) ? $data['depth'] : null;
         $dataPosition = isset($data['position']) ? intval($data['position']) : null;
@@ -398,6 +409,21 @@ class TrayApiController extends ActiveController
             if ($dataFullCount != $tray->full_count) {
                 $tray->full_count = $dataFullCount ? $dataFullCount : null;
                 $logDetails[] = sprintf("full count %s", $dataFullCount ? $dataFullCount : "null");
+            }
+        }
+        // Size
+        if (!is_null($dataSize)) {
+            $size = \app\models\Size::find()->where(['code' => $data['size']])->one();
+            if ($data['size'] && !$size) {
+                throw new \yii\web\HttpException(400, sprintf('Size %s does not exist', $data['size']));
+            }
+            else if ($size == "") {
+                $tray->size_id = null;
+                $logDetails[] = sprintf("size null");
+            }
+            else if ($size->id != $tray->size_id) {
+                $tray->size_id = $size->id;
+                $logDetails[] = sprintf("size %s", $data['size']);
             }
         }
         // Flag
@@ -529,6 +555,7 @@ class TrayApiController extends ActiveController
 
             $newData = [
                 'barcode' => $data['tray'],
+                'size' => isset($data['size']) ? $data['size'] : null,
                 'shelf' => $data['shelf'],
                 'depth' => $data['depth'],
                 'position' => $data['position'],
