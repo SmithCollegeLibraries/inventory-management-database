@@ -153,7 +153,7 @@ class TrayApiController extends ActiveController
                 if ($data['size'] && !$size) {
                     throw new \yii\web\HttpException(400, sprintf('Size %s does not exist', $data['size']));
                 }
-                $sizeId = $size->id;
+                $sizeId = $size ? $size->id : null;
             }
             $depth = isset($data['depth']) && $data['depth'] ? $data['depth'] : null;
             $position = isset($data['position']) && $data['position'] ? $data['position'] : null;
