@@ -180,7 +180,7 @@ class Tray extends \yii\db\ActiveRecord
     public function flagTrayIfOverfull($userId)
     {
         $currentTrayCount = count($this->getItems()->asArray()->all());
-        if ($currentTrayCount > $this->full_count) {
+        if ($this->full_count && $currentTrayCount > $this->full_count) {
             $this->flag = 1;
             $this->save();
 
