@@ -145,8 +145,9 @@ class CollectionApiController extends ActiveController
             $modelLog->details = sprintf('Renamed %s to %s', $oldName, $data['name']);
             $modelLog->save();
 
-            return true;
-        } else {
+            return $collection;
+        }
+        else {
             throw new \yii\web\ForbiddenHttpException('You are not authorized to update collections');
         }
     }

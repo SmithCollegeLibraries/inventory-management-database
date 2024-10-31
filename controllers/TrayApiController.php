@@ -551,7 +551,7 @@ class TrayApiController extends ActiveController
             }
 
             $newData = [
-                'barcode' => $data['tray'],
+                'barcode' => $data['barcode'],
                 'size' => isset($data['size']) ? $data['size'] : null,
                 'shelf' => $data['shelf'],
                 'depth' => $data['depth'],
