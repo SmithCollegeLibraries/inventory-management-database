@@ -8,6 +8,11 @@ class Folio
 {
     public static function fullLookup($barcode)
     {
+        // Don't look the item up in FOLIO if it doesn't consist completely
+        // of numbers, letters, or a hyphen
+        if (!preg_match('/^[a-zA-Z0-9-]+$/', $barcode)) {
+            return null;
+        }
         $client = new Client(['baseUrl' => "http://libtools2.smith.edu/folio/web/search/search-inventory"]);
         $response = $client->createRequest()
             ->setMethod('get')
@@ -26,6 +31,11 @@ class Folio
 
     public static function partialLookup($barcode)
     {
+        // Don't look the item up in FOLIO if it doesn't consist completely
+        // of numbers, letters, or a hyphen
+        if (!preg_match('/^[a-zA-Z0-9-]+$/', $barcode)) {
+            return null;
+        }
         $client = new Client(['baseUrl' => "http://libtools2.smith.edu/folio/web/search/search-inventory"]);
         $response = $client->createRequest()
             ->setMethod('get')
@@ -75,6 +85,11 @@ class Folio
 
     public static function getTitleAndVolume($barcode)
     {
+        // Don't look the item up in FOLIO if it doesn't consist completely
+        // of numbers, letters, or a hyphen
+        if (!preg_match('/^[a-zA-Z0-9-]+$/', $barcode)) {
+            return null;
+        }
         $client = new Client(['baseUrl' => "http://libtools2.smith.edu/folio/web/search/search-inventory"]);
         $response = $client->createRequest()
             ->setMethod('get')
