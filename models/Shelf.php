@@ -37,7 +37,7 @@ class Shelf extends \yii\db\ActiveRecord
         return [
             [['barcode'], 'required'],
             [['active', 'flag'], 'integer'],
-            [['barcode'], 'string', 'max' => 20],
+            [['barcode'], 'string', 'max' => 64],
             [['row', 'ladder', 'rung'], 'string', 'max' => 2],
             [['side'], 'string', 'max' => 1],
             [['barcode'], 'unique'],

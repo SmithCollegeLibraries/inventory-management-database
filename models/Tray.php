@@ -38,9 +38,9 @@ class Tray extends \yii\db\ActiveRecord
         return [
             [['barcode'], 'required'],
             [['shelf_id', 'active', 'flag', 'size_id'], 'integer'],
-            [['barcode'], 'string', 'max' => 20],
+            [['barcode'], 'string', 'max' => 64],
             [['depth'], 'string', 'max' => 6],
-            [['position'], 'integer', 'max' => 20],
+            [['position'], 'integer', 'max' => 64],
             [['barcode'], 'unique'],
             [['shelf_id'], 'exist', 'skipOnError' => true, 'targetClass' => Shelf::class, 'targetAttribute' => ['shelf_id' => 'id']],
             [['size_id'], 'exist', 'skipOnError' => true, 'targetClass' => Size::class, 'targetAttribute' => ['size_id' => 'id']],

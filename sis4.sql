@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS `collection` (
 
 CREATE TABLE IF NOT EXISTS `shelf` (
   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `barcode` varchar(20) NOT NULL,
+  `barcode` varchar(64) NOT NULL,
   `row` char(2) DEFAULT NULL,
   `side` char(1) DEFAULT NULL,
   `ladder` char(2) DEFAULT NULL,
@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS `shelf` (
 
 CREATE TABLE IF NOT EXISTS `tray` (
   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `barcode` varchar(20) NOT NULL,
+  `barcode` varchar(64) NOT NULL,
   `shelf_id` int(11) UNSIGNED,
   `depth` varchar(6) DEFAULT NULL,
   `position` tinyint(2) UNSIGNED DEFAULT NULL,
@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS `tray` (
 
 CREATE TABLE IF NOT EXISTS `item` (
   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `barcode` varchar(20) NOT NULL,
+  `barcode` varchar(64) NOT NULL,
   `status` varchar(25) NOT NULL,
   `tray_id` int(11) UNSIGNED,
   `collection_id` int(11) UNSIGNED DEFAULT NULL,
@@ -129,7 +129,7 @@ CREATE TABLE IF NOT EXISTS `item` (
 
 CREATE TABLE IF NOT EXISTS `folio_validation` (
   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `barcode` varchar(20) NOT NULL,
+  `barcode` varchar(64) NOT NULL,
   `item_in_folio` boolean DEFAULT NULL,
   `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
@@ -184,7 +184,7 @@ CREATE TABLE IF NOT EXISTS `picklist` (
 CREATE TABLE IF NOT EXISTS `old_barcode_tray` (
   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `boxbarcode` varchar(255) NOT NULL,
-  `barcode` varchar(20) NOT NULL,
+  `barcode` varchar(64) NOT NULL,
   `stream` varchar(255) NOT NULL,
   `initials` varchar(10) NOT NULL,
   `status` varchar(25) NOT NULL,

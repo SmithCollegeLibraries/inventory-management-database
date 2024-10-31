@@ -38,7 +38,7 @@ class Item extends \yii\db\ActiveRecord
         return [
             [['barcode'], 'required'],
             [['tray_id', 'collection_id', 'active', 'flag'], 'integer'],
-            [['barcode'], 'string', 'max' => 20],
+            [['barcode'], 'string', 'max' => 64],
             [['status'], 'string', 'max' => 25],
             [['barcode'], 'unique'],
             [['collection_id'], 'exist', 'skipOnError' => true, 'targetClass' => Collection::class, 'targetAttribute' => ['collection_id' => 'id']],

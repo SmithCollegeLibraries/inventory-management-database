@@ -28,7 +28,7 @@ class FolioValidation extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['barcode'], 'string', 'max' => 20],
+            [['barcode'], 'string', 'max' => 64],
             [['barcode'], 'unique'],
             [['timestamp'], 'safe'],
         ];
