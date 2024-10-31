@@ -358,7 +358,9 @@ class ItemApiController extends ActiveController
 
         // Check whether the tray is overfull, and if so, flag it.
         $tray = Tray::find()->where(['id' => $item->tray_id])->one();
-        $tray->flagTrayIfOverfull($userId);
+        if ($tray) {
+            $tray->flagTrayIfOverfull($userId);
+        }
 
         return $item;
     }
@@ -490,7 +492,9 @@ class ItemApiController extends ActiveController
 
         // Check whether the tray is overfull, and if so, flag it.
         $tray = Tray::find()->where(['id' => $item->tray_id])->one();
-        $tray->flagTrayIfOverfull($userId);
+        if ($tray) {
+            $tray->flagTrayIfOverfull($userId);
+        }
 
         return $item;
     }
