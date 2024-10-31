@@ -243,7 +243,6 @@ class ItemApiController extends ActiveController
             }
             $item->barcode = $data['new_barcode'];
             $item->save();
-            \app\components\Folio::handleMarkFolioAnomaly($item, $userId);
             $logDetails[] = sprintf("barcode %s", $data['new_barcode']);
         }
 
@@ -489,11 +488,6 @@ class ItemApiController extends ActiveController
             }
         }
 
-        // Look up the item in FOLIO to see if it is somewhere other
-        // than the Annex, or marked as something other than Available.
-        // If so, flag it.
-        \app\components\Folio::handleMarkFolioAnomaly($item, $userId);
-
         // Check whether the tray is overfull, and if so, flag it.
         $tray = Tray::find()->where(['id' => $item->tray_id])->one();
         $tray->flagTrayIfOverfull($userId);
@@ -643,15 +637,19 @@ class ItemApiController extends ActiveController
                 $item = $this->handleItemUpdate($data, $tokenCheck['id'], "Returned");
             }
             else {
+                $item = $this->handleItemAdd($data, $tokenCheck['id']);
                 // If the item wasn't validated in FOLIO, add to the table
-                // so that we can check it later
-                if (!$data['folioVerified']) {
+                // so that we can check it later; if it's in FOLIO, check
+                // if it has an anomalous location or status there.
+                if ($data['folioVerified']) {
+                    \app\components\Folio::handleMarkFolioAnomaly($item, $tokenCheck['id']);
+                }
+                else {
                     $folioValidation = new \app\models\FolioValidation;
                     $folioValidation->barcode = $data['barcode'];
                     $folioValidation->item_in_folio = null;
                     $folioValidation->save();
                 }
-                $item = $this->handleItemAdd($data, $tokenCheck['id']);
             }
             return $item;
         }
