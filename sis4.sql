@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS `shelf` (
   `rung` char(2) DEFAULT NULL,
   `width` float DEFAULT NULL,
   `height` float DEFAULT NULL,
+  `collection_id` int(11) UNSIGNED DEFAULT NULL,
   `max_positions` int(4) UNSIGNED DEFAULT NULL,
   `size_id` int(11) UNSIGNED,
   `active` boolean NOT NULL DEFAULT TRUE,
@@ -347,6 +348,7 @@ CREATE INDEX idx_shelf_row ON shelf (row);
 CREATE INDEX idx_shelf_width ON shelf (width);
 CREATE INDEX idx_shelf_height ON shelf (height);
 CREATE INDEX idx_shelf_size ON shelf (size_id);
+CREATE INDEX idx_shelf_collection ON shelf (collection_id);
 
 -- Create indexes for old tables
 
