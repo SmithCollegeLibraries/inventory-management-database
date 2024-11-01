@@ -87,11 +87,12 @@ CREATE TABLE IF NOT EXISTS `shelf` (
 CREATE TABLE IF NOT EXISTS `tray` (
   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `barcode` varchar(64) NOT NULL,
+  `size_id` int(11) UNSIGNED,
+  `collection_id` int(11) UNSIGNED DEFAULT NULL,
   `shelf_id` int(11) UNSIGNED,
   `depth` varchar(6) DEFAULT NULL,
   `position` tinyint(2) UNSIGNED DEFAULT NULL,
   `full_count` int(4) UNSIGNED DEFAULT NULL,
-  `size_id` int(11) UNSIGNED,
   `active` boolean NOT NULL DEFAULT TRUE,
   `flag` boolean NOT NULL DEFAULT FALSE,
   `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -334,10 +335,11 @@ CREATE INDEX idx_item_created ON item (created);
 CREATE INDEX idx_item_updated ON item (updated);
 
 CREATE INDEX idx_tray_barcode ON tray (barcode);
+CREATE INDEX idx_tray_size ON tray (size_id);
+CREATE INDEX idx_tray_collection ON tray (collection_id);
 CREATE INDEX idx_tray_shelf ON tray (shelf_id);
 CREATE INDEX idx_tray_depth ON tray (depth);
 CREATE INDEX idx_tray_position ON tray (position);
-CREATE INDEX idx_tray_size ON tray (size_id);
 CREATE INDEX idx_tray_flag ON tray (flag);
 CREATE INDEX idx_tray_active ON tray (active);
 CREATE INDEX idx_tray_created ON tray (created);
