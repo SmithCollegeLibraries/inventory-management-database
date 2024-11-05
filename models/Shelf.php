@@ -15,6 +15,8 @@ use Yii;
  * @property string|null $rung
  * @property int $active
  * @property int $flag
+ * @property int|null $size_id
+ * @property int|null $collection_id
  *
  * @property ShelfLog[] $shelfLogs
  * @property Tray[] $trays
@@ -42,6 +44,8 @@ class Shelf extends \yii\db\ActiveRecord
             [['side'], 'string', 'max' => 1],
             [['barcode'], 'unique'],
             [['row', 'side', 'ladder', 'rung'], 'unique', 'targetAttribute' => ['row', 'side', 'ladder', 'rung']],
+            [['size_id'], 'exist', 'skipOnError' => true, 'targetClass' => Size::class, 'targetAttribute' => ['size_id' => 'id']],
+            [['collection_id'], 'exist', 'skipOnError' => true, 'targetClass' => Collection::class, 'targetAttribute' => ['collection_id' => 'id']],
         ];
     }
 
@@ -56,7 +60,25 @@ class Shelf extends \yii\db\ActiveRecord
             'rung',
             'active',
             'flag',
-            'trays' => function ($shelf) {
+            'size' => function ($shelf) {
+                $size = 'app\models\Size'::find()->where(['id' => $shelf["size_id"]])->one();
+                if ($size) {
+                    return $size->code;
+                }
+                else {
+                    return null;
+                }
+            },
+            'collection' => function ($shelf) {
+                $collection = 'app\models\Collection'::find()->where(['id' => $shelf["collection_id"]])->one();
+                if ($collection) {
+                    return $collection->name;
+                }
+                else {
+                    return null;
+                }
+            },
+            'trays' => function () {
                 $trays = $this->getTrays()->where(["active" => true])->all();
                 $trayArray = [];
                 foreach ($trays as $tray) {
@@ -91,6 +113,8 @@ class Shelf extends \yii\db\ActiveRecord
             'rung' => 'Rung',
             'active' => 'Active',
             'flag' => 'Flag',
+            'size' => 'Size',
+            'collection' => 'Collection',
         ];
     }
 

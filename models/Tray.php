@@ -10,6 +10,7 @@ use Yii;
  * @property int $id
  * @property string $barcode
  * @property int|null $size_id
+ * @property int|null $collection_id
  * @property int|null $shelf_id
  * @property string|null $depth
  * @property string|null $position
@@ -44,6 +45,7 @@ class Tray extends \yii\db\ActiveRecord
             [['barcode'], 'unique'],
             [['shelf_id'], 'exist', 'skipOnError' => true, 'targetClass' => Shelf::class, 'targetAttribute' => ['shelf_id' => 'id']],
             [['size_id'], 'exist', 'skipOnError' => true, 'targetClass' => Size::class, 'targetAttribute' => ['size_id' => 'id']],
+            [['collection_id'], 'exist', 'skipOnError' => true, 'targetClass' => Collection::class, 'targetAttribute' => ['collection_id' => 'id']],
         ];
     }
 
@@ -56,6 +58,15 @@ class Tray extends \yii\db\ActiveRecord
                 $size = 'app\models\Size'::find()->where(['id' => $tray["size_id"]])->one();
                 if ($size) {
                     return $size->code;
+                }
+                else {
+                    return null;
+                }
+            },
+            'collection' => function ($tray) {
+                $collection = 'app\models\Collection'::find()->where(['id' => $tray["collection_id"]])->one();
+                if ($collection) {
+                    return $collection->name;
                 }
                 else {
                     return null;

@@ -640,8 +640,10 @@ class TrayApiController extends ActiveController
             // If a barcode has been provided, search by barcode and return
             // up to 20 results
             $query = $this->modelClass::find()
-                ->select(['tray.*', 'COUNT(item.id) AS total_items', 'full_count - COUNT(item.id) AS free_space'])
+                ->select(['tray.*', 'size.code AS size', 'collection.name AS collection', 'COUNT(item.id) AS total_items', 'full_count - COUNT(item.id) AS free_space'])
                 ->leftJoin('item', 'tray.id = item.tray_id')
+                ->leftJoin('size', 'tray.size_id = size.id')
+                ->leftJoin('collection', 'tray.collection_id = collection.id')
                 ->groupBy('tray.id')
                 ->andWhere(['item.active' => true])
                 ->andWhere(['tray.active' => true]);
