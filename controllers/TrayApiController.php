@@ -171,6 +171,7 @@ class TrayApiController extends ActiveController
                 $this->handleTrayUpdate([
                     'barcode' => $trayBarcode,
                     'size' => isset($data['size']) ? $data['size'] : null,
+                    'collection' => $collectionName,
                     'shelf' => $shelf,
                     'depth' => $depth,
                     'position' => $position,
@@ -285,6 +286,7 @@ class TrayApiController extends ActiveController
         // Get the tray and shelf
         $trayBarcode = $data['barcode'];
         $dataSize = isset($data['size']) ? $data['size'] : null;
+        $dataCollection = isset($data['collection']) ? $data['collection'] : null;
         $dataShelf = isset($data['shelf']) ? $data['shelf'] : null;
         $dataDepth = isset($data['depth']) ? $data['depth'] : null;
         $dataPosition = isset($data['position']) ? intval($data['position']) : null;
@@ -426,6 +428,21 @@ class TrayApiController extends ActiveController
                 $logDetails[] = sprintf("size %s", $data['size']);
             }
         }
+        // Collection
+        if (!is_null($dataCollection)) {
+            $collection = \app\models\Collection::find()->where(['name' => $data['collection']])->one();
+            if ($data['collection'] && !$collection) {
+                throw new \yii\web\HttpException(400, sprintf('Collection %s does not exist', $data['collection']));
+            }
+            else if ($collection == "") {
+                $tray->collection_id = null;
+                $logDetails[] = sprintf("collection null");
+            }
+            else if ($collection->id != $tray->collection_id) {
+                $tray->collection_id = $collection->id;
+                $logDetails[] = sprintf("collection %s", $data['collection']);
+            }
+        }
         // Flag
         if ($flag == true) {
             $tray->flag = 1;
@@ -553,6 +570,7 @@ class TrayApiController extends ActiveController
             $newData = [
                 'barcode' => $data['barcode'],
                 'size' => isset($data['size']) ? $data['size'] : null,
+                'collection' => isset($data['collection']) ? $data['collection'] : null,
                 'shelf' => $data['shelf'],
                 'depth' => $data['depth'],
                 'position' => $data['position'],
@@ -645,7 +663,6 @@ class TrayApiController extends ActiveController
                 ->leftJoin('size', 'tray.size_id = size.id')
                 ->leftJoin('collection', 'tray.collection_id = collection.id')
                 ->groupBy('tray.id')
-                ->andWhere(['item.active' => true])
                 ->andWhere(['tray.active' => true]);
             if ($barcode) {
                 $query->andWhere(['like', 'tray.barcode', $barcode]);
