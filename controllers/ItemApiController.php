@@ -262,11 +262,11 @@ class ItemApiController extends ActiveController
 
         // Tray
         if ($trayBarcode === "") {
-            $item->tray_id = null;
             // If the item was previously in a tray, log that it was made null
             if ($item->tray != null) {
                 $logDetails[] = sprintf("tray null");
             }
+            $item->tray_id = null;
         }
         else if ($trayBarcode === null) {
             // Do nothing if no tray barcode was provided
@@ -288,7 +288,14 @@ class ItemApiController extends ActiveController
             $logDetails[] = sprintf("tray %s", $trayBarcode);
         }
         // Collection
-        if ($collection) {
+        if ($collection === "") {
+            // If the item was previously in a collection, log that it was made null
+            if ($item->collection_id != null) {
+                $logDetails[] = sprintf("collection null");
+            }
+            $item->collection_id = null;
+        }
+        else if ($collection) {
             $newCollection = Collection::find()->where(['name' => $collection])->andWhere(['active' => true])->one();
             if ($newCollection === null) {
                 if (Collection::find()->where(['name' => $collection])->andWhere(['active' => false])->one()) {
@@ -305,7 +312,14 @@ class ItemApiController extends ActiveController
         }
 
         // Status
-        if ($status && $status != $item->status) {
+        if ($status === "") {
+            // If the previously had a status, log that it was made null
+            if ($item->status != null) {
+                $logDetails[] = sprintf("status null");
+            }
+            $item->status = null;
+        }
+        else if ($status != $item->status) {
             // Mark "To return to campus" items differently
             if ($status === "Picked" && ($item->status === "To return to campus" || $item->status === "Returned to campus")) {
                 $item->status = "Returned to campus";

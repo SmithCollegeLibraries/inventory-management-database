@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS `tray` (
 CREATE TABLE IF NOT EXISTS `item` (
   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `barcode` varchar(64) NOT NULL,
-  `status` varchar(25) NOT NULL,
+  `status` varchar(25),
   `tray_id` int(11) UNSIGNED,
   `collection_id` int(11) UNSIGNED DEFAULT NULL,
   `active` boolean NOT NULL DEFAULT TRUE,
@@ -189,7 +189,7 @@ CREATE TABLE IF NOT EXISTS `old_barcode_tray` (
   `barcode` varchar(64) NOT NULL,
   `stream` varchar(255) NOT NULL,
   `initials` varchar(10) NOT NULL,
-  `status` varchar(25) NOT NULL,
+  `status` varchar(25),
   `added` varchar(100) NOT NULL,
   `timestamp` varchar(30) NOT NULL,
   PRIMARY KEY (id),
