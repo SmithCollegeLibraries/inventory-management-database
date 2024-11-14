@@ -51,10 +51,18 @@ class ItemApiController extends ActiveController
 
     public function actionSearch()
     {
-        $json = file_get_contents('php://input');
-        $data = json_decode($json, true);
-        $results = $this->modelClass::find()->where(['barcode' => $data["barcodes"], 'active' => 1])->all();
-        return $results;
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if ($tokenCheck['level'] >= 20) {
+            $json = file_get_contents('php://input');
+            $data = json_decode($json, true);
+            $results = $this->modelClass::find()->where(['barcode' => $data["barcodes"], 'active' => 1])->all();
+            return $results;
+        }
+        else {
+            throw new \yii\web\HttpException(403, 'You do not have permission to search items');
+        }
     }
 
     // This function takes a list of barcodes and returns a list with
