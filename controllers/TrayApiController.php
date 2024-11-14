@@ -665,7 +665,7 @@ class TrayApiController extends ActiveController
                 ->groupBy('tray.id')
                 ->andWhere(['tray.active' => true]);
             if ($barcode) {
-                $query->andWhere(['like', 'tray.barcode', $barcode]);
+                $query->andWhere(['tray.barcode' => $barcode]);
             }
             // If we're searching for free space at all
             if ($freeSpace) {
