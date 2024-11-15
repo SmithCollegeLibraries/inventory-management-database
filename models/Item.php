@@ -9,6 +9,7 @@ use Yii;
  *
  * @property int $id
  * @property string $barcode
+ * @property string $barcode_search
  * @property string $status
  * @property int|null $tray_id
  * @property int $collection_id
@@ -39,6 +40,7 @@ class Item extends \yii\db\ActiveRecord
             [['barcode'], 'required'],
             [['tray_id', 'collection_id', 'active', 'flag'], 'integer'],
             [['barcode'], 'string', 'max' => 64],
+            [['barcode_search'], 'string', 'max' => 64],
             [['status'], 'string', 'max' => 25],
             [['barcode'], 'unique'],
             [['collection_id'], 'exist', 'skipOnError' => true, 'targetClass' => Collection::class, 'targetAttribute' => ['collection_id' => 'id']],

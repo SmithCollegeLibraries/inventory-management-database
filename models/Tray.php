@@ -9,6 +9,7 @@ use Yii;
  *
  * @property int $id
  * @property string $barcode
+ * @property string $barcode_search
  * @property int|null $size_id
  * @property int|null $collection_id
  * @property int|null $shelf_id
@@ -40,6 +41,7 @@ class Tray extends \yii\db\ActiveRecord
             [['barcode'], 'required'],
             [['shelf_id', 'active', 'flag', 'size_id'], 'integer'],
             [['barcode'], 'string', 'max' => 64],
+            [['barcode_search'], 'string', 'max' => 64],
             [['depth'], 'string', 'max' => 6],
             [['position'], 'integer', 'max' => 64],
             [['barcode'], 'unique'],

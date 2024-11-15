@@ -87,6 +87,7 @@ CREATE TABLE IF NOT EXISTS `shelf` (
 CREATE TABLE IF NOT EXISTS `tray` (
   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `barcode` varchar(64) NOT NULL,
+  `barcode_search` varchar(64),
   `size_id` int(11) UNSIGNED,
   `collection_id` int(11) UNSIGNED DEFAULT NULL,
   `shelf_id` int(11) UNSIGNED,
@@ -112,6 +113,7 @@ CREATE TABLE IF NOT EXISTS `tray` (
 CREATE TABLE IF NOT EXISTS `item` (
   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `barcode` varchar(64) NOT NULL,
+  `barcode_search` varchar(64),
   `status` varchar(25),
   `tray_id` int(11) UNSIGNED,
   `collection_id` int(11) UNSIGNED DEFAULT NULL,
