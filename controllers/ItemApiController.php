@@ -224,6 +224,7 @@ class ItemApiController extends ActiveController
                 }
             }
             $item->barcode = $newBarcode;
+            $item->barcode_search = preg_replace("/[^a-zA-Z0-9]/", "", $newBarcode);
             $item->save();
             $logDetails[] = sprintf("barcode %s", $newBarcode);
         }
@@ -398,6 +399,7 @@ class ItemApiController extends ActiveController
                 }
             }
             $item->barcode = $itemBarcode;
+            $item->barcode_search = preg_replace("/[^a-zA-Z0-9]/", "", $itemBarcode);
             $logDetails[] = sprintf("barcode %s", $itemBarcode);
 
             // Tray barcode
