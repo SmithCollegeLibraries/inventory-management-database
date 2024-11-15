@@ -57,7 +57,12 @@ class ItemApiController extends ActiveController
         if ($tokenCheck['level'] >= 20) {
             $json = file_get_contents('php://input');
             $data = json_decode($json, true);
-            $results = $this->modelClass::find()->where(['barcode' => $data["barcodes"], 'active' => 1])->all();
+            $allBarcodes = $data["barcodes"];
+            $allBarcodesSearch = array_map(function($barcode) {
+                return preg_replace("/[^a-zA-Z0-9]/", "", $barcode);
+            }, $allBarcodes);
+
+            $results = $this->modelClass::find()->where(['LIKE', 'barcode_search', $allBarcodesSearch, 'active' => 1])->all();
             return $results;
         }
         else {
@@ -78,50 +83,18 @@ class ItemApiController extends ActiveController
         $json = file_get_contents('php://input');
         $data = json_decode($json, true);
 
-        $query = $data["barcodes"] ? $data["barcodes"] : [];
-        $newTableResults = $this->modelClass::find()->where(['barcode' => $query, 'active' => 1])->all();
-        $oldTableResults = OldBarcodeTray::find()
-                ->joinWith([
-                    'oldTrayShelf' => function ($q) {
-                        $q->select('boxbarcode, shelf, shelf_depth, shelf_position');
-                    }
-                ])
-                ->where(['barcode' => $query])
-                ->orderBy([
-                    'shelf' => SORT_ASC,
-                    'shelf_depth'=>SORT_ASC,
-                    'shelf_position'=>SORT_ASC,
-                  ])
-                ->asArray()
-                ->all();
+        // Construct query from list of barcodes:
+        // barcode_search LIKE "%x%" for each barcode in the list,
+        // with all non-alphanumeric characters removed from the search query
+        $strippedBarcodes = array_map(function($barcode) {
+            return '"%' . preg_replace("/[^a-zA-Z0-9]/", "", $barcode) . '%"';
+        }, $data["barcodes"]);
+        $query = 'barcode_search LIKE' . implode(' OR barcode_search LIKE ', $strippedBarcodes);
+        $newTableResults = $this->modelClass::find()
+            ->where($query)
+            ->andWhere(['active' => 1])
+            ->all();
         $results = [];
-        // Default to a null for that barcode
-        for ($i = 0; $i < count($query); $i++) {
-            $results[$query[$i]] = [
-                'barcode' => $query[$i],
-                'tray' => null,
-                'shelf' => null,
-                'depth' => null,
-                'position' => null,
-                // 'collection' => null,
-                'status' => 'Not found',
-                'system' => null,
-            ];
-        }
-        // Add the old table results. These will get overwritten by
-        // new table results if they exist
-        for ($i = 0; $i < count($oldTableResults); $i++) {
-            $results[$oldTableResults[$i]['barcode']] = [
-                'barcode' => $oldTableResults[$i]['barcode'],
-                'tray' => $oldTableResults[$i]['boxbarcode'],
-                'shelf' => $oldTableResults[$i]['oldTrayShelf'] ? $oldTableResults[$i]['oldTrayShelf']['shelf'] : null,
-                'depth' => $oldTableResults[$i]['oldTrayShelf'] ? $oldTableResults[$i]['oldTrayShelf']['shelf_depth'] : null,
-                'position' => $oldTableResults[$i]['oldTrayShelf'] ? $oldTableResults[$i]['oldTrayShelf']['shelf_position'] : null,
-                // 'collection' => $newTableResults[$i]['stream'],
-                'status' => $oldTableResults[$i]['status'],
-                'system' => 'Old',
-            ];
-        }
         // Add the new table results
         for ($i = 0; $i < count($newTableResults); $i++) {
             $results[$newTableResults[$i]['barcode']] = [
@@ -143,13 +116,14 @@ class ItemApiController extends ActiveController
         $barcode = isset($_REQUEST["query"]) ? $_REQUEST["query"] : null;
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
+        $barcodeSearch = preg_replace("/[^a-zA-Z0-9]/", "", $barcode);
 
         if ($tokenCheck['level'] >= 20) {
             // If a barcode has been provided, search by barcode and return
             // a limited number of results
             $provider = new ActiveDataProvider([
                 'query' => $this->modelClass::find()
-                    ->where(['like', 'barcode', $barcode])
+                    ->where(['like', 'barcode_search', $barcodeSearch])
                     ->andWhere(['active' => 1]),
                 'sort' => [
                     'defaultOrder' => [
@@ -587,7 +561,7 @@ class ItemApiController extends ActiveController
                     )
                 )->execute();
 
-                return $this->modelClass::find()->where(['barcode' => $data["barcodes"]])->all();
+                return $this->modelClass::find()->where(['barcode_search like "%H25con%" or barcode_search like "%C227p%"'])->all();
             }
             catch (Exception $e) {
                 throw new \yii\web\HttpException(400, 'Error updating items.');
