@@ -131,7 +131,7 @@ class CollectionApiController extends ActiveController
         $data = json_decode($json, true);
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
-        if ($tokenCheck['level'] >= 60) {
+        if ($tokenCheck['level'] >= 80) {
             $collection = Collection::findOne($data["id"]);
             $oldName = $collection->name;
             $collection->name = $data["name"];
