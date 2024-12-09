@@ -45,10 +45,12 @@ CREATE TABLE IF NOT EXISTS `size` (
 CREATE TABLE IF NOT EXISTS `collection` (
   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
+  `code` varchar(63),
   `folio_validated` boolean NOT NULL DEFAULT TRUE,
   `active` boolean NOT NULL DEFAULT TRUE,
   PRIMARY KEY (id),
-  UNIQUE (name)
+  UNIQUE (name),
+  UNIQUE (code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
