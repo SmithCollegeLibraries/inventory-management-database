@@ -171,6 +171,7 @@ CREATE TABLE IF NOT EXISTS `picklist` (
   `item_id` int(11) UNSIGNED NOT NULL,
   `title` varchar(255),
   `volume` varchar(31),
+  `collection` varchar(255),
   `user_id` int(11) UNSIGNED,
   `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),

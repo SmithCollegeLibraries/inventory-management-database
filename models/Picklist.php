@@ -36,6 +36,7 @@ class Picklist extends \yii\db\ActiveRecord
             },
             'title',
             'volume',
+            'collection',
             'user_id',
             'assignee' => function () {
                 $user = $this->user;
@@ -88,6 +89,7 @@ class Picklist extends \yii\db\ActiveRecord
             'barcode' => 'Barcode',
             'title' => 'Title',
             'volume' => 'Volume',
+            'collection' => 'Collection',
             'user_id' => 'User ID',
             'timestamp' => 'Timestamp',
         ];

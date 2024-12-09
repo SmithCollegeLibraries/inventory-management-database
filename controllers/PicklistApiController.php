@@ -99,13 +99,18 @@ class PicklistApiController extends ActiveController
         // Add items to the picklist table in batch
         Yii::$app->db->createCommand()->batchInsert(
             'picklist',
-            ['item_id', 'user_id', 'title', 'volume'],
+            ['item_id', 'user_id', 'title', 'volume', 'collection'],
             array_map(
                 function($i) {
                     $infoFromFolio = \app\components\Folio::getTitleAndVolume($i['barcode']);
                     $title = isset($infoFromFolio['title']) ? $this->truncate($infoFromFolio['title'], 79) : $i['barcode'];
                     $volume = isset($infoFromFolio['volume']) ? $this->truncate($infoFromFolio['volume'], 31) : null;
-                    return [$i['id'], null, $title, $volume];
+                    $collection = \app\models\Item::find()
+                        ->select('collection.code')
+                        ->leftJoin('collection', 'collection.id = item.collection_id')
+                        ->where(['item.id' => $i['id']])
+                        ->scalar();
+                    return [$i['id'], null, $title, $volume, $collection];
                 },
                 $itemsNotInPicklist
             )
@@ -146,9 +151,10 @@ class PicklistApiController extends ActiveController
     {
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
+        $collection = $_REQUEST["collection"];
 
         if ($tokenCheck['level'] >= 40) {
-            $barcodeList = \app\components\Folio::getPicklist("SC_ANNEX");
+            $barcodeList = \app\components\Folio::getPicklist($collection);
             $newPicklist = $this->handleAddItems($barcodeList, $tokenCheck, false);
             $existingBarcodes = array_map(
                 function($i) { return $i['barcode']; },
