@@ -174,11 +174,7 @@ class ItemApiController extends ActiveController
         $json = file_get_contents('php://input');
         $data = json_decode($json, true);
         $results = \app\components\Folio::fullLookup($data["barcode"]);
-        try {
-            return $results["data"]["totalRecords"] > 0;
-        } catch (\Exception $e) {
-            return false;
-        }
+        return $results["data"];  // ["totalRecords"] > 0;
     }
 
     // Expects a single barcode in data under "barcode". Returns the item's

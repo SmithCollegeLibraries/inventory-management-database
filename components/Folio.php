@@ -18,7 +18,8 @@ class Folio
             ->setMethod('get')
             ->setFormat(Client::FORMAT_JSON)
             ->setUrl([
-                'query' => sprintf("(items.barcode==%s)", $barcode),
+                'type' => 'inventory',
+                'query' => sprintf("barcode==%s", $barcode),
             ])
             ->send();
         if ($response->isOk) {

@@ -85,12 +85,7 @@ class OldBarcodeTrayApiController extends ActiveController
     public function handleCheckFolio($barcode)
     {
         $results = \app\components\Folio::fullLookup($barcode);
-        try {
-            return $results["data"]["totalRecords"] > 0;
-        }
-        catch (\Exception $e) {
-            return null;
-        }
+        return $results["data"]["totalRecords"] > 0;
     }
 
     // Check multiple items in FOLIO and add the results to the `in_folio`
@@ -115,7 +110,7 @@ class OldBarcodeTrayApiController extends ActiveController
             $rows = $modelClass::find()->where(['in_folio' => null, 'status' => $status])->orderBy("id")->limit($number)->all();
         }
         foreach ($rows as $row) {
-            $inFolio = $this->handleCheckFolio($row->barcode);
+            $inFolio = $this->handleCheckFolio($row->barcode) === true;
             $row->in_folio = $inFolio;
             $row->save();
         }

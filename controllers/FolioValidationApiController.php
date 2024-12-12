@@ -56,12 +56,7 @@ class FolioValidationApiController extends ActiveController
     public function handleCheckFolio($barcode)
     {
         $results = \app\components\Folio::fullLookup($barcode);
-        try {
-            return $results["data"]["totalRecords"] > 0;
-        }
-        catch (\Exception $e) {
-            return null;
-        }
+        return $results["data"]["totalRecords"] > 0;
     }
 
     // Check multiple items in FOLIO and add the results to the `in_folio`
@@ -80,7 +75,7 @@ class FolioValidationApiController extends ActiveController
         }
         $rows = $modelClass::find()->where(['item_in_folio' => null])->orderBy("id")->limit($number)->all();
         foreach ($rows as $row) {
-            $inFolio = $this->handleCheckFolio($row->barcode);
+            $inFolio = $this->handleCheckFolio($row->barcode) === true;
             $row->item_in_folio = $inFolio;
             $row->save();
         }
