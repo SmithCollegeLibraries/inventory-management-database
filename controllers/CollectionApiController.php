@@ -159,7 +159,7 @@ class CollectionApiController extends ActiveController
         $data = json_decode($json, true);
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
-        if ($tokenCheck['level'] >= 60) {
+        if ($tokenCheck['level'] >= 80) {
             try {
                 $collection = Collection::findOne($data["id"]);
                 // Mark collection as inactive instead of deleting from database
