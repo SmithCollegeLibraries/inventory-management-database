@@ -71,71 +71,73 @@ class ItemApiController extends ActiveController
     {
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
-        if ($tokenCheck['level'] < 10) {
+        if ($tokenCheck['level'] >= 20) {
+
+            $json = file_get_contents('php://input');
+            $data = json_decode($json, true);
+
+            $query = $data["barcodes"] ? $data["barcodes"] : [];
+            $newTableResults = $this->modelClass::find()->where(['barcode' => $query, 'active' => 1])->all();
+            $oldTableResults = OldBarcodeTray::find()
+                    ->joinWith([
+                        'oldTrayShelf' => function ($q) {
+                            $q->select('boxbarcode, shelf, shelf_depth, shelf_position');
+                        }
+                    ])
+                    ->where(['barcode' => $query])
+                    ->orderBy([
+                        'shelf' => SORT_ASC,
+                        'shelf_depth'=>SORT_ASC,
+                        'shelf_position'=>SORT_ASC,
+                    ])
+                    ->asArray()
+                    ->all();
+            $results = [];
+            // Default to a null for that barcode
+            for ($i = 0; $i < count($query); $i++) {
+                $results[$query[$i]] = [
+                    'barcode' => $query[$i],
+                    'tray' => null,
+                    'shelf' => null,
+                    'depth' => null,
+                    'position' => null,
+                    // 'collection' => null,
+                    'status' => 'Not found',
+                    'system' => null,
+                ];
+            }
+            // Add the old table results. These will get overwritten by
+            // new table results if they exist
+            for ($i = 0; $i < count($oldTableResults); $i++) {
+                $results[$oldTableResults[$i]['barcode']] = [
+                    'barcode' => $oldTableResults[$i]['barcode'],
+                    'tray' => $oldTableResults[$i]['boxbarcode'],
+                    'shelf' => $oldTableResults[$i]['oldTrayShelf'] ? $oldTableResults[$i]['oldTrayShelf']['shelf'] : null,
+                    'depth' => $oldTableResults[$i]['oldTrayShelf'] ? $oldTableResults[$i]['oldTrayShelf']['shelf_depth'] : null,
+                    'position' => $oldTableResults[$i]['oldTrayShelf'] ? $oldTableResults[$i]['oldTrayShelf']['shelf_position'] : null,
+                    // 'collection' => $newTableResults[$i]['stream'],
+                    'status' => $oldTableResults[$i]['status'],
+                    'system' => 'Old',
+                ];
+            }
+            // Add the new table results
+            for ($i = 0; $i < count($newTableResults); $i++) {
+                $results[$newTableResults[$i]['barcode']] = [
+                    'barcode' => $newTableResults[$i]['barcode'],
+                    'tray' => $newTableResults[$i]['tray'] ? $newTableResults[$i]['tray']['barcode'] : null,
+                    'shelf' => $newTableResults[$i]['tray'] ? (isset($newTableResults[$i]['tray']['shelf']['barcode']) ? $newTableResults[$i]['tray']['shelf']['barcode'] : $newTableResults[$i]['tray']['shelf']) : null,
+                    'depth' => $newTableResults[$i]['tray'] ? $newTableResults[$i]['tray']['depth'] : null,
+                    'position' => $newTableResults[$i]['tray'] ? $newTableResults[$i]['tray']['position'] : null,
+                    // 'collection' => $newTableResults[$i]['collection'],
+                    'status' => $newTableResults[$i]['status'],
+                    'system' => 'New',
+                ];
+            }
+            return $results;
+        }
+        else {
             throw new \yii\web\HttpException(403, 'You do not have permission to search items');
         }
-
-        $json = file_get_contents('php://input');
-        $data = json_decode($json, true);
-
-        $query = $data["barcodes"] ? $data["barcodes"] : [];
-        $newTableResults = $this->modelClass::find()->where(['barcode' => $query, 'active' => 1])->all();
-        $oldTableResults = OldBarcodeTray::find()
-                ->joinWith([
-                    'oldTrayShelf' => function ($q) {
-                        $q->select('boxbarcode, shelf, shelf_depth, shelf_position');
-                    }
-                ])
-                ->where(['barcode' => $query])
-                ->orderBy([
-                    'shelf' => SORT_ASC,
-                    'shelf_depth'=>SORT_ASC,
-                    'shelf_position'=>SORT_ASC,
-                  ])
-                ->asArray()
-                ->all();
-        $results = [];
-        // Default to a null for that barcode
-        for ($i = 0; $i < count($query); $i++) {
-            $results[$query[$i]] = [
-                'barcode' => $query[$i],
-                'tray' => null,
-                'shelf' => null,
-                'depth' => null,
-                'position' => null,
-                // 'collection' => null,
-                'status' => 'Not found',
-                'system' => null,
-            ];
-        }
-        // Add the old table results. These will get overwritten by
-        // new table results if they exist
-        for ($i = 0; $i < count($oldTableResults); $i++) {
-            $results[$oldTableResults[$i]['barcode']] = [
-                'barcode' => $oldTableResults[$i]['barcode'],
-                'tray' => $oldTableResults[$i]['boxbarcode'],
-                'shelf' => $oldTableResults[$i]['oldTrayShelf'] ? $oldTableResults[$i]['oldTrayShelf']['shelf'] : null,
-                'depth' => $oldTableResults[$i]['oldTrayShelf'] ? $oldTableResults[$i]['oldTrayShelf']['shelf_depth'] : null,
-                'position' => $oldTableResults[$i]['oldTrayShelf'] ? $oldTableResults[$i]['oldTrayShelf']['shelf_position'] : null,
-                // 'collection' => $newTableResults[$i]['stream'],
-                'status' => $oldTableResults[$i]['status'],
-                'system' => 'Old',
-            ];
-        }
-        // Add the new table results
-        for ($i = 0; $i < count($newTableResults); $i++) {
-            $results[$newTableResults[$i]['barcode']] = [
-                'barcode' => $newTableResults[$i]['barcode'],
-                'tray' => $newTableResults[$i]['tray'] ? $newTableResults[$i]['tray']['barcode'] : null,
-                'shelf' => $newTableResults[$i]['tray'] ? (isset($newTableResults[$i]['tray']['shelf']['barcode']) ? $newTableResults[$i]['tray']['shelf']['barcode'] : $newTableResults[$i]['tray']['shelf']) : null,
-                'depth' => $newTableResults[$i]['tray'] ? $newTableResults[$i]['tray']['depth'] : null,
-                'position' => $newTableResults[$i]['tray'] ? $newTableResults[$i]['tray']['position'] : null,
-                // 'collection' => $newTableResults[$i]['collection'],
-                'status' => $newTableResults[$i]['status'],
-                'system' => 'New',
-            ];
-        }
-        return $results;
     }
 
     public function actionBrowse()
@@ -195,20 +197,21 @@ class ItemApiController extends ActiveController
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
-        if ($tokenCheck['level'] < 80) {
+        if ($tokenCheck['level'] >= 80) {
+            $allItems = $this->modelClass::find()->where(['active' => 1])->all();
+            $anomalousItems = [];
+            // Go through each item and check it against FOLIO
+            foreach ($allItems as $item) {
+                $anomalous = \app\components\Folio::handleMarkFolioAnomaly($item, $tokenCheck['id']);
+                if ($anomalous) {
+                    $anomalousItems[] = $item["barcode"];
+                }
+            }
+            return $anomalousItems;
+        }
+        else {
             throw new \yii\web\HttpException(403, 'You do not have permission to do this operation');
         }
-
-        $allItems = $this->modelClass::find()->where(['active' => 1])->all();
-        $anomalousItems = [];
-        // Go through each item and check it against FOLIO
-        foreach ($allItems as $item) {
-            $anomalous = \app\components\Folio::handleMarkFolioAnomaly($item, $tokenCheck['id']);
-            if ($anomalous) {
-                $anomalousItems[] = $item["barcode"];
-            }
-        }
-        return $anomalousItems;
     }
 
     private function handleItemUpdate($data, $userId, $actionIndicator)

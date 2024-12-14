@@ -84,7 +84,7 @@ class TrayLogApiController extends ActiveController
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
-        if ($tokenCheck['level'] >= 60) {
+        if ($tokenCheck['level'] >= 20) {
             $results = $this->modelClass::find()
                 ->select('action')
                 ->distinct()
