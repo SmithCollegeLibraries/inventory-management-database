@@ -607,6 +607,11 @@ class TrayApiController extends ActiveController
             else {
                 $oldLocation = sprintf("shelf %s, depth %s, position %s", $tray->shelf->barcode, $tray->depth, $tray->position);
             }
+            // Clear shelf, otherwise it gets counted as occupying a space
+            // when we look for shelves without space
+            $tray->shelf_id = null;
+            $tray->depth = null;
+            $tray->position = null;
             $tray->active = 0;
             $tray->save();
 
