@@ -187,6 +187,27 @@ class ShelfApiController extends ActiveController
                     ],
                 ]);
             }
+            else if ($positionsFree == 0) {
+                $provider = new ActiveDataProvider([
+                    'query' => $this->modelClass::find()
+                        ->leftJoin('tray', 'tray.shelf_id = shelf.id')
+                        ->where(['like', 'shelf.barcode', $shelfBarcode, false])
+                        ->andFilterWhere(['shelf.size_id' => $sizeId])
+                        ->andFilterWhere(['shelf.collection_id' => $collectionId])
+                        ->andWhere(['shelf.active' => true])
+                        ->andWhere(['or', ['tray.active' => true], ['tray.id' => null]])
+                        ->groupBy(['capacity', 'shelf.id'])
+                        ->having('cast(shelf.capacity as signed) - count(tray.id) <= 0'),
+                    'sort' => [
+                        'defaultOrder' => [
+                            'barcode' => SORT_ASC,
+                        ]
+                    ],
+                    'pagination' => [
+                        'pageSize' => 60,
+                    ],
+                ]);
+            }
             else if ($positionsFree !== null && $positionsFree !== "") {
                 $provider = new ActiveDataProvider([
                     'query' => $this->modelClass::find()
