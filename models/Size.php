@@ -11,6 +11,7 @@ use Yii;
  * @property string $code
  * @property string $height
  * @property string $width
+ * @property int $depths
  * @property string $average_count
  */
 class Size extends \yii\db\ActiveRecord
@@ -31,7 +32,7 @@ class Size extends \yii\db\ActiveRecord
         return [
             [['code'], 'required'],
             [['height', 'width'], 'number'],
-            [['average_count'], 'integer'],
+            [['average_count', 'depths'], 'integer'],
             [['code'], 'string', 'max' => 8],
             [['code'], 'unique'],
         ];
@@ -47,6 +48,7 @@ class Size extends \yii\db\ActiveRecord
             'code' => 'Code',
             'height' => 'Height',
             'width' => 'Width',
+            'depths' => 'Max depths',
             'average_count' => 'Average count',
         ];
     }

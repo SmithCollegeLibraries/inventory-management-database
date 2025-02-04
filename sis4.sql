@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS `size` (
   `code` varchar(8) NOT NULL,
   `height` float DEFAULT NULL,
   `width` float DEFAULT NULL,
+  `depths` int(4) UNSIGNED DEFAULT NULL,
   `average_count` int(4) UNSIGNED DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE (code)
