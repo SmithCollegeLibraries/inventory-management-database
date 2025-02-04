@@ -166,7 +166,6 @@ class ShelfApiController extends ActiveController
                         'pageSize' => 60,
                     ],
                 ]);
-                return $provider->getModels();
             }
             else if ($trayBarcode == '') {
                 $provider = new ActiveDataProvider([
@@ -182,7 +181,6 @@ class ShelfApiController extends ActiveController
                         'pageSize' => 60,
                     ],
                 ]);
-                return $provider->getModels();
             }
             else {
                 $provider = new ActiveDataProvider([
@@ -199,8 +197,11 @@ class ShelfApiController extends ActiveController
                         'pageSize' => 60,
                     ],
                 ]);
-                return $provider->getModels();
             }
+            return [
+                'resultCount' => $provider->getTotalCount(),
+                'results' => $provider->getModels()
+            ];
         }
         else {
             throw new \yii\web\HttpException(403, 'You do not have permission to view shelves');
