@@ -2,11 +2,12 @@
 
 namespace app\controllers;
 
-use Yii;
 use yii\rest\ActiveController;
 use yii\data\ActiveDataProvider;
 use yii\filters\auth\QueryParamAuth;
 
+use app\models\Size;
+use app\models\Collection;
 use app\models\User;
 
 class ShelfApiController extends ActiveController
@@ -140,8 +141,14 @@ class ShelfApiController extends ActiveController
     {
         $shelfBarcode = isset($_REQUEST["shelf"]) ? str_replace('-', '_', $_REQUEST["shelf"]) : "_______";
         $trayBarcode = isset($_REQUEST["tray"]) ? $_REQUEST["tray"] : '';
+        $size = isset($_REQUEST["size"]) ? $_REQUEST["size"] : null;
+        $collection = isset($_REQUEST["collection"]) ? $_REQUEST["collection"] : null;
+        $positionsFree = isset($_REQUEST["positionsfree"]) ? $_REQUEST["positionsfree"] : null;
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        $sizeId = $size ? Size::find()->where(['code' => $size])->one()->id : null;
+        $collectionId = $collection ? Collection::find()->where(['name' => $collection])->andWhere(['active' => true])->one()->id : null;
 
         if ($tokenCheck['level'] >= 20) {
             $shelfFromTray = \app\models\Tray::find()
@@ -152,11 +159,24 @@ class ShelfApiController extends ActiveController
             // If a tray barcode is provided but no shelf barcode,
             // search just by the tray barcode; otherwise, 60 shelves
             // will be returned
-            if ($shelfBarcode == "_______" && $trayBarcode != '') {
+            if ($trayBarcode != '') {
                 $provider = new ActiveDataProvider([
                     'query' => $this->modelClass::find()
                         ->where(['barcode' => $secondShelfBarcode])
                         ->andWhere(['active' => true]),
+                ]);
+            }
+            // If the user is looking for empty shelves specifically
+            else if ($positionsFree == -1) {
+                $provider = new ActiveDataProvider([
+                    'query' => $this->modelClass::find()
+                        ->leftJoin('tray', 'tray.shelf_id = shelf.id')
+                        ->where(['like', 'shelf.barcode', $shelfBarcode, false])
+                        ->andFilterWhere(['shelf.size_id' => $sizeId])
+                        ->andFilterWhere(['shelf.collection_id' => $collectionId])
+                        ->andWhere(['shelf.active' => true])
+                        ->andWhere(['tray.id' => null])
+                        ->groupBy(['shelf.id']),
                     'sort' => [
                         'defaultOrder' => [
                             'barcode' => SORT_ASC,
@@ -167,11 +187,17 @@ class ShelfApiController extends ActiveController
                     ],
                 ]);
             }
-            else if ($trayBarcode == '') {
+            else if ($positionsFree !== null && $positionsFree !== "") {
                 $provider = new ActiveDataProvider([
                     'query' => $this->modelClass::find()
-                        ->where(['like', 'barcode', $shelfBarcode, false])
-                        ->andWhere(['active' => true]),
+                        ->leftJoin('tray', 'tray.shelf_id = shelf.id')
+                        ->where(['like', 'shelf.barcode', $shelfBarcode, false])
+                        ->andFilterWhere(['shelf.size_id' => $sizeId])
+                        ->andFilterWhere(['shelf.collection_id' => $collectionId])
+                        ->andWhere(['shelf.active' => true])
+                        ->andWhere(['or', ['tray.active' => true], ['tray.id' => null]])
+                        ->groupBy(['capacity', 'shelf.id'])
+                        ->having('cast(shelf.capacity as signed) - count(tray.id) >= :positionsFree', [':positionsFree' => $positionsFree]),
                     'sort' => [
                         'defaultOrder' => [
                             'barcode' => SORT_ASC,
@@ -186,7 +212,8 @@ class ShelfApiController extends ActiveController
                 $provider = new ActiveDataProvider([
                     'query' => $this->modelClass::find()
                         ->where(['like', 'barcode', $shelfBarcode, false])
-                        ->andWhere(['barcode' => $secondShelfBarcode])
+                        ->andFilterWhere(['size_id' => $sizeId])
+                        ->andFilterWhere(['collection_id' => $collectionId])
                         ->andWhere(['active' => true]),
                     'sort' => [
                         'defaultOrder' => [

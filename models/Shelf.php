@@ -17,6 +17,7 @@ use Yii;
  * @property int $flag
  * @property int|null $size_id
  * @property int|null $collection_id
+ * @property int|null $capacity
  *
  * @property ShelfLog[] $shelfLogs
  * @property Tray[] $trays
@@ -38,7 +39,7 @@ class Shelf extends \yii\db\ActiveRecord
     {
         return [
             [['barcode'], 'required'],
-            [['active', 'flag'], 'integer'],
+            [['active', 'flag', 'capacity', 'depths', 'positions'], 'integer'],
             [['barcode'], 'string', 'max' => 64],
             [['row', 'ladder', 'rung'], 'string', 'max' => 2],
             [['side'], 'string', 'max' => 1],
@@ -94,6 +95,9 @@ class Shelf extends \yii\db\ActiveRecord
                 }
                 return $trayArray;
             },
+            'capacity',
+            'depths',
+            'positions',
             // 'created',
             // 'updated',
         ];
@@ -115,6 +119,9 @@ class Shelf extends \yii\db\ActiveRecord
             'flag' => 'Flag',
             'size' => 'Size',
             'collection' => 'Collection',
+            'capacity' => 'Tray capacity',
+            'depths' => 'Max depths',
+            'positions' => 'Max positions',
         ];
     }
 
