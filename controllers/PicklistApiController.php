@@ -121,7 +121,7 @@ class PicklistApiController extends ActiveController
             ['item_id', 'user_id', 'action', 'details'],
             array_map(
                 function($i) use ($user) {
-                    return [$i['id'], $user['id'], 'Picklist: Requested', sprintf('Item %s added to picklist', $i['barcode'])];
+                    return [$i['id'], $user['id'], 'Picklist: Requested', sprintf('Item %s added to picklist (current status: %s)', $i['barcode'], $i['status'])];
                 },
                 $itemsNotInPicklist
             )
