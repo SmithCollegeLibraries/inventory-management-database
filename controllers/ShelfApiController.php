@@ -356,7 +356,7 @@ class ShelfApiController extends ActiveController
                 ]);
             }
             // If the user is looking for empty shelves specifically
-            else if ($positionsFree == -1) {
+            else if ($positionsFree === -1) {
                 $provider = new ActiveDataProvider([
                     'query' => $this->modelClass::find()
                         ->leftJoin('tray', 'tray.shelf_id = shelf.id')
@@ -376,7 +376,7 @@ class ShelfApiController extends ActiveController
                     ],
                 ]);
             }
-            else if ($positionsFree == 0) {
+            else if ($positionsFree === 0) {
                 $provider = new ActiveDataProvider([
                     'query' => $this->modelClass::find()
                         ->leftJoin('tray', 'tray.shelf_id = shelf.id')
@@ -397,7 +397,7 @@ class ShelfApiController extends ActiveController
                     ],
                 ]);
             }
-            else if ($positionsFree !== null && $positionsFree !== "") {
+            else if (!$positionsFree) {
                 $provider = new ActiveDataProvider([
                     'query' => $this->modelClass::find()
                         ->leftJoin('tray', 'tray.shelf_id = shelf.id')
