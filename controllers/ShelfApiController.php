@@ -397,7 +397,7 @@ class ShelfApiController extends ActiveController
                     ],
                 ]);
             }
-            else if (!$positionsFree) {
+            else if ($positionsFree > 0) {
                 $provider = new ActiveDataProvider([
                     'query' => $this->modelClass::find()
                         ->leftJoin('tray', 'tray.shelf_id = shelf.id')
