@@ -137,6 +137,183 @@ class ShelfApiController extends ActiveController
         }
     }
 
+    public function actionUpdateShelf()
+    {
+        $json = file_get_contents('php://input');
+        $data = json_decode($json, true);
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+        if ($tokenCheck['level'] >= 60) {
+            $shelfBarcode = array_key_exists('barcode', $data) ? $data['barcode'] : '';
+            $newBarcode = array_key_exists('newBarcode', $data) ? $data['new_barcode'] : null;
+            $row = array_key_exists('row', $data) ? $data['row'] : null;
+            $side = array_key_exists('side', $data) ? $data['side'] : null;
+            $ladder = array_key_exists('ladder', $data) ? $data['ladder'] : null;
+            $rung = array_key_exists('rung', $data) ? $data['rung'] : null;
+            $width = array_key_exists('width', $data) ? $data['width'] : null;
+            $height = array_key_exists('height', $data) ? $data['height'] : null;
+            $size = array_key_exists('size', $data) ? $data['size'] : null;
+            $collection = array_key_exists('collection', $data) ? $data['collection'] : null;
+            $capacity = array_key_exists('capacity', $data) ? $data['capacity'] : null;
+            $depths = array_key_exists('depths', $data) ? $data['depths'] : null;
+            $positions = array_key_exists('positions', $data) ? $data['positions'] : null;
+            $notes = array_key_exists('notes', $data) ? $data['notes'] : null;
+
+            $shelf = \app\models\Shelf::find()->where(['barcode' => $shelfBarcode, 'active' => true])->one();
+            if (!$shelf) {
+                throw new \yii\web\HttpException(400, sprintf('Shelf %s does not exist', $shelfBarcode));
+            }
+            if (!$shelf->active) {
+                throw new \yii\web\HttpException(400, sprintf('Shelf %s has been deleted', $shelfBarcode));
+            }
+            $trayLog = new $this->modelLogClass;
+            $logDetails = [];
+            $flag = false;
+            $flagDetails = [];
+
+            // If a barcode was provided and it's not the same as the current
+            // one, check that it's not already in use
+            if ($newBarcode !== null && $newBarcode != $shelfBarcode) {
+                $shelfCheck = $this->modelClass::find()->where(['barcode' => $newBarcode])->one();
+                if ($shelfCheck != null) {
+                    throw new \yii\web\HttpException(400, sprintf('Shelf %s already exists', $shelfBarcode));
+                }
+                $logDetails[] = sprintf("barcode %s", $newBarcode);
+                $shelf->barcode = $newBarcode;
+            }
+
+            // Row
+            if ($row !== null && $row != $shelf->row) {
+                $logDetails[] = sprintf('row %s', $row === "" ? "null" : $row);
+                $shelf->row = $row === "" ? null : $row;
+            }
+            // Side
+            if ($side !== null && $side != $shelf->side) {
+                $logDetails[] = sprintf('side %s', $side === "" ? "null" : $side);
+                $shelf->side = $side === "" ? null : $side;
+            }
+            // Ladder
+            if ($ladder !== null && $ladder != $shelf->ladder) {
+                $logDetails[] = sprintf('ladder %s', $ladder === "" ? "null" : $ladder);
+                $shelf->ladder = $ladder === "" ? null : $ladder;
+            }
+            // Rung
+            if ($rung !== null && $rung != $shelf->rung) {
+                $logDetails[] = sprintf('rung %s', $rung === "" ? "null" : $rung);
+                $shelf->rung = $rung === "" ? null : $rung;
+            }
+            // Width
+            if ($width !== null && $width != $shelf->width) {
+                $logDetails[] = sprintf('width %s', $width === "" ? "null" : $width);
+                $shelf->width = $width === "" ? null : $width;
+            }
+            // Height
+            if ($height !== null && $height != $shelf->height) {
+                $logDetails[] = sprintf('height %s', $height === "" ? "null" : $height);
+                $shelf->height = $height === "" ? null : $height;
+            }
+            // Size
+            if ($size !== null) {
+                if ($size === "") {
+                    $logDetails[] = sprintf('size null');
+                    $shelf->size_id = null;
+                }
+                else {
+                    $sizeObject = Size::find()->where(['code' => $size])->one();
+                    if (!$sizeObject) {
+                        throw new \yii\web\HttpException(400, sprintf('Size %s does not exist', $size));
+                    }
+                    else if ($sizeObject->id != $shelf->size_id) {
+                        $logDetails[] = sprintf('size %s', $size);
+                        $shelf->size_id = $sizeObject->id;
+
+                        // Flag shelf if size doesn't fit height
+                        if ($sizeObject->height && $shelf->height && $sizeObject->height > $shelf->height) {
+                            $flag = true;
+                            $flagDetails[] = sprintf('Size %s does not fit height %s', $size, $shelf->height);
+                        }
+
+                        // Calculate new capacity, positions, and depths if
+                        // they weren't manually given
+                        if ($sizeObject && $shelf->width && $capacity === null) {
+                            $capacity = $sizeObject->depths * floor($shelf->width / $sizeObject->width);
+                        }
+                        if ($sizeObject && $shelf->width && $positions === null) {
+                            $positions = floor($shelf->width / $sizeObject->width);
+                        }
+                        if ($sizeObject && $shelf->width && $depths === null) {
+                            $depths = $sizeObject->depths;
+                        }
+                    }
+                }
+            }
+            // Collection
+            if ($collection !== null) {
+                if ($collection === "") {
+                    $logDetails[] = sprintf('collection null');
+                    $shelf->collection_id = null;
+                }
+                else {
+                    $collectionObject = Collection::find()->where(['name' => $collection])->one();
+                    if (!$collectionObject) {
+                        throw new \yii\web\HttpException(400, sprintf('Collection %s does not exist', $collection));
+                    }
+                    else if ($collectionObject->id != $shelf->collection_id) {
+                        $logDetails[] = sprintf('collection %s', $collection);
+                        $shelf->collection_id = $collectionObject->id;
+                    }
+                }
+            }
+            // Capacity
+            if ($capacity !== null && $capacity != $shelf->capacity) {
+                $logDetails[] = sprintf('capacity %s', $capacity === "" ? "null" : $capacity);
+                $shelf->capacity = $capacity === "" ? null : $capacity;
+            }
+            // Positions
+            if ($positions !== null && $positions != $shelf->positions) {
+                $logDetails[] = sprintf('positions %s', $positions === "" ? "null" : $positions);
+                $shelf->positions = $positions === "" ? null : $positions;
+            }
+            // Depths
+            if ($depths !== null && $depths != $shelf->depths) {
+                $logDetails[] = sprintf('depths %s', $depths === "" ? "null" : $depths);
+                $shelf->depths = $depths === "" ? null : $depths;
+            }
+            // Notes
+            if ($notes !== null && $notes != $shelf->notes) {
+                $logDetails[] = sprintf('notes');
+                $shelf->notes = $notes;
+            }
+
+            if ($flag) {
+                $shelf->flag = 1;
+                $flagLog = new $this->modelLogClass;
+                $flagLog->shelf_id = $shelf->id;
+                $flagLog->action = 'Flagged';
+                $flagLog->details = sprintf("Flagged shelf %s: %s", $shelf->barcode, implode('; ', $flagDetails));
+                $flagLog->user_id = $tokenCheck['id'];
+                $flagLog->save();
+            }
+
+            $shelf->save();
+
+            $trayLog->shelf_id = $shelf->id;
+            $trayLog->action = 'Updated';
+            if ($logDetails) {
+                $trayLog->details = sprintf("Updated shelf %s: %s", $shelf->barcode, implode(', ', $logDetails));
+            }
+            else {
+                $trayLog->details = sprintf("Updated shelf %s (no changes)", $shelf->barcode);
+            }
+            $trayLog->user_id = $tokenCheck['id'];
+            $trayLog->save();
+            return $shelf;
+        }
+        else {
+            throw new \yii\web\HttpException(403, 'You do not have permission to update shelves');
+        }
+    }
+
     public function actionSearch()
     {
         $shelfBarcode = isset($_REQUEST["shelf"]) ? str_replace('-', '_', $_REQUEST["shelf"]) : "_______";
