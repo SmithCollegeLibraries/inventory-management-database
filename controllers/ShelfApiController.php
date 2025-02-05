@@ -137,15 +137,13 @@ class ShelfApiController extends ActiveController
         }
     }
 
-    public function actionUpdateShelf()
+    public static function handleShelfUpdate($data)
     {
-        $json = file_get_contents('php://input');
-        $data = json_decode($json, true);
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
         if ($tokenCheck['level'] >= 60) {
             $shelfBarcode = array_key_exists('barcode', $data) ? $data['barcode'] : '';
-            $newBarcode = array_key_exists('newBarcode', $data) ? $data['new_barcode'] : null;
+            $newBarcode = array_key_exists('new_barcode', $data) ? $data['new_barcode'] : null;
             $row = array_key_exists('row', $data) ? $data['row'] : null;
             $side = array_key_exists('side', $data) ? $data['side'] : null;
             $ladder = array_key_exists('ladder', $data) ? $data['ladder'] : null;
@@ -158,6 +156,7 @@ class ShelfApiController extends ActiveController
             $depths = array_key_exists('depths', $data) ? $data['depths'] : null;
             $positions = array_key_exists('positions', $data) ? $data['positions'] : null;
             $notes = array_key_exists('notes', $data) ? $data['notes'] : null;
+            $flag = array_key_exists('flag', $data) ? $data['flag'] : null;
 
             $shelf = \app\models\Shelf::find()->where(['barcode' => $shelfBarcode, 'active' => true])->one();
             if (!$shelf) {
@@ -166,15 +165,14 @@ class ShelfApiController extends ActiveController
             if (!$shelf->active) {
                 throw new \yii\web\HttpException(400, sprintf('Shelf %s has been deleted', $shelfBarcode));
             }
-            $trayLog = new $this->modelLogClass;
+            $trayLog = new \app\models\ShelfLog;
             $logDetails = [];
-            $flag = false;
             $flagDetails = [];
 
             // If a barcode was provided and it's not the same as the current
             // one, check that it's not already in use
             if ($newBarcode !== null && $newBarcode != $shelfBarcode) {
-                $shelfCheck = $this->modelClass::find()->where(['barcode' => $newBarcode])->one();
+                $shelfCheck = \app\models\Shelf::find()->where(['barcode' => $newBarcode])->one();
                 if ($shelfCheck != null) {
                     throw new \yii\web\HttpException(400, sprintf('Shelf %s already exists', $shelfBarcode));
                 }
@@ -194,6 +192,7 @@ class ShelfApiController extends ActiveController
             }
             // Ladder
             if ($ladder !== null && $ladder != $shelf->ladder) {
+                $ladder = strlen($ladder) == 1 ? '0' . $ladder : $ladder;
                 $logDetails[] = sprintf('ladder %s', $ladder === "" ? "null" : $ladder);
                 $shelf->ladder = $ladder === "" ? null : $ladder;
             }
@@ -229,7 +228,6 @@ class ShelfApiController extends ActiveController
 
                         // Flag shelf if size doesn't fit height
                         if ($sizeObject->height && $shelf->height && $sizeObject->height > $shelf->height) {
-                            $flag = true;
                             $flagDetails[] = sprintf('Size %s does not fit height %s', $size, $shelf->height);
                         }
 
@@ -285,13 +283,13 @@ class ShelfApiController extends ActiveController
                 $shelf->notes = $notes;
             }
 
-            if ($flag) {
+            if ($flagDetails || $flag) {
                 $shelf->flag = 1;
-                $flagLog = new $this->modelLogClass;
+                $flagLog = new \app\models\ShelfLog;
                 $flagLog->shelf_id = $shelf->id;
                 $flagLog->action = 'Flagged';
                 $flagLog->details = sprintf("Flagged shelf %s: %s", $shelf->barcode, implode('; ', $flagDetails));
-                $flagLog->user_id = $tokenCheck['id'];
+                $flagLog->user_id = $tokenCheck->id;
                 $flagLog->save();
             }
 
@@ -305,9 +303,23 @@ class ShelfApiController extends ActiveController
             else {
                 $trayLog->details = sprintf("Updated shelf %s (no changes)", $shelf->barcode);
             }
-            $trayLog->user_id = $tokenCheck['id'];
+            $trayLog->user_id = $tokenCheck->id;
             $trayLog->save();
             return $shelf;
+        }
+        else {
+            throw new \yii\web\HttpException(403, 'You do not have permission to update shelves');
+        }
+    }
+
+    public function actionUpdateShelf()
+    {
+        $json = file_get_contents('php://input');
+        $data = json_decode($json, true);
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+        if ($tokenCheck['level'] >= 60) {
+            return $this->handleShelfUpdate($data, $tokenCheck);
         }
         else {
             throw new \yii\web\HttpException(403, 'You do not have permission to update shelves');

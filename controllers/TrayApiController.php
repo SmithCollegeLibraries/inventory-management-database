@@ -11,6 +11,8 @@ use app\models\Shelf;
 use app\models\User;
 use app\models\OldBarcodeTray;
 
+use app\controllers\ShelfApiController;
+
 class TrayApiController extends ActiveController
 {
     public $modelClass = 'app\models\Tray';
@@ -379,17 +381,65 @@ class TrayApiController extends ActiveController
         // In each case, don't make any changes if a given parameter wasn't
         // provided -- but do clear to null if an empty string or 0 was provided
 
+        // Size
+        $sizeChanged = false;
+        if (!is_null($dataSize)) {
+            $size = \app\models\Size::find()->where(['code' => $data['size']])->one();
+            if ($data['size'] && !$size) {
+                throw new \yii\web\HttpException(400, sprintf('Size %s does not exist', $data['size']));
+            }
+            else if ($size == "") {
+                $tray->size_id = null;
+                $logDetails[] = sprintf("size null");
+            }
+            else if ($size->id != $tray->size_id) {
+                $sizeChanged = true;
+                $tray->size_id = $size->id;
+                $logDetails[] = sprintf("size %s", $data['size']);
+            }
+        }
+        // Collection
+        $collectionChanged = false;
+        if (!is_null($dataCollection)) {
+            $collection = \app\models\Collection::find()->where(['name' => $data['collection']])->one();
+            if ($data['collection'] && !$collection) {
+                throw new \yii\web\HttpException(400, sprintf('Collection %s does not exist', $data['collection']));
+            }
+            else if ($collection == "") {
+                $tray->collection_id = null;
+                $logDetails[] = sprintf("collection null");
+            }
+            else if ($collection->id != $tray->collection_id) {
+                $collectionChanged = true;
+                $tray->collection_id = $collection->id;
+                $logDetails[] = sprintf("collection %s", $data['collection']);
+            }
+        }
+
         // Shelf
+        $shelfChanged = false;
         if (!is_null($dataShelf)) {
             // If there is a current shelf and the new shelf is different/null
-            if (isset($tray->shelf) && $dataShelf != $tray->shelf->barcode) {
+            // or there is no current shelf and the new shelf is not null
+            if ((isset($tray->shelf) && $dataShelf != $tray->shelf->barcode)
+                || (!isset($tray->shelf) && $shelf)
+            ) {
+                $shelfChanged = true;
                 $tray->shelf_id = $shelf == null ? null : $shelf->id;
                 $logDetails[] = sprintf("shelf %s", $shelf == null ? "null" : $dataShelf);
-            }
-            // If there is no current shelf and there is a new one
-            else if (!isset($tray->shelf) && $shelf) {
-                $tray->shelf_id = $shelf->id;
-                $logDetails[] = sprintf("shelf %s", $dataShelf);
+
+                // Assign the shelf size and collection if not assigned yet
+                // (the shelf will be flagged if the size is too big)
+                if ($shelf != null) {
+                    if (!$shelf->size_id && $tray->size_id) {
+                        $sizeObject = \app\models\Size::find()->where(['id' => $tray->size_id])->one();
+                        ShelfApiController::handleShelfUpdate(["barcode" => $shelf->barcode, "size" => $sizeObject->code]);
+                    }
+                    if (!$shelf->collection_id && $tray->collection_id) {
+                        $collectionObject = \app\models\Collection::find()->where(['id' => $tray->collection_id])->one();
+                        ShelfApiController::handleShelfUpdate(["barcode" => $shelf->barcode, "collection" => $collectionObject->name]);
+                    }
+                }
             }
         }
         // Depth
@@ -413,38 +463,34 @@ class TrayApiController extends ActiveController
                 $logDetails[] = sprintf("full count %s", $dataFullCount ? $dataFullCount : "null");
             }
         }
-        // Size
-        if (!is_null($dataSize)) {
-            $size = \app\models\Size::find()->where(['code' => $data['size']])->one();
-            if ($data['size'] && !$size) {
-                throw new \yii\web\HttpException(400, sprintf('Size %s does not exist', $data['size']));
+
+        // If the tray update results in partial location information, flag it
+        if (($tray->shelf_id == null || $tray->depth == null || $tray->position == null) &&
+                !($tray->shelf_id == null && $tray->depth == null && $tray->position == null)) {
+            $flagDetails[] = sprintf('Tray %s was shelved with incomplete location information', $tray->barcode);
+        }
+
+        // If the tray size or collection doesn't match with the shelf, flag it
+        if ($tray->shelf_id != null) {
+            $shelf = \app\models\Shelf::find()->where(['id' => $tray->shelf_id])->one();
+            // Log the flag if either the tray size or tray shelf changed
+            if (($tray->size_id != null && $shelf->size_id != $tray->size_id)
+                && ($shelfChanged || $sizeChanged)
+            ) {
+                $traySizeCode = \app\models\Size::find()->where(['id' => $tray->size_id])->one()->code;
+                $shelfSizeCode = \app\models\Size::find()->where(['id' => $shelf->size_id])->one()->code;
+                $flagDetails[] = sprintf('Size mismatch between tray %s (%s) and shelf %s (%s)', $tray->barcode, $traySizeCode, $shelf->barcode, $shelfSizeCode);
             }
-            else if ($size == "") {
-                $tray->size_id = null;
-                $logDetails[] = sprintf("size null");
-            }
-            else if ($size->id != $tray->size_id) {
-                $tray->size_id = $size->id;
-                $logDetails[] = sprintf("size %s", $data['size']);
+            if (($tray->collection_id != null && $shelf->collection_id != $tray->collection_id)
+                && ($shelfChanged || $collectionChanged)
+            ) {
+                $trayCollectionName = \app\models\Collection::find()->where(['id' => $tray->collection_id])->one()->name;
+                $shelfCollectionName = \app\models\Collection::find()->where(['id' => $shelf->collection_id])->one()->name;
+                $flagDetails[] = sprintf('Collection mismatch between tray %s (%s) and shelf %s (%s)', $tray->barcode, $trayCollectionName, $shelf->barcode, $shelfCollectionName);
             }
         }
-        // Collection
-        if (!is_null($dataCollection)) {
-            $collection = \app\models\Collection::find()->where(['name' => $data['collection']])->one();
-            if ($data['collection'] && !$collection) {
-                throw new \yii\web\HttpException(400, sprintf('Collection %s does not exist', $data['collection']));
-            }
-            else if ($collection == "") {
-                $tray->collection_id = null;
-                $logDetails[] = sprintf("collection null");
-            }
-            else if ($collection->id != $tray->collection_id) {
-                $tray->collection_id = $collection->id;
-                $logDetails[] = sprintf("collection %s", $data['collection']);
-            }
-        }
-        // Flag
-        if ($flag == true) {
+
+        if ($flagDetails || $flag) {
             $tray->flag = 1;
         }
         $tray->save();
@@ -460,17 +506,6 @@ class TrayApiController extends ActiveController
         }
         $trayLog->user_id = $userId;
         $trayLog->save();
-
-        // If the tray update results in partial location information, flag it
-        if (($tray->shelf_id == null || $tray->depth == null || $tray->position == null) &&
-                !($tray->shelf_id == null && $tray->depth == null && $tray->position == null)) {
-            $flagDetails[] = sprintf('Tray %s was shelved with incomplete location information', $tray->barcode);
-        }
-
-        if ($flagDetails) {
-            $tray->flag = 1;
-            $tray->save();
-        }
 
         // Log any flags that occurred
         foreach ($flagDetails as $flagDetail) {
