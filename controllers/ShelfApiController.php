@@ -459,4 +459,23 @@ class ShelfApiController extends ActiveController
         }
     }
 
+    public function actionLadderCount()
+    {
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if ($tokenCheck['level'] >= 20) {
+            $ladderCount = $this->modelClass::find()
+                ->select('row, side, ladder')
+                ->where(['active' => 1])
+                ->andWhere(['not', ['row' => null]])
+                ->distinct()
+                ->count();
+            return $ladderCount;
+        }
+        else {
+            throw new \yii\web\HttpException(403, 'You do not have permission to view the ladder count.');
+        }
+    }
+
 }
