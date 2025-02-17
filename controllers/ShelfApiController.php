@@ -478,4 +478,26 @@ class ShelfApiController extends ActiveController
         }
     }
 
+    public function actionCountsCollectionSize()
+    {
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if ($tokenCheck['level'] >= 60) {
+            $collectionCounts = $this->modelClass::find()
+                ->select('collection_id, size_id, collection.code as collection_code, collection.name as collection_name, size.code as size, count(*) as count')
+                ->leftJoin('size', 'shelf.size_id = size.id')
+                ->leftJoin('collection', 'shelf.collection_id = collection.id')
+                ->where(['shelf.active' => 1])
+                ->andWhere(['collection.active' => 1])
+                ->groupBy(['collection_id', 'size_id'])
+                ->asArray()
+                ->all();
+            return $collectionCounts;
+        }
+        else {
+            throw new \yii\web\HttpException(403, 'You do not have permission to view the counts by collection and size.');
+        }
+    }
+
 }
