@@ -50,7 +50,10 @@ class CollectionApiController extends ActiveController
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
         if ($tokenCheck['level'] >= 10) {
-            return Collection::find()->where(['active' => 1])->all();
+            return Collection::find()
+                ->where(['active' => 1])
+                ->orderBy(['name' => SORT_ASC])
+                ->all();
         } else {
             throw new \yii\web\ForbiddenHttpException('You are not authorized to view collections');
         }
