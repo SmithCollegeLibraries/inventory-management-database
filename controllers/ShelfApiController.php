@@ -489,7 +489,6 @@ class ShelfApiController extends ActiveController
                 ->leftJoin('size', 'shelf.size_id = size.id')
                 ->leftJoin('collection', 'shelf.collection_id = collection.id')
                 ->where(['shelf.active' => 1])
-                ->andWhere(['collection.active' => 1])
                 ->groupBy(['collection_id', 'size_id'])
                 ->asArray()
                 ->all();
