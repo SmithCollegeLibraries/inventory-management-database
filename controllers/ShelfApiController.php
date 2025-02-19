@@ -484,7 +484,7 @@ class ShelfApiController extends ActiveController
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
         if ($tokenCheck['level'] >= 60) {
-            $collectionCounts = $this->modelClass::find()
+            $collectionSizeCounts = $this->modelClass::find()
                 ->select('collection_id, size_id, collection.code as collection_code, collection.name as collection_name, size.code as size, count(*) as count')
                 ->leftJoin('size', 'shelf.size_id = size.id')
                 ->leftJoin('collection', 'shelf.collection_id = collection.id')
@@ -492,10 +492,10 @@ class ShelfApiController extends ActiveController
                 ->groupBy(['collection_id', 'size_id'])
                 ->asArray()
                 ->all();
-            return $collectionCounts;
+            return $collectionSizeCounts;
         }
         else {
-            throw new \yii\web\HttpException(403, 'You do not have permission to view the counts by collection and size.');
+            throw new \yii\web\HttpException(403, 'You do not have permission to view shelf counts by collection and size.');
         }
     }
 

@@ -742,5 +742,27 @@ class ItemApiController extends ActiveController
         }
     }
 
+    public function actionCountsCollectionSize()
+    {
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if ($tokenCheck['level'] >= 60) {
+            $collectionSizeCounts = $this->modelClass::find()
+                ->select('item.collection_id, tray.size_id, collection.code as collection_code, collection.name as collection_name, size.code as size, count(*) as count')
+                ->leftJoin('tray', 'item.tray_id = tray.id')
+                ->leftJoin('size', 'tray.size_id = size.id')
+                ->leftJoin('collection', 'item.collection_id = collection.id')
+                ->where(['item.active' => 1])
+                ->groupBy(['item.collection_id', 'tray.size_id'])
+                ->asArray()
+                ->all();
+            return $collectionSizeCounts;
+        }
+        else {
+            throw new \yii\web\HttpException(403, 'You do not have permission to view item counts by collection and size.');
+        }
+    }
+
 }
 
