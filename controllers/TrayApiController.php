@@ -871,8 +871,8 @@ class TrayApiController extends ActiveController
         if ($tokenCheck['level'] >= 60) {
             $collectionSizeCounts = $this->modelClass::find()
                 ->select('tray.collection_id, tray.size_id, collection.code as collection_code, collection.name as collection_name, size.code as size, count(*) as count')
-                ->leftJoin('size', 'tray.size_id = size.id')
                 ->leftJoin('collection', 'tray.collection_id = collection.id')
+                ->leftJoin('size', 'tray.size_id = size.id')
                 ->where(['tray.active' => 1])
                 ->groupBy(['tray.collection_id', 'tray.size_id'])
                 ->asArray()

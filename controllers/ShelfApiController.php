@@ -8,6 +8,7 @@ use yii\filters\auth\QueryParamAuth;
 
 use app\models\Size;
 use app\models\Collection;
+use app\models\TrayLog;
 use app\models\User;
 
 class ShelfApiController extends ActiveController
@@ -486,8 +487,8 @@ class ShelfApiController extends ActiveController
         if ($tokenCheck['level'] >= 60) {
             $collectionSizeCounts = $this->modelClass::find()
                 ->select('collection_id, size_id, collection.code as collection_code, collection.name as collection_name, size.code as size, count(*) as count')
-                ->leftJoin('size', 'shelf.size_id = size.id')
                 ->leftJoin('collection', 'shelf.collection_id = collection.id')
+                ->leftJoin('size', 'shelf.size_id = size.id')
                 ->where(['shelf.active' => 1])
                 ->groupBy(['collection_id', 'size_id'])
                 ->asArray()

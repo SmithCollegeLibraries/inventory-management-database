@@ -3,6 +3,7 @@
 namespace app\controllers;
 
 use Yii;
+use yii\db\Expression;
 use yii\rest\ActiveController;
 use yii\data\ActiveDataProvider;
 use yii\filters\auth\QueryParamAuth;
@@ -172,6 +173,36 @@ class ItemLogApiController extends ActiveController
         }
         else {
             throw new \yii\web\HttpException(403, "You do not have permission to view this data.");
+        }
+    }
+
+    public function actionFillRateCollectionSize()
+    {
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if ($tokenCheck['level'] >= 60) {
+            $collectionSizeCounts = $this->modelClass::find()
+                ->select([
+                    new Expression('YEAR(timestamp) AS year'),
+                    new Expression('MONTH(timestamp) AS month'),
+                    'collection.code AS collection',
+                    'size.code AS size',
+                    'COUNT(*) AS count'
+                ])
+                ->leftJoin('item', 'item_log.item_id = item.id')
+                ->leftJoin('tray', 'item.tray_id = tray.id')
+                ->leftJoin('collection', 'item.collection_id = collection.id')
+                ->leftJoin('size', 'tray.size_id = size.id')
+                ->where(['item.active' => 1])
+                ->andWhere(['item_log.action' => "Added"])
+                ->groupBy(['left(timestamp, 7)'])
+                ->asArray()
+                ->all();
+            return $collectionSizeCounts;
+        }
+        else {
+            throw new \yii\web\HttpException(403, 'You do not have permission to view item counts by collection and size.');
         }
     }
 }
