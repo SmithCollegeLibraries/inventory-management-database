@@ -398,7 +398,7 @@ class ItemApiController extends ActiveController
             ->andWhere(['active' => false])
             ->one();
         if ($existingItem) {
-            $item = $this->handleItemUpdate($data, $userId, "Reactivated");
+            $item = $this->handleItemUpdate($data, $userId, "Restored");
         }
         else {
             $item = new $this->modelClass;
