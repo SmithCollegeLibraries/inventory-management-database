@@ -111,9 +111,10 @@ class ShelfLogApiController extends ActiveController
         }
     }
 
-    public function actionFillRateCollectionSize()
+    public function actionFillRates()
     {
         $token = $_REQUEST["access-token"];
+        $months = isset($_REQUEST["months"]) ? $_REQUEST["months"] : null;
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
         if ($tokenCheck['level'] >= 60) {
@@ -144,6 +145,9 @@ class ShelfLogApiController extends ActiveController
                         AND tl2.action = "Added")'
                     )
                 ])
+                // Restrict to the last $months months, or all time if no
+                // query parameter is given
+                ->andWhere(['>=', 'timestamp', $months === null ? "0" : new Expression('DATE_FORMAT(DATE_SUB(NOW(), INTERVAL :months MONTH), "%Y-%m-01")', [':months' => $months])])
                 ->groupBy(['year', 'month', 'tray.size_id', 'tray.collection_id'])
                 ->asArray()
                 // ->orderBy(['year' => SORT_ASC, 'month' => SORT_ASC, 'tray.size_id' => SORT_ASC, 'tray.collection_id' => SORT_ASC])
