@@ -242,7 +242,7 @@ class TrayLogApiController extends ActiveController
                 // Restrict to the last $months months, or all time if no
                 // query parameter is given
                 ->andWhere(['>=', 'timestamp', $months === null ? "0" : new Expression('DATE_FORMAT(DATE_SUB(NOW(), INTERVAL :months MONTH), "%Y-%m-01")', [':months' => $months])])
-                ->groupBy(['left(timestamp, 7)'])
+                ->groupBy(['YEAR(timestamp)', 'MONTH(timestamp)', 'collection.code', 'size.code'])
                 ->asArray()
                 ->all();
             return $collectionSizeCounts;
