@@ -306,7 +306,7 @@ CREATE TABLE IF NOT EXISTS `shelf_log` (
 CREATE TABLE IF NOT EXISTS `setting` (
   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `name` varchar(31) NOT NULL,
-  `value` varchar(255) NOT NULL,
+  `value` varchar(255),
   PRIMARY KEY (id),
   UNIQUE (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -320,7 +320,7 @@ CREATE TABLE IF NOT EXISTS `setting` (
 CREATE TABLE IF NOT EXISTS `setting_log` (
   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `setting_id` int(11) UNSIGNED NOT NULL,
-  `value` varchar(255) NOT NULL,
+  `value` varchar(255),
   `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `user_id` int(11) UNSIGNED NOT NULL,
   PRIMARY KEY (id),
