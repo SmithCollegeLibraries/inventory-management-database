@@ -328,6 +328,28 @@ CREATE TABLE IF NOT EXISTS `setting_log` (
   FOREIGN KEY (user_id) REFERENCES user(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- --------------------------------------------------------
+
+--
+-- Table structure for fill rate cache
+--
+
+CREATE TABLE IF NOT EXISTS `cache_fill_rate` (
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `year` int(4) UNSIGNED NOT NULL,
+  `month` int(2) UNSIGNED NOT NULL,
+  `collection_id` int(11) UNSIGNED,
+  `size_id` int(11) UNSIGNED,
+  `item_count` int(11) UNSIGNED,
+  `tray_count` int(11) UNSIGNED,
+  `shelf_count` int(11) UNSIGNED,
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  FOREIGN KEY (collection_id) REFERENCES collection(id),
+  FOREIGN KEY (size_id) REFERENCES size(id),
+  CONSTRAINT count_subtotal UNIQUE (year, month, collection_id, size_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 
 -- Create indexes
 
@@ -379,3 +401,10 @@ CREATE INDEX idx_shelf_log_shelf ON shelf_log (shelf_id);
 CREATE INDEX idx_shelf_log_user ON shelf_log (user_id);
 CREATE INDEX idx_shelf_log_action ON shelf_log (action);
 CREATE INDEX idx_shelf_log_timestamp ON shelf_log (timestamp);
+
+-- Create indexes for cache tables
+
+CREATE INDEX idx_cache_fill_rate_year ON cache_fill_rate (year);
+CREATE INDEX idx_cache_fill_rate_month ON cache_fill_rate (month);
+CREATE INDEX idx_cache_fill_rate_collection ON cache_fill_rate (collection_id);
+CREATE INDEX idx_cache_fill_rate_size ON cache_fill_rate (size_id);
