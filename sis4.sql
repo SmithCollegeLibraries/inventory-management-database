@@ -322,7 +322,7 @@ CREATE TABLE IF NOT EXISTS `setting_log` (
   `setting_id` int(11) UNSIGNED NOT NULL,
   `value` varchar(255),
   `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `user_id` int(11) UNSIGNED NOT NULL,
+  `user_id` int(11) UNSIGNED,  -- Could be null for system processes
   PRIMARY KEY (id),
   FOREIGN KEY (setting_id) REFERENCES setting(id),
   FOREIGN KEY (user_id) REFERENCES user(id)
