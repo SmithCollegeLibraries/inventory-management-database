@@ -17,6 +17,8 @@ const ANNEX_START_DATE = '2017-05-01';
 
 class CacheTableController extends Controller
 {
+    /* This is called as a cron job daily to avoid long waits when
+     * viewing fill rate reports */
     public static function actionFillRates(?int $user_id=null)
     {
         // Cache the item fill rate values for the given year and month, and

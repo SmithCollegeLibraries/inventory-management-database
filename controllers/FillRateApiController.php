@@ -53,7 +53,7 @@ class FillRateApiController extends ActiveController
     // last time this function was run is saved in the Settings table. All
     // months since that time, including the month of the last call of
     // this function, will be updated.
-    public function actionGetFillRates($months)
+    public function actionGetFillRates(?int $months=null)
     {
         // Restrict to level 60 or more
         $token = $_REQUEST["access-token"];
@@ -65,13 +65,23 @@ class FillRateApiController extends ActiveController
             // $command = 'yii cache-tables/fill-rates ' . $tokenCheck['id'];
             CacheTableController::actionFillRates($tokenCheck['id']);
 
-            // Then, return the results from the cache tables
-            $startOfTotals = date('Y-m-01', strtotime("-$months months"));
-            $fillRates = $this->modelClass::find()
-                ->where(['>=', new Expression("CONCAT(year, '-', LPAD(month, 2, '0'), '-01')"), $startOfTotals])
-                ->orderBy(['year' => SORT_DESC, 'month' => SORT_DESC])
-                ->all();
-            return $fillRates;
+            // Then, return the results from the cache tables. If $months is
+            // defined, return the fill rates for the past $months months;
+            // otherwise, return results from all time.
+            if ($months) {
+                $startOfTotals = date('Y-m-01', strtotime("-$months months"));
+                $fillRates = $this->modelClass::find()
+                    ->where(['>=', new Expression("CONCAT(year, '-', LPAD(month, 2, '0'), '-01')"), $startOfTotals])
+                    ->orderBy(['year' => SORT_DESC, 'month' => SORT_DESC])
+                    ->all();
+                return $fillRates;
+            }
+            else {
+                $fillRates = $this->modelClass::find()
+                    ->orderBy(['year' => SORT_DESC, 'month' => SORT_DESC])
+                    ->all();
+                return $fillRates;
+            }
         }
     }
 }
