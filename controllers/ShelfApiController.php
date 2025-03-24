@@ -500,4 +500,68 @@ class ShelfApiController extends ActiveController
         }
     }
 
+    public function actionSpaceUsage()
+    {
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if ($tokenCheck['level'] >= 60) {
+            $query = $this->modelClass::find()
+                ->select([
+                    'collection.code AS collection_code',
+                    'size.code AS size_code',
+                    'shelf.barcode AS barcode',
+                    'IF(tray.id, count(*), 0) AS shelf_count',
+                    'shelf.capacity AS capacity'
+                ])
+                ->leftJoin('tray', 'tray.shelf_id = shelf.id')
+                ->leftJoin('size', 'size.id = shelf.size_id')
+                ->leftJoin('collection', 'collection.id = shelf.collection_id')
+                ->where(['or', ['tray.active' => 1], ['tray.id' => null]])
+                ->groupBy('shelf.id')
+                ->orderBy(['collection.id' => SORT_ASC, 'size.id' => SORT_ASC])
+                ->asArray()
+                ->all();
+
+            $results = [];
+            foreach ($query as $row) {
+                // PHP stores null array keys as empty strings anyway
+                $collectionCode = $row['collection_code'] ?: "";
+                $sizeCode = $row['size_code'] ?: "";
+                if (!isset($results[$collectionCode])) {
+                    $results[$collectionCode] = [];
+                }
+                if (!isset($results[$collectionCode][$sizeCode])) {
+                    $results[$collectionCode][$sizeCode] = [
+                        'total_shelves' => 0,
+                        'total_trays' => 0,
+                        'total_capacity' => null,
+                        'empty' => 0,
+                        'partial/full' => 0,
+                        'full' => 0,
+                    ];
+                }
+                $results[$collectionCode][$sizeCode]['total_shelves']++;
+                $results[$collectionCode][$sizeCode]['total_trays'] += $row['shelf_count'];
+                if ($row['capacity']) {
+                    $results[$collectionCode][$sizeCode]['total_capacity'] += $row['capacity'];
+                }
+                if ($row['shelf_count'] == 0 || $row['shelf_count'] === null) {
+                    $results[$collectionCode][$sizeCode]['empty']++;
+                }
+                elseif ($row['shelf_count'] && $row['capacity'] && $row['shelf_count'] >= $row['capacity']) {
+                    $results[$collectionCode][$sizeCode]['full']++;
+                }
+                else {
+                    $results[$collectionCode][$sizeCode]['partial/full']++;
+                }
+            }
+
+            return $results;
+        }
+        else {
+            throw new \yii\web\HttpException(403, 'You do not have permission to view shelf space usage.');
+        }
+    }
+
 }
