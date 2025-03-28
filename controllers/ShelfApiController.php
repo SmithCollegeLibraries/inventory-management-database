@@ -526,27 +526,27 @@ class ShelfApiController extends ActiveController
                 }
                 if (!isset($results[$collectionCode][$sizeCode])) {
                     $results[$collectionCode][$sizeCode] = [
-                        'total_shelves' => 0,
-                        'total_trays' => 0,
-                        'total_capacity' => null,
-                        'empty' => 0,
-                        'partial/full' => 0,
-                        'full' => 0,
+                        'Total trays' => 0,
+                        'Capacity' => null,
+                        'Shelves' => 0,
+                        'Empty' => 0,
+                        'Partial/full' => 0,
+                        'Full' => 0,
                     ];
                 }
-                $results[$collectionCode][$sizeCode]['total_shelves']++;
-                $results[$collectionCode][$sizeCode]['total_trays'] += $row['shelf_count'];
+                $results[$collectionCode][$sizeCode]['Shelves']++;
+                $results[$collectionCode][$sizeCode]['Total trays'] += $row['shelf_count'];
                 if ($row['capacity']) {
-                    $results[$collectionCode][$sizeCode]['total_capacity'] += $row['capacity'];
+                    $results[$collectionCode][$sizeCode]['Capacity'] += $row['capacity'];
                 }
                 if ($row['shelf_count'] == 0 || $row['shelf_count'] === null) {
-                    $results[$collectionCode][$sizeCode]['empty']++;
+                    $results[$collectionCode][$sizeCode]['Empty']++;
                 }
                 elseif ($row['shelf_count'] && $row['capacity'] && $row['shelf_count'] >= $row['capacity']) {
-                    $results[$collectionCode][$sizeCode]['full']++;
+                    $results[$collectionCode][$sizeCode]['Full']++;
                 }
                 else {
-                    $results[$collectionCode][$sizeCode]['partial/full']++;
+                    $results[$collectionCode][$sizeCode]['Partial/full']++;
                 }
             }
 
