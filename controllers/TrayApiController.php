@@ -456,16 +456,22 @@ class TrayApiController extends ActiveController
                 $tray->shelf_id = $shelf == null ? null : $shelf->id;
                 $logDetails[] = sprintf("shelf %s", $shelf == null ? "null" : $dataShelf);
 
-                // Assign the shelf size and collection if not assigned yet
-                // (the shelf will be flagged if the size is too big)
-                if ($shelf != null) {
-                    if (!$shelf->size_id && $tray->size_id) {
-                        $sizeObject = \app\models\Size::find()->where(['id' => $tray->size_id])->one();
-                        ShelfApiController::handleShelfUpdate(["barcode" => $shelf->barcode, "size" => $sizeObject->code], $userId);
+                // Assign the shelf size and collection if not assigned yet,
+                // OR if there are no trays on that shelf yet. (The shelf
+                // will be flagged if the size is too big for its height.)
+                if ($shelf !== null) {
+                    $trayCount = \app\models\Tray::find()->where(['shelf_id' => $shelf->id, 'active' => 1])->count();
+                    if ($trayCount == 0 || !$shelf->size_id) {
+                        if ($tray->size_id) {
+                            $sizeObject = \app\models\Size::find()->where(['id' => $tray->size_id])->one();
+                            ShelfApiController::handleShelfUpdate(["barcode" => $shelf->barcode, "size" => $sizeObject->code, "capacity" => null, "depths" => null, "positions" => null], $userId);
+                        }
                     }
-                    if (!$shelf->collection_id && $tray->collection_id) {
-                        $collectionObject = \app\models\Collection::find()->where(['id' => $tray->collection_id])->one();
-                        ShelfApiController::handleShelfUpdate(["barcode" => $shelf->barcode, "collection" => $collectionObject->name], $userId);
+                    if ($trayCount == 0 || !$shelf->collection_id) {
+                        if ($tray->collection_id) {
+                            $collectionObject = \app\models\Collection::find()->where(['id' => $tray->collection_id])->one();
+                            ShelfApiController::handleShelfUpdate(["barcode" => $shelf->barcode, "collection" => $collectionObject->name, "capacity" => null, "depths" => null, "positions" => null], $userId);
+                        }
                     }
                 }
             }

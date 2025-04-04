@@ -231,14 +231,14 @@ class ShelfApiController extends ActiveController
 
                     // Calculate new capacity, positions, and depths if
                     // they weren't manually given
-                    if ($sizeObject && $sizeObject->width && $shelf->width && $capacity === null) {
-                        $capacity = $sizeObject->depths * floor($shelf->width / $sizeObject->width);
+                    if ($sizeObject && $capacity === null) {
+                        $capacity = $sizeObject->width && $shelf->width ? $sizeObject->depths * floor($shelf->width / $sizeObject->width) : null;
                     }
-                    if ($sizeObject && $sizeObject->width && $shelf->width && $positions === null) {
-                        $positions = floor($shelf->width / $sizeObject->width);
+                    if ($sizeObject && $positions === null) {
+                        $positions = $sizeObject->width && $shelf->width ? floor($shelf->width / $sizeObject->width) : null;
                     }
-                    if ($sizeObject && $sizeObject->width && $shelf->width && $depths === null) {
-                        $depths = $sizeObject->depths;
+                    if ($sizeObject && $depths === null) {
+                        $depths = $sizeObject->depths ? $sizeObject->depths : null;
                     }
                 }
             }
