@@ -252,6 +252,26 @@ class TrayApiController extends ActiveController
         // If the shelf already exists, return it
         $possibleShelf = \app\models\Shelf::find()->where(['barcode' => $shelfBarcode])->one();
         if ($possibleShelf) {
+            if ($possibleShelf->active == 0) {
+                $possibleShelf->active = 1;
+                $possibleShelf->flag = 1;
+                $possibleShelf->save();
+
+                // Log the reactivation
+                $shelfLog = new \app\models\ShelfLog;
+                $shelfLog->shelf_id = $possibleShelf->id;
+                $shelfLog->action = 'Restored';
+                $shelfLog->details = sprintf('Restored shelf %s', $possibleShelf->barcode);
+                $shelfLog->user_id = $userId;
+                $shelfLog->save();
+
+                $flagShelfLog = new \app\models\ShelfLog;
+                $flagShelfLog->shelf_id = $possibleShelf->id;
+                $flagShelfLog->action = 'Flagged';
+                $flagShelfLog->details = sprintf('Flagged shelf %s: shelf was inactive when a tray was assigned to it', $possibleShelf->barcode);
+                $flagShelfLog->user_id = $userId;
+                $flagShelfLog->save();
+            }
             return $possibleShelf;
         }
         else {
@@ -262,6 +282,7 @@ class TrayApiController extends ActiveController
             $shelf->ladder = substr($shelfBarcode, 3, 2);
             $shelf->rung = substr($shelfBarcode, 5, 2);
             $shelf->active = 1;
+            $shelf->flag = 1;
             $shelf->save();
 
             $shelfLog = new \app\models\ShelfLog;
@@ -270,6 +291,13 @@ class TrayApiController extends ActiveController
             $shelfLog->details = sprintf('Created shelf %s automatically', $shelf->barcode);
             $shelfLog->user_id = $userId;
             $shelfLog->save();
+
+            $flagShelfLog = new \app\models\ShelfLog;
+            $flagShelfLog->shelf_id = $shelf->id;
+            $flagShelfLog->action = 'Flagged';
+            $flagShelfLog->details = sprintf('Flagged shelf %s: shelf did not exist when a tray was assigned to it', $shelf->barcode);
+            $flagShelfLog->user_id = $userId;
+            $flagShelfLog->save();
 
             return $shelf;
         }
@@ -293,13 +321,25 @@ class TrayApiController extends ActiveController
         $dataDepth = isset($data['depth']) ? $data['depth'] : null;
         $dataPosition = isset($data['position']) ? intval($data['position']) : null;
         $dataFullCount = isset($data['full_count']) ? $data['full_count'] : null;
-        $tray = $this->modelClass::find()->where(['barcode' => $trayBarcode])->one();
-        $shelf = \app\models\Shelf::find()->where(['barcode' => $dataShelf])->one();
+        $tray = $this->modelClass::find()->where(['barcode' => $trayBarcode, 'active' => 1])->one();
+        $shelf = \app\models\Shelf::find()->where(['barcode' => $dataShelf, 'active' => 1])->one();
 
         // Here are the five anomalies where we either throw an error
         // or shelve and flag, depending on the situation.
 
-        // 1. If the tray doesn't exist
+        // 1. If the shelf doesn't exist: with rapid shelve, this isn't a
+        // problem, we should have created the shelf on the fly already.
+        // When editing a tray manually, we should create the shelf first
+        // and confirm it exists, so we throw an error in that case.
+        if ($shelf == null) {
+            // You can clear the shelf field in the manual tray edit form,
+            // so it's not an error if this is a null string
+            if ($dataShelf != "") {
+                $shelf = $this->findOrCreateShelf($dataShelf, $userId);
+            }
+        }
+
+        // 2. If the tray doesn't exist
         if ($tray == null) {
             if ($flagsAllowed == true) {
                 $tray = $this->handleCreateTray($trayBarcode, $userId);
@@ -310,7 +350,7 @@ class TrayApiController extends ActiveController
             }
         }
 
-        // 2. If the tray is empty
+        // 3. If the tray is empty
         if ($tray->items == []) {
             if ($flagsAllowed == true) {
                 $flagDetails[] = sprintf('Tray %s was shelved when empty', $trayBarcode);
@@ -322,7 +362,7 @@ class TrayApiController extends ActiveController
             }
         }
 
-        // 3. If the tray is already shelved
+        // 4. If the tray is already shelved
         $oldShelf = \app\models\Shelf::find()->where(['id' => $tray->shelf_id])->one();
         if ($tray && $tray->shelf_id != null) {
             if ($flagsAllowed == true) {
@@ -337,18 +377,6 @@ class TrayApiController extends ActiveController
             else {
                 // This isn't an issue when using the non-rapid shelve form:
                 // it's actually normal to be editing already-shelved trays
-            }
-        }
-
-        // 4. If the shelf doesn't exist: with rapid shelve, this isn't a
-        // problem, we should have created the shelf on the fly already.
-        // When editing a tray manually, we should create the shelf first
-        // and confirm it exists, so we throw an error in that case.
-        if ($shelf == null) {
-            // You can clear the shelf field in the manual tray edit form,
-            // so it's not an error if this is a null string
-            if ($dataShelf != "") {
-                throw new \yii\web\HttpException(400, sprintf('Shelf %s does not exist', $dataShelf));
             }
         }
 
@@ -554,9 +582,6 @@ class TrayApiController extends ActiveController
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
         if ($tokenCheck['level'] >= 30) {
-            // Create the shelf on the fly if necessary
-            $this->findOrCreateShelf($data['shelf'], $tokenCheck['id']);
-
             $newData = [
                 'barcode' => $data['tray'],
                 'shelf' => $data['shelf'],
