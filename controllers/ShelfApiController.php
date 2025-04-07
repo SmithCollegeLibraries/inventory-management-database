@@ -334,11 +334,11 @@ class ShelfApiController extends ActiveController
         $collectionId = $collection ? Collection::find()->where(['name' => $collection])->andWhere(['active' => true])->one()->id : null;
 
         if ($tokenCheck['level'] >= 20) {
-            $shelfFromTray = \app\models\Tray::find()
+            $trayObject = \app\models\Tray::find()
                 ->where(['barcode' => $trayBarcode])
                 ->andWhere(['active' => true])
                 ->one();
-            $secondShelfBarcode = $shelfFromTray ? $shelfFromTray->shelf->barcode : '';
+            $secondShelfBarcode = $trayObject && $trayObject->shelf ? $trayObject->shelf->barcode : null;
             // If a tray barcode is provided but no shelf barcode,
             // search just by the tray barcode; otherwise, 60 shelves
             // will be returned
