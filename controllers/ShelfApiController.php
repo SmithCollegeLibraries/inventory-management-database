@@ -334,19 +334,15 @@ class ShelfApiController extends ActiveController
         $collectionId = $collection ? Collection::find()->where(['name' => $collection])->andWhere(['active' => true])->one()->id : null;
 
         if ($tokenCheck['level'] >= 20) {
-            $trayObject = \app\models\Tray::find()
-                ->where(['barcode' => $trayBarcode])
-                ->andWhere(['active' => true])
-                ->one();
-            $secondShelfBarcode = $trayObject && $trayObject->shelf ? $trayObject->shelf->barcode : null;
-            // If a tray barcode is provided but no shelf barcode,
-            // search just by the tray barcode; otherwise, 60 shelves
+            // If a tray barcode is provided, search just by the tray barcode
+            // (the shelf query will be cleared); otherwise, 60 shelves
             // will be returned
             if ($trayBarcode != '') {
                 $provider = new ActiveDataProvider([
                     'query' => $this->modelClass::find()
-                        ->where(['barcode' => $secondShelfBarcode])
-                        ->andWhere(['active' => true]),
+                        ->rightJoin('tray', 'tray.shelf_id = shelf.id')
+                        ->where(['tray.barcode' => $trayBarcode])
+                        ->andWhere(['tray.active' => true]),
                 ]);
             }
             // If the user is looking for empty shelves specifically
@@ -428,6 +424,43 @@ class ShelfApiController extends ActiveController
                         'pageSize' => 60,
                     ],
                 ]);
+            }
+            // If there was a tray result for an unshelved tray, return
+            // just that tray, with placeholder null/unshelved information.
+            // TODO: replace this exception with reworking shelf search
+            // to allow searching for "NONE" as its own shelf, and including
+            // all unshelved trays in that virtual shelf
+            if ($provider->getModels() && $provider->getModels()[0]['id'] === null) {
+                $tray = \app\models\Tray::find()
+                    ->where(['barcode' => $trayBarcode, 'active' => true, 'shelf_id' => null])
+                    ->one();
+                if ($tray) {
+                    return [
+                        'resultCount' => 1,
+                        'results' => [[
+                            "id" => null,
+                            "barcode" => "[Unshelved]",
+                            "row" => null,
+                            "side" => null,
+                            "ladder" => null,
+                            "rung" => null,
+                            "active" => true,
+                            "flag" => true,
+                            "size" => null,
+                            "collection" => null,
+                            "trays" => [$tray],
+                            "capacity" => null,
+                            "depths" => null,
+                            "positions" => null,
+                        ]],
+                    ];
+                }
+                else {
+                    return [
+                        'resultCount' => 0,
+                        'results' => [],
+                    ];
+                }
             }
             return [
                 'resultCount' => $provider->getTotalCount(),
