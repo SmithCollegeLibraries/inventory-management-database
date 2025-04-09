@@ -141,4 +141,33 @@ class ItemLogApiController extends ActiveController
         }
     }
 
+    public function actionRequestHistory()
+    {
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if ($tokenCheck['level'] >= 60) {
+            $requests = $this->modelClass::find()
+                ->select([
+                    'year' => 'YEAR(timestamp)',
+                    'month' => 'MONTH(timestamp)',
+                    'collection.code AS collection_code',
+                    'requested_count' => "SUM(CASE WHEN action = 'Picklist: Requested' THEN 1 ELSE 0 END)",
+                    'circulated_count' => "SUM(CASE WHEN action = 'Circulated' THEN 1 ELSE 0 END)",
+                    'missing_count' => "SUM(CASE WHEN action = 'Marked missing' THEN 1 ELSE 0 END)"
+                ])
+                ->from('item_log')
+                ->leftJoin('item', 'item_log.item_id = item.id')
+                ->leftJoin('collection', 'item.collection_id = collection.id')
+                ->where(['in', 'action', ['Picklist: Requested', 'Circulated', 'Marked missing']])
+                ->groupBy(['year', 'month', 'collection_code'])
+                ->orderBy(['year' => SORT_ASC, 'month' => SORT_ASC])
+                ->asArray()
+                ->all();
+            return $requests;
+        }
+        else {
+            throw new \yii\web\HttpException(403, 'You do not have permission to see request history');
+        }
+    }
 }
