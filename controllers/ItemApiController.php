@@ -578,6 +578,12 @@ class ItemApiController extends ActiveController
                     ['id' => array_map(function($i) { return $i['id']; }, $itemList)]
                 );
 
+                // If the item is being marked as missing, also flag it
+                $this->modelClass::updateAll(
+                    ['flag' => 1],
+                    ['and', ['id' => array_map(function($i) { return $i['id']; }, $itemList)], ['status' => 'Missing']]
+                );
+
                 // Add logs for all the new items
                 Yii::$app->db->createCommand()->batchInsert(
                     'item_log',
