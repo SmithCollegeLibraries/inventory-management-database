@@ -151,16 +151,15 @@ class ItemLogApiController extends ActiveController
                 ->select([
                     'year' => 'YEAR(timestamp)',
                     'month' => 'MONTH(timestamp)',
-                    'collection.code AS collection_code',
-                    'requested_count' => "SUM(CASE WHEN action = 'Picklist: Requested' THEN 1 ELSE 0 END)",
-                    'circulated_count' => "SUM(CASE WHEN action = 'Circulated' THEN 1 ELSE 0 END)",
-                    'missing_count' => "SUM(CASE WHEN action = 'Marked missing' THEN 1 ELSE 0 END)"
+                    'action',
+                    'collection_code' => 'collection.code',
+                    'count' => new Expression('COUNT(*)'),
                 ])
                 ->from('item_log')
                 ->leftJoin('item', 'item_log.item_id = item.id')
                 ->leftJoin('collection', 'item.collection_id = collection.id')
                 ->where(['in', 'action', ['Picklist: Requested', 'Circulated', 'Marked missing']])
-                ->groupBy(['year', 'month', 'collection_code'])
+                ->groupBy(['year', 'month', 'action', 'collection_code'])
                 ->orderBy(['year' => SORT_ASC, 'month' => SORT_ASC])
                 ->asArray()
                 ->all();
