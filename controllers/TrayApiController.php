@@ -367,11 +367,18 @@ class TrayApiController extends ActiveController
         if ($tray && $tray->shelf_id != null) {
             if ($flagsAllowed == true) {
                 $oldShelfBarcode = $oldShelf->barcode;
-                $oldPosition = $tray->position == null ? 'null' : $tray->position;
-                $oldDepth = $tray->depth == null ? 'null' : $tray->depth;
+                $oldPosition = $tray->position;
+                $oldDepth = $tray->depth;
                 // Don't worry about it unless it's actually a different location
-                if ($oldShelfBarcode != $dataShelf || $oldPosition != $dataPosition || $oldDepth != $dataDepth) {
-                    $flagDetails[] = sprintf('Tray %s was already on shelf %s, depth %s, position %s', $trayBarcode, $oldShelfBarcode, $oldDepth, $oldPosition);
+                if (($oldShelfBarcode && $oldShelfBarcode != $dataShelf)
+                      || ($oldPosition && $oldPosition != $dataPosition)
+                      || ($oldDepth && $oldDepth != $dataDepth)) {
+                    if ($oldShelfBarcode && preg_match('/^(00|BR|99)/', $oldShelfBarcode)) {
+                        // Do nothing: these are temporary shelves and don't need to be flagged
+                    }
+                    else {
+                        $flagDetails[] = sprintf('Tray %s was already on shelf %s, depth %s, position %s', $trayBarcode, $oldShelfBarcode ?: "null", $oldDepth ?: "null", $oldPosition ?: "null");
+                    }
                 }
             }
             else {
