@@ -199,7 +199,7 @@ class UserController extends Controller
         $json = file_get_contents('php://input');
         $data = json_decode($json, true);
 
-        if ($tokenCheck['level'] >= 60) {
+        if ($tokenCheck['level'] >= 50) {
             $query = User::find()
                 ->andFilterWhere(['>', 'level', 0])
                 ->orderBy('name')

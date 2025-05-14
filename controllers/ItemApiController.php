@@ -773,7 +773,7 @@ class ItemApiController extends ActiveController
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
-        if ($tokenCheck['level'] >= 60) {
+        if ($tokenCheck['level'] >= 40) {
             $collectionSizeCounts = $this->modelClass::find()
                 ->select('item.collection_id, tray.size_id, collection.code as collection_code, collection.name as collection_name, size.code as size, count(*) as count')
                 ->leftJoin('tray', 'item.tray_id = tray.id')
@@ -795,7 +795,7 @@ class ItemApiController extends ActiveController
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
-        if ($tokenCheck['level'] >= 60) {
+        if ($tokenCheck['level'] >= 40) {
             $min = isset($_REQUEST["min"]) ? $_REQUEST["min"] : 1;
 
 

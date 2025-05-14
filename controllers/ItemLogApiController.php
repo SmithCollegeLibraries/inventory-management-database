@@ -61,7 +61,7 @@ class ItemLogApiController extends ActiveController
         $timestampPost = isset($data['timestampPost']) ? $data['timestampPost'] : null;
         $timestampAnte = isset($data['timestampAnte']) ? $data['timestampAnte'] : null;
 
-        if ($tokenCheck['level'] >= 60) {
+        if ($tokenCheck['level'] >= 40) {
             $query = $this->modelClass::find()
                 ->joinWith('item', 'item_log.item_id = item.id')
                 ->joinWith('user', 'item_log.user_id = user.id')
@@ -85,7 +85,7 @@ class ItemLogApiController extends ActiveController
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
-        if ($tokenCheck['level'] >= 60) {
+        if ($tokenCheck['level'] >= 40) {
             $results = $this->modelClass::find()
                 ->select('action')
                 ->distinct()
@@ -117,7 +117,7 @@ class ItemLogApiController extends ActiveController
         $action = isset($data['action']) ? $data['action'] : null;
         $details = isset($data['details']) ? $data['details'] : '';
 
-        if ($tokenCheck['level'] >= 60) {
+        if ($tokenCheck['level'] >= 40) {
             // If a barcode has been provided, search by barcode and return
             // a liminted number of results
             $provider = new ActiveDataProvider([
@@ -146,7 +146,7 @@ class ItemLogApiController extends ActiveController
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
-        if ($tokenCheck['level'] >= 60) {
+        if ($tokenCheck['level'] >= 40) {
             $requests = $this->modelClass::find()
                 ->select([
                     'year' => 'YEAR(timestamp)',

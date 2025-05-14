@@ -61,7 +61,7 @@ class ShelfLogApiController extends ActiveController
         $timestampPost = isset($data['timestampPost']) ? $data['timestampPost'] : null;
         $timestampAnte = isset($data['timestampAnte']) ? $data['timestampAnte'] : null;
 
-        if ($tokenCheck['level'] >= 60) {
+        if ($tokenCheck['level'] >= 40) {
             $query = $this->modelClass::find()
                 ->select([
                     'shelf_log.id',
@@ -95,7 +95,7 @@ class ShelfLogApiController extends ActiveController
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
-        if ($tokenCheck['level'] >= 60) {
+        if ($tokenCheck['level'] >= 40) {
             $results = $this->modelClass::find()
                 ->select('action')
                 ->distinct()

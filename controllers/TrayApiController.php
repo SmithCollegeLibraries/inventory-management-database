@@ -906,7 +906,7 @@ class TrayApiController extends ActiveController
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
-        if ($tokenCheck['level'] >= 60) {
+        if ($tokenCheck['level'] >= 40) {
             $collectionSizeCounts = $this->modelClass::find()
                 ->select('tray.collection_id, tray.size_id, collection.code as collection_code, collection.name as collection_name, size.code as size, count(*) as count')
                 ->leftJoin('collection', 'tray.collection_id = collection.id')

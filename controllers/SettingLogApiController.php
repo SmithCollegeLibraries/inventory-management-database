@@ -60,7 +60,7 @@ class SettingLogApiController extends ActiveController
         $timestampPost = isset($data['timestampPost']) ? $data['timestampPost'] : null;
         $timestampAnte = isset($data['timestampAnte']) ? $data['timestampAnte'] : null;
 
-        if ($tokenCheck['level'] >= 60) {
+        if ($tokenCheck['level'] >= 40) {
             $query = $this->modelClass::find()
                 ->joinWith('collection', 'collection_log.collection_id = collection.id')
                 ->joinWith('user', 'collection_log.user_id = user.id')
