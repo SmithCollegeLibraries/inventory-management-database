@@ -77,33 +77,50 @@ class ItemApiController extends ActiveController
             $data = json_decode($json, true);
 
             $query = $data["barcodes"] ? $data["barcodes"] : [];
-            $newTableResults = $this->modelClass::find()->where(['barcode' => $query, 'active' => 1])->all();
+            $newTableResults = $this->modelClass::find()
+                ->leftJoin('tray', 'item.tray_id = tray.id')
+                ->leftJoin('shelf', 'tray.shelf_id = shelf.id')
+                ->leftJoin('collection', 'item.collection_id = collection.id')
+                ->select([
+                    'item.id',
+                    'item.barcode',
+                    'item.flag',
+                    'item.active',
+                    'item.collection_id',
+                    'collection.name AS collection',
+                    'item.status',
+                    'item.tray_id',
+                    'tray.barcode AS tray',
+                    'shelf.barcode AS shelf',
+                    'tray.depth AS depth',
+                    'tray.position AS position',
+                ])
+                ->where(['item.barcode' => $query])
+                ->andWhere(['item.active' => 1])
+                ->asArray()
+                ->all();
+
             $oldTableResults = OldBarcodeTray::find()
-                    ->joinWith([
-                        'oldTrayShelf' => function ($q) {
-                            $q->select('boxbarcode, shelf, shelf_depth, shelf_position');
-                        }
-                    ])
-                    ->where(['barcode' => $query])
-                    ->orderBy([
-                        'shelf' => SORT_ASC,
-                        'shelf_depth'=>SORT_ASC,
-                        'shelf_position'=>SORT_ASC,
-                    ])
-                    ->asArray()
-                    ->all();
+                ->joinWith([
+                    'oldTrayShelf' => function ($q) {
+                        $q->select('boxbarcode, shelf, shelf_depth, shelf_position');
+                    }
+                ])
+                ->where(['barcode' => $query])
+                ->asArray()
+                ->all();
             $results = [];
             // Default to a null for that barcode
             for ($i = 0; $i < count($query); $i++) {
                 $results[$query[$i]] = [
+                    'collection' => null,
                     'barcode' => $query[$i],
                     'tray' => null,
                     'shelf' => null,
                     'depth' => null,
                     'position' => null,
-                    // 'collection' => null,
-                    'status' => 'Not found',
-                    'system' => null,
+                    'status' => null,
+                    'system' => "Not in SIS",
                 ];
             }
             // Add the old table results. These will get overwritten by
@@ -111,28 +128,32 @@ class ItemApiController extends ActiveController
             for ($i = 0; $i < count($oldTableResults); $i++) {
                 $results[$oldTableResults[$i]['barcode']] = [
                     'barcode' => $oldTableResults[$i]['barcode'],
+                    'collection' => $oldTableResults[$i]['stream'],
+                    'status' => $oldTableResults[$i]['status'],
                     'tray' => $oldTableResults[$i]['boxbarcode'],
                     'shelf' => $oldTableResults[$i]['oldTrayShelf'] ? $oldTableResults[$i]['oldTrayShelf']['shelf'] : null,
                     'depth' => $oldTableResults[$i]['oldTrayShelf'] ? $oldTableResults[$i]['oldTrayShelf']['shelf_depth'] : null,
                     'position' => $oldTableResults[$i]['oldTrayShelf'] ? $oldTableResults[$i]['oldTrayShelf']['shelf_position'] : null,
-                    // 'collection' => $newTableResults[$i]['stream'],
-                    'status' => $oldTableResults[$i]['status'],
-                    'system' => 'Old',
+                    'system' => 'Old SIS',
                 ];
             }
             // Add the new table results
             for ($i = 0; $i < count($newTableResults); $i++) {
                 $results[$newTableResults[$i]['barcode']] = [
                     'barcode' => $newTableResults[$i]['barcode'],
-                    'tray' => $newTableResults[$i]['tray'] ? $newTableResults[$i]['tray']['barcode'] : null,
-                    'shelf' => $newTableResults[$i]['tray'] ? (isset($newTableResults[$i]['tray']['shelf']['barcode']) ? $newTableResults[$i]['tray']['shelf']['barcode'] : $newTableResults[$i]['tray']['shelf']) : null,
-                    'depth' => $newTableResults[$i]['tray'] ? $newTableResults[$i]['tray']['depth'] : null,
-                    'position' => $newTableResults[$i]['tray'] ? $newTableResults[$i]['tray']['position'] : null,
-                    // 'collection' => $newTableResults[$i]['collection'],
+                    'collection' => $newTableResults[$i]['collection'],
+                    'tray' => $newTableResults[$i]['tray'],
+                    'shelf' => $newTableResults[$i]['shelf'],
+                    'depth' => $newTableResults[$i]['depth'],
+                    'position' => $newTableResults[$i]['position'],
                     'status' => $newTableResults[$i]['status'],
-                    'system' => 'New',
+                    'system' => '✔',
                 ];
             }
+            // Sort the results by shelf, depth, and position
+            usort($results, function ($a, $b) {
+                return [$a['shelf'], $a['depth'], $a['position']] <=> [$b['shelf'], $b['depth'], $b['position']];
+            });
             return $results;
         }
         else {
@@ -640,7 +661,6 @@ class ItemApiController extends ActiveController
             throw new \yii\web\HttpException(403, 'You do not have permission to page items.');
         }
     }
-
 
     // Receive new item info and update the database
     public function actionNewItem()
