@@ -790,5 +790,55 @@ class ItemApiController extends ActiveController
         }
     }
 
-}
+    public function actionSearchByCircCount()
+    {
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
+        if ($tokenCheck['level'] >= 60) {
+            $min = isset($_REQUEST["min"]) ? $_REQUEST["min"] : 1;
+
+
+            // Count the number of circulations for each item, with
+            // multiple circulations on the same day counted as one
+            $query = (new \yii\db\Query())
+                ->select([
+                    'COUNT(*) AS loans',
+                    'circulating_items.barcode',
+                    'collection.name AS collection',
+                    'shelf.barcode AS shelf',
+                    'depth',
+                    'position',
+                    'status',
+                    'MAX(circulating_items.date) AS last_circulation_date'
+                ])
+                ->from([
+                    'circulating_items' => (new \yii\db\Query())
+                        ->select([
+                            'item.barcode',
+                            'item.active',
+                            'item.tray_id',
+                            'item.collection_id',
+                            'item.status',
+                            'DATE(item_log.timestamp) AS date',
+                        ])
+                        ->from('item')
+                        ->leftJoin('item_log', 'item_log.item_id = item.id')
+                        ->where(['item_log.action' => 'Circulated'])
+                        ->groupBy(['item.barcode', 'DATE(item_log.timestamp)']),
+                ])
+                ->leftJoin('tray', 'circulating_items.tray_id = tray.id')
+                ->leftJoin('shelf', 'tray.shelf_id = shelf.id')
+                ->leftJoin('collection', 'circulating_items.collection_id = collection.id')
+                ->groupBy(['circulating_items.barcode'])
+                ->having('loans >= :min', [':min' => $min])
+                ->orderBy(['loans' => SORT_DESC, 'collection.code' => SORT_ASC, 'shelf.barcode' => SORT_ASC, 'depth' => SORT_ASC, 'position' => SORT_ASC])
+                ->all();
+            return $query;
+        }
+        else {
+            throw new \yii\web\HttpException(403, 'You do not have permission to view item counts by collection and tray.');
+        }
+    }
+
+}
