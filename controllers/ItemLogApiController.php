@@ -71,7 +71,7 @@ class ItemLogApiController extends ActiveController
                 ->andFilterWhere(['like', 'user.name', $userQ])
                 ->andFilterWhere(['>=', 'item_log.timestamp', $timestampPost])
                 ->andFilterWhere(['<', 'item_log.timestamp', $timestampAnte])
-                ->orderBy(['item_log.id' => SORT_DESC])
+                ->orderBy(['item_log.timestamp' => SORT_DESC])
                 ->limit(100)->all();
             return $query;
         }

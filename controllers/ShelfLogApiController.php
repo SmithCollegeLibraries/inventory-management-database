@@ -81,7 +81,7 @@ class ShelfLogApiController extends ActiveController
                 ->andFilterWhere(['like', 'user.name', $userQ])
                 ->andFilterWhere(['>=', 'shelf_log.timestamp', $timestampPost])
                 ->andFilterWhere(['<', 'shelf_log.timestamp', $timestampAnte])
-                ->orderBy(['shelf_log.id' => SORT_DESC])
+                ->orderBy(['shelf_log.timestamp' => SORT_DESC])
                 ->limit(100)->all();
             return $query;
         }
