@@ -76,7 +76,7 @@ class ShelfLogApiController extends ActiveController
                 ->joinWith('shelf', 'shelf_log.shelf_id = shelf.id')
                 ->joinWith('user', 'shelf_log.user_id = user.id')
                 ->andFilterWhere(['shelf_log.action' => $actionQ])
-                ->andFilterWhere(['like', 'shelf.barcode', $barcodeQ])
+                ->andFilterWhere(['=', 'shelf.barcode', $barcodeQ])
                 ->andFilterWhere(['like', 'shelf_log.details', $detailsQ])
                 ->andFilterWhere(['like', 'user.name', $userQ])
                 ->andFilterWhere(['>=', 'shelf_log.timestamp', $timestampPost])

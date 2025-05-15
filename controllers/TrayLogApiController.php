@@ -66,7 +66,7 @@ class TrayLogApiController extends ActiveController
                 ->joinWith('tray', 'tray_log.tray_id = tray.id')
                 ->joinWith('user', 'tray_log.user_id = user.id')
                 ->andFilterWhere(['tray_log.action' => $actionQ])
-                ->andFilterWhere(['like', 'tray.barcode', $barcodeQ])
+                ->andFilterWhere(['=', 'tray.barcode', $barcodeQ])
                 ->andFilterWhere(['like', 'tray_log.details', $detailsQ])
                 ->andFilterWhere(['like', 'user.name', $userQ])
                 ->andFilterWhere(['>=', 'tray_log.timestamp', $timestampPost])

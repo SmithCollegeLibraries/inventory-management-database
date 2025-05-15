@@ -66,7 +66,7 @@ class ItemLogApiController extends ActiveController
                 ->joinWith('item', 'item_log.item_id = item.id')
                 ->joinWith('user', 'item_log.user_id = user.id')
                 ->andFilterWhere(['item_log.action' => $actionQ])
-                ->andFilterWhere(['like', 'item.barcode', $barcodeQ])
+                ->andFilterWhere(['=', 'item.barcode', $barcodeQ])
                 ->andFilterWhere(['like', 'item_log.details', $detailsQ])
                 ->andFilterWhere(['like', 'user.name', $userQ])
                 ->andFilterWhere(['>=', 'item_log.timestamp', $timestampPost])
