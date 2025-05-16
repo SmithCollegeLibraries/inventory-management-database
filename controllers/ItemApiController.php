@@ -239,7 +239,6 @@ class ItemApiController extends ActiveController
     {
         $itemLog = new $this->modelLogClass;
         $logDetails = [];
-        $flag = false;
         $flagDetails = [];
 
         // Get the item and related info
@@ -248,6 +247,7 @@ class ItemApiController extends ActiveController
         $trayBarcode = isset($data['tray']) ? $data['tray'] : null;
         $collection = isset($data['collection']) ? $data['collection'] : null;
         $status = isset($data['status']) ? $data['status'] : null;
+        $flag = isset($data['flag']) ? $data['flag'] : null;
         $item = $this->modelClass::find()->where(['barcode' => $itemBarcode])->one();
         $currentCollection = \app\models\Collection::find()->where(['id' => $item->collection_id])->one();
         $currentTray = \app\models\Tray::find()->where(['id' => $item->tray_id])->one();
@@ -351,7 +351,7 @@ class ItemApiController extends ActiveController
             }
             $item->status = null;
         }
-        else if ($status != $item->status) {
+        else if ($status && $status != $item->status) {
             // Mark "To return to campus" items differently
             if ($status === "Picked" && ($item->status === "To return to campus" || $item->status === "Returned to campus")) {
                 $item->status = "Returned to campus";
@@ -375,8 +375,23 @@ class ItemApiController extends ActiveController
             $reactivatedItemLog->save();
         }
         // Flag
-        if ($flag == true || count($flagDetails) > 0) {
+        if ($flag || count($flagDetails) > 0) {
+            if (!$flagDetails) {
+                $flagDetails[] = sprintf("Flagged item %s (manual)", $item->barcode);
+            }
             $item->flag = 1;
+        }
+
+        // Unflag if specifically set to false or empty string (not null)
+        if ($item->flag && ($flag !== null && !$flag)) {
+            $item->flag = 0;
+            // Add bespoke item log entry for unflagging
+            $unflagLog = new $this->modelLogClass;
+            $unflagLog->item_id = $item->id;
+            $unflagLog->action = 'Unflagged';
+            $unflagLog->details = sprintf("Unflagged item %s", $item->barcode);
+            $unflagLog->user_id = $userId;
+            $unflagLog->save();
         }
         $item->save();
 
