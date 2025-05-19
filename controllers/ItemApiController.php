@@ -150,10 +150,6 @@ class ItemApiController extends ActiveController
                     'system' => '✔',
                 ];
             }
-            // Sort the results by shelf, depth, and position
-            usort($results, function ($a, $b) {
-                return [$a['shelf'], $a['depth'], $a['position']] <=> [$b['shelf'], $b['depth'], $b['position']];
-            });
             return $results;
         }
         else {
