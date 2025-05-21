@@ -55,9 +55,13 @@ class ItemApiController extends ActiveController
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
         if ($tokenCheck['level'] >= 20) {
-            $json = file_get_contents('php://input');
-            $data = json_decode($json, true);
-            $results = $this->modelClass::find()->where(['barcode' => $data["barcodes"], 'active' => 1])->all();
+            $barcode = isset($_REQUEST["barcode"]) ? $_REQUEST["barcode"] : null;
+            $query = $this->modelClass::find()->where(['active' => 1])->andWhere(['barcode' => $barcode]);
+            if (isset($_REQUEST["flagged_only"]) && ($_REQUEST["flagged_only"] == "true" || $_REQUEST["flagged_only"] == 1)) {
+                $query->andWhere(['flag' => 1]);
+            }
+
+            $results = $query->all();
             return $results;
         }
         else {
@@ -159,17 +163,19 @@ class ItemApiController extends ActiveController
 
     public function actionBrowse()
     {
-        $barcode = isset($_REQUEST["query"]) ? $_REQUEST["query"] : null;
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
         if ($tokenCheck['level'] >= 20) {
-            // If a barcode has been provided, search by barcode and return
-            // a limited number of results
+            if (isset($_REQUEST["flagged_only"]) && ($_REQUEST["flagged_only"] == "true" || $_REQUEST["flagged_only"] == 1)) {
+                $query = $this->modelClass::find()->where(['active' => 1])->andWhere(['flag' => 1]);
+            }
+            else {
+                $query = $this->modelClass::find()->where(['active' => 1]);
+            }
+
             $provider = new ActiveDataProvider([
-                'query' => $this->modelClass::find()
-                    ->where(['like', 'barcode', $barcode])
-                    ->andWhere(['active' => 1]),
+                'query' => $query,
                 'sort' => [
                     'defaultOrder' => [
                         'id' => SORT_DESC,
