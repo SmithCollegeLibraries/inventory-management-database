@@ -323,6 +323,7 @@ class TrayApiController extends ActiveController
         $dataFullCount = isset($data['full_count']) ? $data['full_count'] : null;
         $tray = $this->modelClass::find()->where(['barcode' => $trayBarcode, 'active' => 1])->one();
         $shelf = \app\models\Shelf::find()->where(['barcode' => $dataShelf, 'active' => 1])->one();
+        $flag = isset($data['flag']) ? $data['flag'] : null;
 
         // Here are the five anomalies where we either throw an error
         // or shelve and flag, depending on the situation.
@@ -531,9 +532,26 @@ class TrayApiController extends ActiveController
             }
         }
 
-        if ($flagDetails || $flag) {
+        // Flag
+        if ($flag || count($flagDetails) > 0) {
+            if (!$flagDetails) {
+                $flagDetails[] = sprintf("Flagged tray %s (manual)", $tray->barcode);
+            }
             $tray->flag = 1;
         }
+
+        // Unflag if specifically set to false or empty string (not null)
+        if ($tray->flag && ($flag !== null && !$flag)) {
+            $tray->flag = 0;
+            // Add separate item log entry for unflagging
+            $unflagLog = new $this->modelLogClass;
+            $unflagLog->tray_id = $tray->id;
+            $unflagLog->action = 'Unflagged';
+            $unflagLog->details = sprintf("Unflagged tray %s", $tray->barcode);
+            $unflagLog->user_id = $userId;
+            $unflagLog->save();
+        }
+
         $tray->save();
 
         // Log the update

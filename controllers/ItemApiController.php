@@ -387,7 +387,7 @@ class ItemApiController extends ActiveController
         // Unflag if specifically set to false or empty string (not null)
         if ($item->flag && ($flag !== null && !$flag)) {
             $item->flag = 0;
-            // Add bespoke item log entry for unflagging
+            // Add separate item log entry for unflagging
             $unflagLog = new $this->modelLogClass;
             $unflagLog->item_id = $item->id;
             $unflagLog->action = 'Unflagged';
