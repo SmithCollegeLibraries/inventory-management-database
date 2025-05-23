@@ -149,7 +149,7 @@ class UserController extends Controller
         }
     }
 
-    public function actionDeleteUsers()
+    public function actionDeleteAccount()
     {
         \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
         $json = file_get_contents('php://input');
@@ -161,8 +161,9 @@ class UserController extends Controller
             // Set level to 0 instead of deleting from database
             $user->level = 0;
             $user->save();
-            return true;
-        } else {
+            return $user->level == 0;  // Only return true if successful
+        }
+        else {
             throw new \yii\web\ForbiddenHttpException('You are not authorized to delete users');
         }
     }
@@ -183,7 +184,8 @@ class UserController extends Controller
             $user->save();
             if ($user->save()) {
                 return true;
-            } else {
+            }
+            else {
                 return false;
             }
         } else {

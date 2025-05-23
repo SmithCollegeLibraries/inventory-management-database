@@ -27,7 +27,7 @@ class User extends \yii\db\ActiveRecord implements \yii\web\IdentityInterface
             [['name'], 'string', 'max' => 31],
             [['level'], 'integer', 'max' => 100],
             [['email'], 'unique'],
-            [['default_collection'], 'skipOnError' => true, 'targetClass' => Collection::class, 'targetAttribute' => ['collection_id' => 'id']],
+            [['default_collection'], 'exist', 'skipOnError' => true, 'targetClass' => Collection::class, 'targetAttribute' => ['default_collection' => 'id']],
         ];
     }
 
@@ -57,7 +57,7 @@ class User extends \yii\db\ActiveRecord implements \yii\web\IdentityInterface
             'id' => 'ID',
             'email' => 'Email address',
             'name' => 'Name',
-            'level' => 'Level (0 = Viewer, 40 = Staff, 100 = Admin)',
+            'level' => 'Level (0 = Inactive, 20 = Read only, 40 = Neilson staff, 60 = Annex staff, 80 = Managers, 100 = Admin)',
             'passwordhash' => 'Password hash',
             'access_token' => 'Access token',
             'default_collection' => 'Default collection',
