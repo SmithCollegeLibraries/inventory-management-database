@@ -62,15 +62,13 @@ class SettingLogApiController extends ActiveController
 
         if ($tokenCheck['level'] >= 40) {
             $query = $this->modelClass::find()
-                ->joinWith('collection', 'collection_log.collection_id = collection.id')
-                ->joinWith('user', 'collection_log.user_id = user.id')
-                ->andFilterWhere(['collection_log.action' => $actionQ])
-                ->andFilterWhere(['like', 'collection.name', $nameQ])
-                ->andFilterWhere(['like', 'collection_log.details', $detailsQ])
+                ->joinWith('setting', 'setting_log.setting_id = setting.id')
+                ->joinWith('user', 'setting_log.user_id = user.id')
+                ->andFilterWhere(['like', 'setting.name', $nameQ])
                 ->andFilterWhere(['like', 'user.name', $userQ])
-                ->andFilterWhere(['>=', 'collection_log.timestamp', $timestampPost])
-                ->andFilterWhere(['<', 'collection_log.timestamp', $timestampAnte])
-                ->orderBy(['collection_log.timestamp' => SORT_DESC])
+                ->andFilterWhere(['>=', 'setting_log.timestamp', $timestampPost])
+                ->andFilterWhere(['<', 'setting_log.timestamp', $timestampAnte])
+                ->orderBy(['setting_log.timestamp' => SORT_DESC])
                 ->limit(100)->all();
             return $query;
         }
