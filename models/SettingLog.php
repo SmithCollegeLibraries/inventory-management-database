@@ -46,7 +46,7 @@ class SettingLog extends \yii\db\ActiveRecord
         return [
             'id',
             'name' => function ($settingLog) {
-                $setting = 'app\models\Setting'::find()->where(['id' => $settingLog["shelf_id"]])->one();
+                $setting = 'app\models\Setting'::find()->where(['id' => $settingLog["setting_id"]])->one();
                 if ($setting) {
                     return $setting->name;
                 }
