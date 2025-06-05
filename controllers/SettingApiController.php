@@ -13,6 +13,7 @@ use app\models\User;
 class SettingApiController extends ActiveController
 {
     public $modelClass = 'app\models\Setting';
+    public $modelLogClass = 'app\models\SettingLog';
 
     public function init()
     {
@@ -74,6 +75,61 @@ class SettingApiController extends ActiveController
         }
         else {
             throw new \yii\web\ForbiddenHttpException('You are not authorized to view settings');
+        }
+    }
+
+    public function actionNewSetting()
+    {
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+        if ($tokenCheck['level'] >= 100) {
+            $name = $_REQUEST["name"];
+            $value = isset($_REQUEST["value"]) ? $_REQUEST["value"] : null;
+            $setting = new Setting();
+            $setting->name = $name;
+            $setting->value = $value;
+            $setting->save();
+
+            // Log the creation of the setting
+            $settingLog = new $this->modelLogClass();
+            $settingLog->setting_id = $setting->id;
+            $settingLog->value = $value;
+            $settingLog->user_id = $tokenCheck->id;
+            $settingLog->save();
+
+            return $setting;
+        }
+        else {
+            throw new \yii\web\ForbiddenHttpException('You are not authorized to create a new setting');
+        }
+    }
+
+    public function actionUpdateSetting()
+    {
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+        if ($tokenCheck['level'] >= 80) {
+            $name = $_REQUEST["name"];
+            $value = $_REQUEST["value"];
+            $setting = Setting::find()->where(['name' => $name])->one();
+            if ($setting) {
+                $setting->value = $value;
+                $setting->save();
+
+                $settingLog = new $this->modelLogClass();
+                $settingLog->setting_id = $setting->id;
+                $settingLog->value = $value;
+                $settingLog->user_id = $tokenCheck->id;
+                $settingLog->save();
+
+                return $setting;
+            }
+            else {
+                throw new \yii\web\NotFoundHttpException('Setting not found');
+            }
+        }
+        else {
+            throw new \yii\web\ForbiddenHttpException('You are not authorized to update settings');
         }
     }
 }
