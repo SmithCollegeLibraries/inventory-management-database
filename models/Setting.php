@@ -29,7 +29,7 @@ class Setting extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['name', 'value'], 'required'],
+            [['name'], 'required'],
             [['name'], 'string', 'max' => 31],
             [['value'], 'string', 'max' => 255],
             [['name'], 'unique'],

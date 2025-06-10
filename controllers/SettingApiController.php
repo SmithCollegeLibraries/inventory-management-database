@@ -86,7 +86,7 @@ class SettingApiController extends ActiveController
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
         if ($tokenCheck['level'] >= 100) {
             $name = $data["name"];
-            $value = isset($data["value"]) ? $data["value"] : null;
+            $value = isset($data["value"]) ? $data["value"] : "";
             $setting = new Setting();
             $setting->name = $name;
             $setting->value = $value;
@@ -108,11 +108,13 @@ class SettingApiController extends ActiveController
 
     public function actionUpdateSetting()
     {
+        $json = file_get_contents('php://input');
+        $data = json_decode($json, true);
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
         if ($tokenCheck['level'] >= 80) {
-            $name = $_REQUEST["name"];
-            $value = $_REQUEST["value"];
+            $name = $data["name"];
+            $value = isset($data["value"]) ? $data["value"] : "";
             $setting = Setting::find()->where(['name' => $name])->one();
             if ($setting) {
                 $setting->value = $value;
