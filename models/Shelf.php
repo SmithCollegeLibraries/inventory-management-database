@@ -63,21 +63,11 @@ class Shelf extends \yii\db\ActiveRecord
             'flag',
             'size' => function ($shelf) {
                 $size = 'app\models\Size'::find()->where(['id' => $shelf["size_id"]])->one();
-                if ($size) {
-                    return $size->code;
-                }
-                else {
-                    return null;
-                }
+                return $size ? $size->code : null;
             },
             'collection' => function ($shelf) {
                 $collection = 'app\models\Collection'::find()->where(['id' => $shelf["collection_id"]])->one();
-                if ($collection) {
-                    return $collection->name;
-                }
-                else {
-                    return null;
-                }
+                return $collection ? $collection->name : null;
             },
             'trays' => function () {
                 $trays = $this->getTrays()->where(["active" => true])->all();
@@ -86,6 +76,7 @@ class Shelf extends \yii\db\ActiveRecord
                     $trayArray[] = array(
                         "depth" => $tray->depth,
                         "position" => $tray->position,
+                        "size" => 'app\models\Size'::find()->where(['id' => $tray->size_id])->one(),
                         "barcode" => $tray->barcode,
                         "trayer" => $tray->getTrayer(),
                         "items" => $tray->getItemBarcodes(),
