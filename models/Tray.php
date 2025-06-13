@@ -57,7 +57,14 @@ class Tray extends \yii\db\ActiveRecord
             'size' => function ($tray) {
                 $size = 'app\models\Size'::find()->where(['id' => $tray["size_id"]])->one();
                 if ($size) {
-                    return $size->code;
+                    return [
+                        'id' => $size->id,
+                        'code' => $size->code,
+                        'width' => $size->width,
+                        'height' => $size->height,
+                        'depths' => $size->depths,
+                        'average_count' => $size->average_count,
+                    ];
                 }
                 else {
                     return null;
