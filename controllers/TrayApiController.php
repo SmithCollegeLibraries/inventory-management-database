@@ -743,6 +743,8 @@ class TrayApiController extends ActiveController
     {
         $barcode = isset($_REQUEST["barcode"]) ? $_REQUEST["barcode"] : null;
         $freeSpace = isset($_REQUEST["free_space"]) ? $_REQUEST["free_space"] : null;
+        $flaggedOnly = isset($_REQUEST["flagged_only"]) && ($_REQUEST["flagged_only"] == "true" || $_REQUEST["flagged_only"] == 1) ? true : false;
+        $unshelvedOnly = isset($_REQUEST["unshelved_only"]) && ($_REQUEST["unshelved_only"] == "true" || $_REQUEST["unshelved_only"] == 1) ? true : false;
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
@@ -762,6 +764,12 @@ class TrayApiController extends ActiveController
                 ->andWhere(['tray.active' => true]);
             if ($barcode) {
                 $query->andWhere(['tray.barcode' => $barcode]);
+            }
+            if ($flaggedOnly) {
+                $query->andWhere(['tray.flag' => 1]);
+            }
+            if ($unshelvedOnly) {
+                $query->andWhere(['shelf_id' => null]);
             }
             // If we're searching for free space at all
             if ($freeSpace) {
