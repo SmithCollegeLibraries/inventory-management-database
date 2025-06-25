@@ -134,19 +134,49 @@ class CollectionApiController extends ActiveController
         $data = json_decode($json, true);
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
         if ($tokenCheck['level'] >= 80) {
+            $newName = isset($data["name"]) ? $data["name"] : null;
+            $newCode = isset($data["code"]) ? $data["code"] : null;
+            $newValidationStatus = isset($data["folio_validated"]) ? $data["folio_validated"] : null;
+            $logDetails = [];
+
+            if (!isset($data["id"])) {
+                throw new \yii\web\HttpException(400, 'Collection ID is required for updating');
+            }
             $collection = Collection::findOne($data["id"]);
             $oldName = $collection->name;
-            $collection->name = $data["name"];
+            if ($collection == null) {
+                throw new \yii\web\HttpException(400, sprintf('Tried to edit a non-existing collection'));
+            }
+            if ($newName !== null && $newName !== $oldName) {
+                $collection->name = $newName;
+                $logDetails[] = sprintf('Renamed %s to %s', $oldName, $newName);
+            }
+            if ($newCode !== null && $newCode !== $collection->code) {
+                $collection->code = $newCode;
+                $logDetails[] = sprintf('Updated %s: collection code %s', $oldName, $newCode);
+            }
+            if ($newValidationStatus !== null && $newValidationStatus !== $collection->folio_validated) {
+                $collection->folio_validated = $newValidationStatus;
+                $validationMessage = $newValidationStatus ? 'added validation against FOLIO' : 'removed validation against FOLIO';
+                $logDetails[] = sprintf('Updated %s: %s', $oldName, $validationMessage);
+            }
             $collection->save();
 
-            // Add log to database
-            $modelLog = new $this->modelLogClass;
-            $modelLog->collection_id = $data["id"];
-            $modelLog->user_id = $tokenCheck['id'];
-            $modelLog->action = "Updated";
-            $modelLog->details = sprintf('Renamed %s to %s', $oldName, $data['name']);
-            $modelLog->save();
+            if (!$logDetails) {
+                $logDetails[] = sprintf('Updated %s (no changes)', $oldName);
+            }
+
+            // Add log for each thing that was changed about the collection
+            for ($i = 0; $i < count($logDetails); $i++) {
+                $modelLog = new $this->modelLogClass;
+                $modelLog->collection_id = $data["id"];
+                $modelLog->user_id = $tokenCheck['id'];
+                $modelLog->action = "Updated";
+                $modelLog->details = $logDetails[$i];
+                $modelLog->save();
+            }
 
             return $collection;
         }
