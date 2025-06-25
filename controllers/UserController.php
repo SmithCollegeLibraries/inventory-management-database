@@ -5,6 +5,7 @@ namespace app\controllers;
 use Yii;
 use yii\web\Controller;
 use app\models\User;
+use app\models\Collection;
 
 class UserController extends Controller
 {
@@ -115,7 +116,8 @@ class UserController extends Controller
                 "id" => $user->id,
                 "name" => $user->name,
                 "access_token" => $user->access_token,
-                "level" => $user->level
+                "level" => $user->level,
+                "default_collection" => $user->default_collection ? Collection::find()->where(['id' => $user->default_collection])->one()->code : null
             ];
         } else {
             throw new \yii\web\ForbiddenHttpException();
