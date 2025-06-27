@@ -95,6 +95,10 @@ class CollectionApiController extends ActiveController
                 // Add collection to database
                 $model = new $this->modelClass;
                 $model->name = $data["name"];
+                $model->code = isset($data["code"]) ? $data["code"] : $data["name"];
+                // Default to having it validated, but make it not validated if explicitly set to false
+                $model->folio_validated = isset($data["folio_validated"]) && !$data["folio_validated"] ? 0 : 1;
+                $model->active = 1;
                 $model->save();
 
                 // Add log to database
@@ -102,7 +106,8 @@ class CollectionApiController extends ActiveController
                 $modelLog->collection_id = $model->id;
                 $modelLog->user_id = $tokenCheck['id'];
                 $modelLog->action = "Created";
-                $modelLog->details = sprintf('Created %s', $data['name']);
+                $validationMessage = $model->folio_validated ? 'FOLIO-validated' : 'not FOLIO-validated';
+                $modelLog->details = sprintf('Created %s%s, %s', $data['name'], isset($data["code"]) ? " (" . $data["code"] . ")" : "", $validationMessage);
                 $modelLog->save();
                 return $model;
             }
@@ -119,6 +124,14 @@ class CollectionApiController extends ActiveController
                 $modelLog->action = "Restored";
                 $modelLog->details = sprintf('Restored %s', $data['name']);
                 $modelLog->save();
+
+                // If the code or validation status were provided and are
+                // different from the existing values, update them
+                if ((isset($data["code"]) && $data["code"] !== $collection->code) ||
+                        (isset($data["folio_validated"]) && $data["folio_validated"] !== $collection->folio_validated)) {
+                    handleUpdateCollection($collection, $data["name"], $data["code"] ?? null, $data["folio_validated"] ?? null, $tokenCheck['id']);
+                }
+
                 return $collection;
             }
             // Finally, if the collection already exists and is active,
@@ -142,51 +155,56 @@ class CollectionApiController extends ActiveController
         if ($tokenCheck['level'] >= 80) {
             $newName = isset($data["name"]) ? $data["name"] : null;
             $newCode = isset($data["code"]) ? $data["code"] : null;
-            $newValidationStatus = isset($data["folio_validated"]) ? $data["folio_validated"] : null;
-            $logDetails = [];
+            $newValidationStatus = isset($data["folio_validated"]) ? ($data["folio_validated"] ? 1 : 0) : null;
 
             if (!isset($data["id"])) {
                 throw new \yii\web\HttpException(400, 'Collection ID is required for updating');
             }
             $collection = Collection::findOne($data["id"]);
-            $oldName = $collection->name;
-            if ($collection == null) {
-                throw new \yii\web\HttpException(400, sprintf('Tried to edit a non-existing collection'));
-            }
-            if ($newName !== null && $newName !== $oldName) {
-                $collection->name = $newName;
-                $logDetails[] = sprintf('Renamed %s to %s', $oldName, $newName);
-            }
-            if ($newCode !== null && $newCode !== $collection->code) {
-                $collection->code = $newCode;
-                $logDetails[] = sprintf('Updated %s: collection code %s', $oldName, $newCode);
-            }
-            if ($newValidationStatus !== null && $newValidationStatus !== $collection->folio_validated) {
-                $collection->folio_validated = $newValidationStatus;
-                $validationMessage = $newValidationStatus ? 'added validation against FOLIO' : 'removed validation against FOLIO';
-                $logDetails[] = sprintf('Updated %s: %s', $oldName, $validationMessage);
-            }
-            $collection->save();
 
-            if (!$logDetails) {
-                $logDetails[] = sprintf('Updated %s (no changes)', $oldName);
-            }
-
-            // Add log for each thing that was changed about the collection
-            for ($i = 0; $i < count($logDetails); $i++) {
-                $modelLog = new $this->modelLogClass;
-                $modelLog->collection_id = $data["id"];
-                $modelLog->user_id = $tokenCheck['id'];
-                $modelLog->action = "Updated";
-                $modelLog->details = $logDetails[$i];
-                $modelLog->save();
-            }
-
-            return $collection;
+            return $this->handleUpdateCollection($collection, $newName, $newCode, $newValidationStatus, $tokenCheck['id']);
         }
         else {
             throw new \yii\web\ForbiddenHttpException('You are not authorized to update collections');
         }
+    }
+
+    private function handleUpdateCollection($collection, $newName, $newCode, $newValidationStatus, $userId) {
+        $logDetails = [];
+        $oldName = $collection->name;
+        if ($collection == null) {
+            throw new \yii\web\HttpException(400, sprintf('Tried to edit a non-existing collection'));
+        }
+        if ($newName !== null && $newName !== $oldName) {
+            $collection->name = $newName;
+            $logDetails[] = sprintf('Renamed %s to %s', $oldName, $newName);
+        }
+        if ($newCode !== null && $newCode !== $collection->code) {
+            $collection->code = $newCode;
+            $logDetails[] = sprintf('Updated %s: collection code %s', $oldName, $newCode);
+        }
+        if ($newValidationStatus !== null && $newValidationStatus !== $collection->folio_validated) {
+            $collection->folio_validated = $newValidationStatus;
+            $validationMessage = $newValidationStatus ? 'added validation against FOLIO' : 'removed validation against FOLIO';
+            $logDetails[] = sprintf('Updated %s: %s', $oldName, $validationMessage);
+        }
+        $collection->save();
+
+        if (!$logDetails) {
+            $logDetails[] = sprintf('Updated %s (no changes)', $oldName);
+        }
+
+        // Add log for each thing that was changed about the collection
+        for ($i = 0; $i < count($logDetails); $i++) {
+            $modelLog = new $this->modelLogClass;
+            $modelLog->collection_id = $collection->id;
+            $modelLog->user_id = $userId;
+            $modelLog->action = "Updated";
+            $modelLog->details = $logDetails[$i];
+            $modelLog->save();
+        }
+
+        return $collection;
     }
 
     public function actionDeleteCollection()
