@@ -84,6 +84,10 @@ class CollectionApiController extends ActiveController
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
         if ($tokenCheck['level'] >= 60) {
+            // If that collection code is already in use, throw an error
+            if (isset($data["code"]) && Collection::find()->where(['code' => $data["code"]])->exists()) {
+                throw new \yii\web\HttpException(400, sprintf('Collection code %s already exists', $data['code']));
+            }
             // If there hasn't been a collection with that name before,
             // we add a new row to the database
             $collection = Collection::find()->where(['name' => $data["name"]])->one();
