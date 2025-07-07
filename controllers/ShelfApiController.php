@@ -320,6 +320,38 @@ class ShelfApiController extends ActiveController
         }
     }
 
+    public function actionDeleteShelf()
+    {
+        $json = file_get_contents('php://input');
+        $data = json_decode($json, true);
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+        if ($tokenCheck['level'] >= 80) {
+            $shelfBarcode = array_key_exists('barcode', $data) ? $data['barcode'] : '';
+            $shelf = \app\models\Shelf::find()->where(['barcode' => $shelfBarcode])->one();
+            if (!$shelf) {
+                throw new \yii\web\HttpException(400, sprintf('Shelf %s does not exist', $shelfBarcode));
+            }
+            if (!$shelf->active) {
+                throw new \yii\web\HttpException(400, sprintf('Shelf %s has already been deleted', $shelfBarcode));
+            }
+            // Log the deletion
+            $shelfLog = new $this->modelLogClass;
+            $shelfLog->shelf_id = $shelf->id;
+            $shelfLog->action = 'Deleted';
+            $shelfLog->details = sprintf("Deleted shelf %s", $shelf->barcode);
+            $shelfLog->user_id = $tokenCheck['id'];
+            $shelfLog->save();
+            // Set the shelf to inactive
+            $shelf->active = 0;
+            $shelf->save();
+            return true;
+        }
+        else {
+            throw new \yii\web\HttpException(403, 'You do not have permission to delete shelves');
+        }
+    }
+
     public function actionSearch()
     {
         $shelfBarcode = isset($_REQUEST["shelf"]) ? str_replace('-', '_', $_REQUEST["shelf"]) : "_______";
