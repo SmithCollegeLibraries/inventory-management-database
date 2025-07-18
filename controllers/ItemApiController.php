@@ -376,24 +376,26 @@ class ItemApiController extends ActiveController
             $reactivatedItemLog->user_id = $userId;
             $reactivatedItemLog->save();
         }
-        // Flag
-        if ($flag || count($flagDetails) > 0) {
-            if (!$flagDetails) {
-                $flagDetails[] = sprintf("Flagged item %s (manual)", $item->barcode);
-            }
-            $item->flag = 1;
-        }
 
-        // Unflag if specifically set to false or empty string (not null)
+        // Unflag if specifically set to false or empty string (not null).
+        // If there is a condition that would set the flag, it will get
+        // reflagged right away.
         if ($item->flag && ($flag !== null && !$flag)) {
             $item->flag = 0;
-            // Add separate item log entry for unflagging
+            // Add separate log entry for unflagging
             $unflagLog = new $this->modelLogClass;
             $unflagLog->item_id = $item->id;
             $unflagLog->action = 'Unflagged';
             $unflagLog->details = sprintf("Unflagged item %s", $item->barcode);
             $unflagLog->user_id = $userId;
             $unflagLog->save();
+        }
+        // Flag
+        if ($flag || count($flagDetails) > 0) {
+            if (!$flagDetails && !$item->flag) {
+                $flagDetails[] = sprintf("Flagged item %s (manual)", $item->barcode);
+            }
+            $item->flag = 1;
         }
         $item->save();
 

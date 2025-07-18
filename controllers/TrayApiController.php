@@ -532,24 +532,25 @@ class TrayApiController extends ActiveController
             }
         }
 
-        // Flag
-        if ($flag || count($flagDetails) > 0) {
-            if (!$flagDetails) {
-                $flagDetails[] = sprintf("Flagged tray %s (manual)", $tray->barcode);
-            }
-            $tray->flag = 1;
-        }
-
-        // Unflag if specifically set to false or empty string (not null)
+        // Unflag if specifically set to false or empty string (not null).
+        // If there is a condition that would set the flag, it will get
+        // reflagged right away.
         if ($tray->flag && ($flag !== null && !$flag)) {
             $tray->flag = 0;
-            // Add separate item log entry for unflagging
+            // Add separate log entry for unflagging
             $unflagLog = new $this->modelLogClass;
             $unflagLog->tray_id = $tray->id;
             $unflagLog->action = 'Unflagged';
             $unflagLog->details = sprintf("Unflagged tray %s", $tray->barcode);
             $unflagLog->user_id = $userId;
             $unflagLog->save();
+        }
+        // Flag
+        if ($flag || count($flagDetails) > 0) {
+            if (!$flagDetails && !$tray->flag) {
+                $flagDetails[] = sprintf("Flagged tray %s (manual)", $tray->barcode);
+            }
+            $tray->flag = 1;
         }
 
         $tray->save();
