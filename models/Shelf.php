@@ -91,6 +91,7 @@ class Shelf extends \yii\db\ActiveRecord
             'positions',
             'width',
             'height',
+            'notes',
             // 'created',
             // 'updated',
         ];
