@@ -8,7 +8,6 @@ use yii\filters\auth\QueryParamAuth;
 
 use app\models\Size;
 use app\models\Collection;
-use app\models\TrayLog;
 use app\models\User;
 
 class ShelfApiController extends ActiveController
@@ -78,6 +77,10 @@ class ShelfApiController extends ActiveController
         if ($tokenCheck['level'] >= 60) {
             $shelfBarcode = array_key_exists('barcode', $data) ? $data['barcode'] : '';
 
+            // Make sure the barcode is exactly 7 characters long
+            if (strlen($shelfBarcode) != 7) {
+                throw new \yii\web\HttpException(400, sprintf('Barcode %s must be exactly 7 characters long', $shelfBarcode));
+            }
             // Fill in row, side, ladder and rung from the barcode
             $shelfRow = substr($shelfBarcode, 0, 2);
             $shelfSide = substr($shelfBarcode, 2, 1);
@@ -121,7 +124,7 @@ class ShelfApiController extends ActiveController
                 $shelf->ladder = $shelfLadder;
                 $shelf->rung = $shelfRung;
                 $shelf->active = 1;
-                // Log the new tray
+                // Log the new shelf
                 $shelfLog = new $this->modelLogClass;
                 $shelfLog->shelf_id = $shelf->id;
                 $shelfLog->action = 'Added';
@@ -143,14 +146,22 @@ class ShelfApiController extends ActiveController
         $shelfBarcode = array_key_exists('barcode', $data) ? $data['barcode'] : '';
         $newBarcode = array_key_exists('new_barcode', $data) ? $data['new_barcode'] : null;
         $row = array_key_exists('row', $data) ? $data['row'] : null;
+        if ($row !== null && strlen($row) < 2) {
+            $row = str_pad($row, 2, '0', STR_PAD_LEFT);
+        }
         $side = array_key_exists('side', $data) ? $data['side'] : null;
         $ladder = array_key_exists('ladder', $data) ? $data['ladder'] : null;
+        if ($ladder !== null && strlen($ladder) < 2) {
+            $ladder = str_pad($ladder, 2, '0', STR_PAD_LEFT);
+        }
         $rung = array_key_exists('rung', $data) ? $data['rung'] : null;
+        if ($rung !== null && strlen($rung) < 2) {
+            $rung = str_pad($rung, 2, '0', STR_PAD_LEFT);
+        }
         $width = array_key_exists('width', $data) ? $data['width'] : null;
         $height = array_key_exists('height', $data) ? $data['height'] : null;
         $size = array_key_exists('size', $data) ? $data['size'] : null;
         $collection = array_key_exists('collection', $data) ? $data['collection'] : null;
-        $capacity = array_key_exists('capacity', $data) ? $data['capacity'] : null;
         $depths = array_key_exists('depths', $data) ? $data['depths'] : null;
         $positions = array_key_exists('positions', $data) ? $data['positions'] : null;
         $notes = array_key_exists('notes', $data) ? $data['notes'] : null;
@@ -163,7 +174,7 @@ class ShelfApiController extends ActiveController
         if (!$shelf->active) {
             throw new \yii\web\HttpException(400, sprintf('Shelf %s has been deleted', $shelfBarcode));
         }
-        $trayLog = new \app\models\ShelfLog;
+        $shelfLog = new \app\models\ShelfLog;
         $logDetails = [];
         $flagDetails = [];
 
@@ -210,13 +221,17 @@ class ShelfApiController extends ActiveController
             $shelf->height = $height === "" ? null : $height;
         }
         // Size
+        if ($size !== null && $size !== "") {
+            $sizeObject = Size::find()->where(['code' => $size])->one();
+        }
         if ($size !== null) {
             if ($size === "") {
-                $logDetails[] = sprintf('size null');
+                if ($shelf->size_id) {
+                    $logDetails[] = sprintf('size null');
+                }
                 $shelf->size_id = null;
             }
             else {
-                $sizeObject = Size::find()->where(['code' => $size])->one();
                 if (!$sizeObject) {
                     throw new \yii\web\HttpException(400, sprintf('Size %s does not exist', $size));
                 }
@@ -224,16 +239,7 @@ class ShelfApiController extends ActiveController
                     $logDetails[] = sprintf('size %s', $size);
                     $shelf->size_id = $sizeObject->id;
 
-                    // Flag shelf if size doesn't fit height
-                    if ($sizeObject->height && $shelf->height && $sizeObject->height > $shelf->height) {
-                        $flagDetails[] = sprintf('Size %s does not fit height %s', $size, $shelf->height);
-                    }
-
-                    // Calculate new capacity, positions, and depths if
-                    // they weren't manually given
-                    if ($sizeObject && $capacity === null) {
-                        $capacity = $sizeObject->width && $shelf->width ? $sizeObject->depths * floor($shelf->width / $sizeObject->width) : null;
-                    }
+                    // Calculate new positions and depths if not manually given
                     if ($sizeObject && $positions === null) {
                         $positions = $sizeObject->width && $shelf->width ? floor($shelf->width / $sizeObject->width) : null;
                     }
@@ -246,7 +252,9 @@ class ShelfApiController extends ActiveController
         // Collection
         if ($collection !== null) {
             if ($collection === "") {
-                $logDetails[] = sprintf('collection null');
+                if ($shelf->collection_id) {
+                    $logDetails[] = sprintf('size null');
+                }
                 $shelf->collection_id = null;
             }
             else {
@@ -260,11 +268,6 @@ class ShelfApiController extends ActiveController
                 }
             }
         }
-        // Capacity
-        if ($capacity !== null && $capacity != $shelf->capacity) {
-            $logDetails[] = sprintf('capacity %s', $capacity === "" ? "null" : $capacity);
-            $shelf->capacity = $capacity === "" ? null : $capacity;
-        }
         // Positions
         if ($positions !== null && $positions != $shelf->positions) {
             $logDetails[] = sprintf('positions %s', $positions === "" ? "null" : $positions);
@@ -275,34 +278,64 @@ class ShelfApiController extends ActiveController
             $logDetails[] = sprintf('depths %s', $depths === "" ? "null" : $depths);
             $shelf->depths = $depths === "" ? null : $depths;
         }
+        // Capacity
+        $shelf->capacity = $shelf->depths * $shelf->positions;
         // Notes
         if ($notes !== null && $notes != $shelf->notes) {
             $logDetails[] = sprintf('notes');
             $shelf->notes = $notes;
         }
 
-        if ($flagDetails || $flag) {
+        // Unflag if specifically set to false or empty string (not null).
+        // If there is a condition that would set the flag, it will get
+        // reflagged right away.
+        if ($shelf->flag && ($flag !== null && !$flag)) {
+            $shelf->flag = 0;
+            // Add separate log entry for unflagging
+            $unflagLog = new \app\models\ShelfLog;
+            $unflagLog->shelf_id = $shelf->id;
+            $unflagLog->action = 'Unflagged';
+            $unflagLog->details = sprintf("Unflagged shelf %s", $shelf->barcode);
+            $unflagLog->user_id = $userId;
+            $unflagLog->save();
+        }
+
+        // Flag shelf if size doesn't fit height
+        if ($sizeObject->height && $shelf->height && $sizeObject->height > $shelf->height) {
+            $flagDetails[] = sprintf('Size %s does not fit height %s', $size, $shelf->height);
             $shelf->flag = 1;
-            $flagLog = new \app\models\ShelfLog;
-            $flagLog->shelf_id = $shelf->id;
-            $flagLog->action = 'Flagged';
-            $flagLog->details = sprintf("Flagged shelf %s: %s", $shelf->barcode, implode('; ', $flagDetails));
-            $flagLog->user_id = $userId;
-            $flagLog->save();
+        }
+        // Flag
+        else if ($flag) {
+            if (!$shelf->flag) {
+                $flagDetails[] = sprintf("Flagged shelf %s (manual)", $shelf->barcode);
+            }
+            $shelf->flag = 1;
         }
 
         $shelf->save();
 
-        $trayLog->shelf_id = $shelf->id;
-        $trayLog->action = 'Updated';
+        $shelfLog->shelf_id = $shelf->id;
+        $shelfLog->action = 'Updated';
         if ($logDetails) {
-            $trayLog->details = sprintf("Updated shelf %s: %s", $shelf->barcode, implode(', ', $logDetails));
+            $shelfLog->details = sprintf("Updated shelf %s: %s", $shelf->barcode, implode(', ', $logDetails));
         }
         else {
-            $trayLog->details = sprintf("Updated shelf %s (no changes)", $shelf->barcode);
+            $shelfLog->details = sprintf("Updated shelf %s (no changes)", $shelf->barcode);
         }
-        $trayLog->user_id = $userId;
-        $trayLog->save();
+        $shelfLog->user_id = $userId;
+        $shelfLog->save();
+
+        // Log any flags that occurred
+        foreach ($flagDetails as $flagDetail) {
+            $flagLog = new \app\models\shelfLog;
+            $flagLog->shelf_id = $shelf->id;
+            $flagLog->action = 'Flagged';
+            $flagLog->details = $flagDetail;
+            $flagLog->user_id = $userId;
+            $flagLog->save();
+        }
+
         return $shelf;
     }
 
@@ -358,7 +391,8 @@ class ShelfApiController extends ActiveController
         $trayBarcode = isset($_REQUEST["tray"]) ? $_REQUEST["tray"] : '';
         $size = isset($_REQUEST["size"]) ? $_REQUEST["size"] : null;
         $collection = isset($_REQUEST["collection"]) ? $_REQUEST["collection"] : null;
-        $positionsFree = isset($_REQUEST["positionsfree"]) ? $_REQUEST["positionsfree"] : null;
+        $positionsFree = isset($_REQUEST["positions_free"]) ? $_REQUEST["positions_free"] : null;
+        $flaggedOnly = isset($_REQUEST["flagged_only"]) ? $_REQUEST["flagged_only"] == 'true' || $_REQUEST["flagged_only"] == 1 : false;
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
@@ -370,24 +404,31 @@ class ShelfApiController extends ActiveController
             // (the shelf query will be cleared); otherwise, 60 shelves
             // will be returned
             if ($trayBarcode != '') {
+                $query = $this->modelClass::find()
+                    ->rightJoin('tray', 'tray.shelf_id = shelf.id')
+                    ->where(['tray.barcode' => $trayBarcode])
+                    ->andWhere(['tray.active' => true]);
+                if ($flaggedOnly) {
+                    $query->andWhere(['shelf.flag' => 1]);
+                }
                 $provider = new ActiveDataProvider([
-                    'query' => $this->modelClass::find()
-                        ->rightJoin('tray', 'tray.shelf_id = shelf.id')
-                        ->where(['tray.barcode' => $trayBarcode])
-                        ->andWhere(['tray.active' => true]),
+                    'query' => $query,
                 ]);
             }
             // If the user is looking for empty shelves specifically
             else if ($positionsFree == -1) {
+                $query = $this->modelClass::find()
+                    ->leftJoin('tray', 'tray.shelf_id = shelf.id')
+                    ->where(['like', 'shelf.barcode', $shelfBarcode, false])
+                    ->andFilterWhere(['shelf.size_id' => $sizeId])
+                    ->andFilterWhere(['shelf.collection_id' => $collectionId])
+                    ->andWhere(['shelf.active' => true])
+                    ->andWhere(['tray.id' => null]);
+                if ($flaggedOnly) {
+                    $query->andWhere(['shelf.flag' => 1]);
+                }
                 $provider = new ActiveDataProvider([
-                    'query' => $this->modelClass::find()
-                        ->leftJoin('tray', 'tray.shelf_id = shelf.id')
-                        ->where(['like', 'shelf.barcode', $shelfBarcode, false])
-                        ->andFilterWhere(['shelf.size_id' => $sizeId])
-                        ->andFilterWhere(['shelf.collection_id' => $collectionId])
-                        ->andWhere(['shelf.active' => true])
-                        ->andWhere(['tray.id' => null])
-                        ->groupBy(['shelf.id']),
+                    'query' => $query->groupBy(['shelf.id']),
                     'sort' => [
                         'defaultOrder' => [
                             'barcode' => SORT_ASC,
@@ -399,14 +440,18 @@ class ShelfApiController extends ActiveController
                 ]);
             }
             else if ($positionsFree === 0 || $positionsFree === "0") {
+                $query = $this->modelClass::find()
+                    ->leftJoin('tray', 'tray.shelf_id = shelf.id')
+                    ->where(['like', 'shelf.barcode', $shelfBarcode, false])
+                    ->andFilterWhere(['shelf.size_id' => $sizeId])
+                    ->andFilterWhere(['shelf.collection_id' => $collectionId])
+                    ->andWhere(['shelf.active' => true])
+                    ->andWhere(['or', ['tray.active' => true], ['tray.id' => null]]);
+                if ($flaggedOnly) {
+                    $query->andWhere(['shelf.flag' => 1]);
+                }
                 $provider = new ActiveDataProvider([
-                    'query' => $this->modelClass::find()
-                        ->leftJoin('tray', 'tray.shelf_id = shelf.id')
-                        ->where(['like', 'shelf.barcode', $shelfBarcode, false])
-                        ->andFilterWhere(['shelf.size_id' => $sizeId])
-                        ->andFilterWhere(['shelf.collection_id' => $collectionId])
-                        ->andWhere(['shelf.active' => true])
-                        ->andWhere(['or', ['tray.active' => true], ['tray.id' => null]])
+                    'query' => $query
                         ->groupBy(['capacity', 'shelf.id'])
                         ->having('cast(shelf.capacity as signed) - count(tray.id) <= 0'),
                     'sort' => [
@@ -420,14 +465,18 @@ class ShelfApiController extends ActiveController
                 ]);
             }
             else if ($positionsFree > 0) {
+                $query = $this->modelClass::find()
+                    ->leftJoin('tray', 'tray.shelf_id = shelf.id')
+                    ->where(['like', 'shelf.barcode', $shelfBarcode, false])
+                    ->andFilterWhere(['shelf.size_id' => $sizeId])
+                    ->andFilterWhere(['shelf.collection_id' => $collectionId])
+                    ->andWhere(['shelf.active' => true])
+                    ->andWhere(['or', ['tray.active' => true], ['tray.id' => null]]);
+                if ($flaggedOnly) {
+                    $query->andWhere(['shelf.flag' => 1]);
+                }
                 $provider = new ActiveDataProvider([
-                    'query' => $this->modelClass::find()
-                        ->leftJoin('tray', 'tray.shelf_id = shelf.id')
-                        ->where(['like', 'shelf.barcode', $shelfBarcode, false])
-                        ->andFilterWhere(['shelf.size_id' => $sizeId])
-                        ->andFilterWhere(['shelf.collection_id' => $collectionId])
-                        ->andWhere(['shelf.active' => true])
-                        ->andWhere(['or', ['tray.active' => true], ['tray.id' => null]])
+                    'query' => $query
                         ->groupBy(['capacity', 'shelf.id'])
                         ->having('cast(shelf.capacity as signed) - count(tray.id) >= :positionsFree', [':positionsFree' => $positionsFree]),
                     'sort' => [
@@ -441,12 +490,16 @@ class ShelfApiController extends ActiveController
                 ]);
             }
             else {
+                $query = $this->modelClass::find()
+                    ->where(['like', 'barcode', $shelfBarcode, false])
+                    ->andFilterWhere(['size_id' => $sizeId])
+                    ->andFilterWhere(['collection_id' => $collectionId])
+                    ->andWhere(['active' => true]);
+                if ($flaggedOnly) {
+                    $query->andWhere(['flag' => 1]);
+                }
                 $provider = new ActiveDataProvider([
-                    'query' => $this->modelClass::find()
-                        ->where(['like', 'barcode', $shelfBarcode, false])
-                        ->andFilterWhere(['size_id' => $sizeId])
-                        ->andFilterWhere(['collection_id' => $collectionId])
-                        ->andWhere(['active' => true]),
+                    'query' => $query,
                     'sort' => [
                         'defaultOrder' => [
                             'barcode' => SORT_ASC,
@@ -467,37 +520,28 @@ class ShelfApiController extends ActiveController
                     ->where(['barcode' => $trayBarcode, 'active' => true, 'shelf_id' => null])
                     ->one();
                 if ($tray) {
-                    return [
-                        'resultCount' => 1,
-                        'results' => [[
-                            "id" => null,
-                            "barcode" => "[Unshelved]",
-                            "row" => null,
-                            "side" => null,
-                            "ladder" => null,
-                            "rung" => null,
-                            "active" => true,
-                            "flag" => true,
-                            "size" => null,
-                            "collection" => null,
-                            "trays" => [$tray],
-                            "capacity" => null,
-                            "depths" => null,
-                            "positions" => null,
-                        ]],
-                    ];
+                    return [[
+                        "id" => null,
+                        "barcode" => "[Unshelved]",
+                        "row" => null,
+                        "side" => null,
+                        "ladder" => null,
+                        "rung" => null,
+                        "active" => true,
+                        "flag" => true,
+                        "size" => null,
+                        "collection" => null,
+                        "trays" => [$tray],
+                        "capacity" => null,
+                        "depths" => null,
+                        "positions" => null,
+                    ]];
                 }
                 else {
-                    return [
-                        'resultCount' => 0,
-                        'results' => [],
-                    ];
+                    return [];
                 }
             }
-            return [
-                'resultCount' => $provider->getTotalCount(),
-                'results' => $provider->getModels()
-            ];
+            return $provider->getModels();
         }
         else {
             throw new \yii\web\HttpException(403, 'You do not have permission to view shelves');
