@@ -63,16 +63,6 @@ class ShelfLogApiController extends ActiveController
 
         if ($tokenCheck['level'] >= 40) {
             $query = $this->modelClass::find()
-                ->select([
-                    'shelf_log.id',
-                    'shelf.barcode',
-                    'shelf_log.action',
-                    'shelf_log.details',
-                    'user.name AS user',
-                    'shelf_log.timestamp',
-                    'shelf_log.currentActive',
-                    'shelf_log.currentFlag'
-                ])
                 ->joinWith('shelf', 'shelf_log.shelf_id = shelf.id')
                 ->joinWith('user', 'shelf_log.user_id = user.id')
                 ->andFilterWhere(['shelf_log.action' => $actionQ])
