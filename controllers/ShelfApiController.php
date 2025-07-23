@@ -520,28 +520,37 @@ class ShelfApiController extends ActiveController
                     ->where(['barcode' => $trayBarcode, 'active' => true, 'shelf_id' => null])
                     ->one();
                 if ($tray) {
-                    return [[
-                        "id" => null,
-                        "barcode" => "[Unshelved]",
-                        "row" => null,
-                        "side" => null,
-                        "ladder" => null,
-                        "rung" => null,
-                        "active" => true,
-                        "flag" => true,
-                        "size" => null,
-                        "collection" => null,
-                        "trays" => [$tray],
-                        "capacity" => null,
-                        "depths" => null,
-                        "positions" => null,
-                    ]];
+                    return [
+                        'resultCount' => 1,
+                        'results' => [[
+                            "id" => null,
+                            "barcode" => "[Unshelved]",
+                            "row" => null,
+                            "side" => null,
+                            "ladder" => null,
+                            "rung" => null,
+                            "active" => true,
+                            "flag" => true,
+                            "size" => null,
+                            "collection" => null,
+                            "trays" => [$tray],
+                            "capacity" => null,
+                            "depths" => null,
+                            "positions" => null,
+                        ]],
+                    ];
                 }
                 else {
-                    return [];
+                    return [
+                        'resultCount' => 0,
+                        'results' => [],
+                    ];
                 }
             }
-            return $provider->getModels();
+            return [
+                'resultCount' => $provider->getTotalCount(),
+                'results' => $provider->getModels()
+            ];
         }
         else {
             throw new \yii\web\HttpException(403, 'You do not have permission to view shelves');
