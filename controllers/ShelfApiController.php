@@ -158,8 +158,8 @@ class ShelfApiController extends ActiveController
         if ($rung !== null && strlen($rung) < 2) {
             $rung = str_pad($rung, 2, '0', STR_PAD_LEFT);
         }
-        $width = array_key_exists('width', $data) ? $data['width'] : null;
         $height = array_key_exists('height', $data) ? $data['height'] : null;
+        $width = array_key_exists('width', $data) ? $data['width'] : null;
         $size = array_key_exists('size', $data) ? $data['size'] : null;
         $collection = array_key_exists('collection', $data) ? $data['collection'] : null;
         $depths = array_key_exists('depths', $data) ? $data['depths'] : null;
@@ -210,15 +210,15 @@ class ShelfApiController extends ActiveController
             $logDetails[] = sprintf('rung %s', $rung === "" ? "null" : $rung);
             $shelf->rung = $rung === "" ? null : $rung;
         }
-        // Width
-        if ($width !== null && $width != $shelf->width) {
-            $logDetails[] = sprintf('width %s', $width === "" ? "null" : $width);
-            $shelf->width = $width === "" ? null : $width;
-        }
         // Height
         if ($height !== null && $height != $shelf->height) {
             $logDetails[] = sprintf('height %s', $height === "" ? "null" : $height);
             $shelf->height = $height === "" ? null : $height;
+        }
+        // Width
+        if ($width !== null && $width != $shelf->width) {
+            $logDetails[] = sprintf('width %s', $width === "" ? "null" : $width);
+            $shelf->width = $width === "" ? null : $width;
         }
         // Size
         if ($size !== null && $size !== "") {
@@ -393,6 +393,30 @@ class ShelfApiController extends ActiveController
         $collection = isset($_REQUEST["collection"]) ? $_REQUEST["collection"] : null;
         $positionsFree = isset($_REQUEST["positions_free"]) ? $_REQUEST["positions_free"] : null;
         $flaggedOnly = isset($_REQUEST["flagged_only"]) ? $_REQUEST["flagged_only"] == 'true' || $_REQUEST["flagged_only"] == 1 : false;
+        if (isset($_REQUEST["height"])) {
+            if ($_REQUEST["height"] === "-") {
+                $height = null;
+                $heightNotSet = true;
+            } else {
+                $height = $_REQUEST["height"];
+                $heightNotSet = false;
+            }
+        } else {
+            $height = null;
+            $heightNotSet = false;
+        }
+        if (isset($_REQUEST["width"])) {
+            if ($_REQUEST["width"] === "-") {
+                $width = null;
+                $widthNotSet = true;
+            } else {
+                $width = $_REQUEST["width"];
+                $widthNotSet = false;
+            }
+        } else {
+            $width = null;
+            $widthNotSet = false;
+        }
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
@@ -422,10 +446,18 @@ class ShelfApiController extends ActiveController
                     ->where(['like', 'shelf.barcode', $shelfBarcode, false])
                     ->andFilterWhere(['shelf.size_id' => $sizeId])
                     ->andFilterWhere(['shelf.collection_id' => $collectionId])
+                    ->andFilterWhere(['shelf.height' => $height])
+                    ->andFilterWhere(['shelf.width' => $width])
                     ->andWhere(['shelf.active' => true])
                     ->andWhere(['tray.id' => null]);
                 if ($flaggedOnly) {
                     $query->andWhere(['shelf.flag' => 1]);
+                }
+                if ($heightNotSet) {
+                    $query->andWhere(['or', ['shelf.height' => null], ['shelf.height' => '']]);
+                }
+                if ($widthNotSet) {
+                    $query->andWhere(['or', ['shelf.width' => null], ['shelf.width' => '']]);
                 }
                 $provider = new ActiveDataProvider([
                     'query' => $query->groupBy(['shelf.id']),
@@ -445,10 +477,18 @@ class ShelfApiController extends ActiveController
                     ->where(['like', 'shelf.barcode', $shelfBarcode, false])
                     ->andFilterWhere(['shelf.size_id' => $sizeId])
                     ->andFilterWhere(['shelf.collection_id' => $collectionId])
+                    ->andFilterWhere(['shelf.height' => $height])
+                    ->andFilterWhere(['shelf.width' => $width])
                     ->andWhere(['shelf.active' => true])
                     ->andWhere(['or', ['tray.active' => true], ['tray.id' => null]]);
                 if ($flaggedOnly) {
                     $query->andWhere(['shelf.flag' => 1]);
+                }
+                if ($heightNotSet) {
+                    $query->andWhere(['or', ['shelf.height' => null], ['shelf.height' => '']]);
+                }
+                if ($widthNotSet) {
+                    $query->andWhere(['or', ['shelf.width' => null], ['shelf.width' => '']]);
                 }
                 $provider = new ActiveDataProvider([
                     'query' => $query
@@ -470,10 +510,18 @@ class ShelfApiController extends ActiveController
                     ->where(['like', 'shelf.barcode', $shelfBarcode, false])
                     ->andFilterWhere(['shelf.size_id' => $sizeId])
                     ->andFilterWhere(['shelf.collection_id' => $collectionId])
+                    ->andFilterWhere(['shelf.height' => $height])
+                    ->andFilterWhere(['shelf.width' => $width])
                     ->andWhere(['shelf.active' => true])
                     ->andWhere(['or', ['tray.active' => true], ['tray.id' => null]]);
                 if ($flaggedOnly) {
                     $query->andWhere(['shelf.flag' => 1]);
+                }
+                if ($heightNotSet) {
+                    $query->andWhere(['or', ['shelf.height' => null], ['shelf.height' => '']]);
+                }
+                if ($widthNotSet) {
+                    $query->andWhere(['or', ['shelf.width' => null], ['shelf.width' => '']]);
                 }
                 $provider = new ActiveDataProvider([
                     'query' => $query
@@ -494,9 +542,17 @@ class ShelfApiController extends ActiveController
                     ->where(['like', 'barcode', $shelfBarcode, false])
                     ->andFilterWhere(['size_id' => $sizeId])
                     ->andFilterWhere(['collection_id' => $collectionId])
+                    ->andFilterWhere(['height' => $height])
+                    ->andFilterWhere(['width' => $width])
                     ->andWhere(['active' => true]);
                 if ($flaggedOnly) {
                     $query->andWhere(['flag' => 1]);
+                }
+                if ($heightNotSet) {
+                    $query->andWhere(['or', ['height' => null], ['height' => '']]);
+                }
+                if ($widthNotSet) {
+                    $query->andWhere(['or', ['width' => null], ['width' => '']]);
                 }
                 $provider = new ActiveDataProvider([
                     'query' => $query,
@@ -672,6 +728,48 @@ class ShelfApiController extends ActiveController
         }
         else {
             throw new \yii\web\HttpException(403, 'You do not have permission to view shelf space usage.');
+        }
+    }
+
+    public function actionGetAllHeights()
+    {
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if ($tokenCheck['level'] >= 20) {
+            $heights = $this->modelClass::find()
+                ->select('height')
+                ->where(['active' => true])
+                ->andWhere(['not', ['height' => null]])
+                ->distinct()
+                ->orderBy('height')
+                ->asArray()
+                ->all();
+            return array_column($heights, 'height');
+        }
+        else {
+            throw new \yii\web\HttpException(403, 'You do not have permission to view shelf heights.');
+        }
+    }
+
+    public function actionGetAllWidths()
+    {
+        $token = $_REQUEST["access-token"];
+        $tokenCheck = User::find()->where(['access_token' => $token])->one();
+
+        if ($tokenCheck['level'] >= 20) {
+            $widths = $this->modelClass::find()
+                ->select('width')
+                ->where(['active' => true])
+                ->andWhere(['not', ['width' => null]])
+                ->distinct()
+                ->orderBy('width')
+                ->asArray()
+                ->all();
+            return array_column($widths, 'width');
+        }
+        else {
+            throw new \yii\web\HttpException(403, 'You do not have permission to view shelf widths.');
         }
     }
 
