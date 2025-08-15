@@ -301,7 +301,7 @@ class ShelfApiController extends ActiveController
         }
 
         // Flag shelf if size doesn't fit height
-        if ($sizeObject->height && $shelf->height && $sizeObject->height > $shelf->height) {
+        if (isset($sizeObject->height) && $sizeObject->height && isset($shelf->height) && $shelf->height && $sizeObject->height > $shelf->height) {
             $flagDetails[] = sprintf('Size %s does not fit height %s', $size, $shelf->height);
             $shelf->flag = 1;
         }
