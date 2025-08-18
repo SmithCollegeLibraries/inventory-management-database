@@ -46,87 +46,92 @@ class ItemLogApiController extends ActiveController
         return $dataProvider;
     }
 
-    public function actionSearch($limit=100, $download=false)
+    public function actionSearch($limit = 100, $download = false)
     {
-        $token = $_REQUEST["access-token"];
+        $token = $_REQUEST["access-token"] ?? null;
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
+        if (!$tokenCheck || $tokenCheck['level'] < 40) {
+            throw new \yii\web\ForbiddenHttpException('Invalid access token or insufficient level.');
+        }
+
         $json = file_get_contents('php://input');
-        $data = json_decode($json, true);
+        $data = json_decode($json, true) ?? [];
 
-        $actionQ = isset($data['action']) ? $data['action'] : null;
-        $barcodeQ = isset($data['barcode']) ? $data['barcode'] : null;
-        $detailsQ = isset($data['details']) ? $data['details'] : null;
-        $userQ = isset($data['user']) ? $data['user'] : null;
-        $timestampPost = isset($data['timestampPost']) ? $data['timestampPost'] : null;
-        $timestampAnte = isset($data['timestampAnte']) ? $data['timestampAnte'] : null;
+        $actionQ = $data['action'] ?? null;
+        $barcodeQ = $data['barcode'] ?? null;
+        $detailsQ = $data['details'] ?? null;
+        $userQ = $data['user'] ?? null;
+        $timestampPost = $data['timestampPost'] ?? null;
+        $timestampAnte = $data['timestampAnte'] ?? null;
 
-        if ($tokenCheck['level'] >= 40) {
-            $query = (new \yii\db\Query())
-                ->select([
-                    'item_log.id',
-                    'item.barcode AS barcode',
-                    'item_log.action',
-                    'user.name AS user',
-                    'item_log.details',
-                    'item_log.timestamp',
-                ])
-                ->from('item_log')
-                ->leftJoin('item', 'item.id = item_log.item_id')
-                ->leftJoin('user', 'user.id = item_log.user_id')
-                ->andFilterWhere(['item_log.action' => $actionQ])
-                ->andFilterWhere(['item.barcode' => $barcodeQ])
-                ->andFilterWhere(['like', 'user.name', $userQ])
-                ->andFilterWhere(['like', 'item_log.details', $detailsQ])
-                ->andFilterWhere(['>=', 'item_log.timestamp', $timestampPost])
-                ->andFilterWhere(['<', 'item_log.timestamp', $timestampAnte])
-                ->orderBy(['item_log.timestamp' => SORT_DESC]);
+        $query = (new \yii\db\Query())
+            ->select([
+                'item_log.id',
+                'item.barcode AS barcode',
+                'item_log.action',
+                'user.name AS user',
+                'item_log.details',
+                'item_log.timestamp',
+            ])
+            ->from('item_log')
+            ->leftJoin('item', 'item.id = item_log.item_id')
+            ->leftJoin('user', 'user.id = item_log.user_id')
+            ->andFilterWhere(['item_log.action' => $actionQ])
+            ->andFilterWhere(['item.barcode' => $barcodeQ])
+            ->andFilterWhere(['like', 'user.name', $userQ])
+            ->andFilterWhere(['like', 'item_log.details', $detailsQ])
+            ->andFilterWhere(['>=', 'item_log.timestamp', $timestampPost])
+            ->andFilterWhere(['<', 'item_log.timestamp', $timestampAnte])
+            ->orderBy(['item_log.timestamp' => SORT_DESC]);
 
-            if ($download) {
-                $db = Yii::$app->db;
-                $db->pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
+        if ($download) {
+            $db = Yii::$app->db;
+            $db->pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
 
-                // Set response headers
-                $filename = 'item_log_' . date('Ymd_His') . '.csv';
-                Yii::$app->response->format = \yii\web\Response::FORMAT_RAW;
-                Yii::$app->response->headers->set('Content-Type', 'text/csv');
-                Yii::$app->response->headers->set('Content-Disposition', "attachment; filename=\"{$filename}\"");
-                Yii::$app->response->headers->set('Cache-Control', 'no-store');
+            if (ob_get_level()) {
+                ob_end_clean(); // clear output buffers
+            }
 
-                $reader = $query->createCommand()->query();
+            $filename = 'sis-item-log-' . date('Ymd_His') . '.csv';
+            header('Content-Type: text/csv');
+            header("Content-Disposition: attachment; filename=\"{$filename}\"");
+            header('Cache-Control: no-store');
 
-                $output = fopen('php://output', 'w');
-                // CSV header row
-                fputcsv($output, ['ID', 'Item barcode', 'Action', 'User', 'Details', 'Timestamp'], ',', '"', '\\', '');
+            $reader = $query->createCommand()->query();
+            $output = fopen('php://output', 'w');
 
-                foreach ($reader as $row) {
-                    fputcsv($output, [
+            // CSV header
+            fputcsv(
+                $output,
+                ['ID', 'Item barcode', 'Action', 'User', 'Details', 'Timestamp'],
+                ',', '"', '\\', "\n"
+            );
+
+            foreach ($reader as $row) {
+                fputcsv(
+                    $output,
+                    [
                         $row['id'],
                         $row['barcode'],
                         $row['action'],
                         $row['user'],
                         $row['details'],
                         $row['timestamp'],
-                    ], ',', '"', '\\', '');
-                }
-                fclose($output);
-                $db->pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
-                Yii::$app->end();
-            }
-            else {
-                $query->limit($limit);
-                $dataProvider = new ActiveDataProvider([
-                    'query' => $query,
-                    'pagination' => [
-                        'pageSize' => $limit,
                     ],
-                ]);
-                return $dataProvider->getModels();
+                    ',', '"', '\\', "\n"
+                );
+                flush(); // send buffer immediately
             }
+
+            fclose($output);
+            $db->pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
+            exit();
         }
-        else {
-            throw new \yii\web\HttpException(403, 'You do not have permission to view logs');
-        }
+
+        // Normal JSON response
+        $rows = $query->limit($limit)->all();
+        return $this->asJson($rows);
     }
 
     public function actionActionsList()
