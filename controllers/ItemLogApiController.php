@@ -83,37 +83,35 @@ class ItemLogApiController extends ActiveController
                 ->orderBy(['item_log.timestamp' => SORT_DESC]);
 
             if ($download) {
-                $command = $query->createCommand();
-
                 $db = Yii::$app->db;
                 $db->pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
-                $reader = $command->query();
 
+                // Set response headers
                 $filename = 'item_log_' . date('Ymd_His') . '.csv';
-                $filePath = Yii::getAlias('@webroot/reports/' . $filename);
-                $fileHandle = fopen($filePath, 'w');
-                fputcsv($fileHandle,
-                    ['ID', 'Item barcode', 'Action', 'User', 'Details', 'Timestamp'],
-                    ',', '"', "\n"
-                );
+                Yii::$app->response->format = \yii\web\Response::FORMAT_RAW;
+                Yii::$app->response->headers->set('Content-Type', 'text/csv');
+                Yii::$app->response->headers->set('Content-Disposition', "attachment; filename=\"{$filename}\"");
+                Yii::$app->response->headers->set('Cache-Control', 'no-store');
+
+                $reader = $query->createCommand()->query();
+
+                $output = fopen('php://output', 'w');
+                // CSV header row
+                fputcsv($output, ['ID', 'Item barcode', 'Action', 'User', 'Details', 'Timestamp'], ',', '"', '\\', '');
 
                 foreach ($reader as $row) {
-                    fputcsv($fileHandle, [
+                    fputcsv($output, [
                         $row['id'],
                         $row['barcode'],
                         $row['action'],
                         $row['user'],
                         $row['details'],
                         $row['timestamp'],
-                    ], ',', '"', "\n");
+                    ], ',', '"', '\\', '');
                 }
-                fclose($fileHandle);
+                fclose($output);
                 $db->pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
-                return [
-                    'status' => 'success',
-                    'message' => 'CSV file generated successfully',
-                    'file' => $filename,
-                ];
+                Yii::$app->end();
             }
             else {
                 $query->limit($limit);
