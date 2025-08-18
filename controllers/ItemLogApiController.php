@@ -46,7 +46,7 @@ class ItemLogApiController extends ActiveController
         return $dataProvider;
     }
 
-    public function actionSearch()
+    public function actionSearch($limit=100, $download=false)
     {
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
@@ -62,18 +62,69 @@ class ItemLogApiController extends ActiveController
         $timestampAnte = isset($data['timestampAnte']) ? $data['timestampAnte'] : null;
 
         if ($tokenCheck['level'] >= 40) {
-            $query = $this->modelClass::find()
-                ->joinWith('item', 'item_log.item_id = item.id')
-                ->joinWith('user', 'item_log.user_id = user.id')
+            $query = (new \yii\db\Query())
+                ->select([
+                    'item_log.id',
+                    'item.barcode AS barcode',
+                    'item_log.action',
+                    'user.name AS user',
+                    'item_log.details',
+                    'item_log.timestamp',
+                ])
+                ->from('item_log')
+                ->leftJoin('item', 'item.id = item_log.item_id')
+                ->leftJoin('user', 'user.id = item_log.user_id')
                 ->andFilterWhere(['item_log.action' => $actionQ])
-                ->andFilterWhere(['=', 'item.barcode', $barcodeQ])
-                ->andFilterWhere(['like', 'item_log.details', $detailsQ])
+                ->andFilterWhere(['item.barcode' => $barcodeQ])
                 ->andFilterWhere(['like', 'user.name', $userQ])
+                ->andFilterWhere(['like', 'item_log.details', $detailsQ])
                 ->andFilterWhere(['>=', 'item_log.timestamp', $timestampPost])
                 ->andFilterWhere(['<', 'item_log.timestamp', $timestampAnte])
-                ->orderBy(['item_log.timestamp' => SORT_DESC])
-                ->limit(100)->all();
-            return $query;
+                ->orderBy(['item_log.timestamp' => SORT_DESC]);
+
+            if ($download) {
+                $command = $query->createCommand();
+
+                $db = Yii::$app->db;
+                $db->pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
+                $reader = $command->query();
+
+                $filename = 'item_log_' . date('Ymd_His') . '.csv';
+                $filePath = Yii::getAlias('@webroot/reports/' . $filename);
+                $fileHandle = fopen($filePath, 'w');
+                fputcsv($fileHandle,
+                    ['ID', 'Item barcode', 'Action', 'User', 'Details', 'Timestamp'],
+                    ',', '"', "\n"
+                );
+
+                foreach ($reader as $row) {
+                    fputcsv($fileHandle, [
+                        $row['id'],
+                        $row['barcode'],
+                        $row['action'],
+                        $row['user'],
+                        $row['details'],
+                        $row['timestamp'],
+                    ], ',', '"', "\n");
+                }
+                fclose($fileHandle);
+                $db->pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
+                return [
+                    'status' => 'success',
+                    'message' => 'CSV file generated successfully',
+                    'file' => $filename,
+                ];
+            }
+            else {
+                $query->limit($limit);
+                $dataProvider = new ActiveDataProvider([
+                    'query' => $query,
+                    'pagination' => [
+                        'pageSize' => $limit,
+                    ],
+                ]);
+                return $dataProvider->getModels();
+            }
         }
         else {
             throw new \yii\web\HttpException(403, 'You do not have permission to view logs');
@@ -86,16 +137,16 @@ class ItemLogApiController extends ActiveController
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
         if ($tokenCheck['level'] >= 40) {
-            $results = $this->modelClass::find()
-                ->select('action')
-                ->distinct()
-                ->all();
-            // Use map/reduce on results and just return a list of the action strings
-            $actions = array_map(function($result) {
-                return $result->action;
-            }, $results);
-            return $actions;
-        }
+                $results = $this->modelClass::find()
+                    ->select('action')
+                    ->distinct()
+                    ->all();
+                // Use map/reduce on results and just return a list of the action strings
+                $actions = array_map(function($result) {
+                    return $result->action;
+                }, $results);
+                return $actions;
+            }
         else {
             throw new \yii\web\HttpException(403, 'You do not have permission to view logs');
         }
