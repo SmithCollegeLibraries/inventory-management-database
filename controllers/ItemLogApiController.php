@@ -51,8 +51,11 @@ class ItemLogApiController extends ActiveController
         $token = $_REQUEST["access-token"] ?? null;
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
-        if (!$tokenCheck || $tokenCheck['level'] < 40) {
-            throw new \yii\web\ForbiddenHttpException('Invalid access token or insufficient level.');
+        if (!$tokenCheck) {
+            throw new \yii\web\ForbiddenHttpException('Invalid access token');
+        }
+        else if ($tokenCheck['level'] < 40) {
+            throw new \yii\web\HttpException(403, 'You do not have permission to view logs');
         }
 
         $json = file_get_contents('php://input');
@@ -68,7 +71,7 @@ class ItemLogApiController extends ActiveController
         $query = (new \yii\db\Query())
             ->select([
                 'item_log.id',
-                'item.barcode AS barcode',
+                'item.barcode',
                 'item_log.action',
                 'user.name AS user',
                 'item_log.details',
@@ -104,7 +107,7 @@ class ItemLogApiController extends ActiveController
             // CSV header
             fputcsv(
                 $output,
-                ['ID', 'Item barcode', 'Action', 'User', 'Details', 'Timestamp'],
+                ['ID', 'Item', 'Action', 'User', 'Details', 'Timestamp'],
                 ',', '"', '\\', "\n"
             );
 

@@ -46,38 +46,95 @@ class TrayLogApiController extends ActiveController
         return $dataProvider;
     }
 
-    public function actionSearch()
+    public function actionSearch($limit = 100, $download = false)
     {
-        $token = $_REQUEST["access-token"];
+        $token = $_REQUEST["access-token"] ?? null;
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
-        $json = file_get_contents('php://input');
-        $data = json_decode($json, true);
-
-        $actionQ = isset($data['action']) ? $data['action'] : null;
-        $barcodeQ = isset($data['barcode']) ? $data['barcode'] : null;
-        $detailsQ = isset($data['details']) ? $data['details'] : null;
-        $userQ = isset($data['user']) ? $data['user'] : null;
-        $timestampPost = isset($data['timestampPost']) ? $data['timestampPost'] : null;
-        $timestampAnte = isset($data['timestampAnte']) ? $data['timestampAnte'] : null;
-
-        if ($tokenCheck['level'] >= 40) {
-            $query = $this->modelClass::find()
-                ->joinWith('tray', 'tray_log.tray_id = tray.id')
-                ->joinWith('user', 'tray_log.user_id = user.id')
-                ->andFilterWhere(['tray_log.action' => $actionQ])
-                ->andFilterWhere(['=', 'tray.barcode', $barcodeQ])
-                ->andFilterWhere(['like', 'tray_log.details', $detailsQ])
-                ->andFilterWhere(['like', 'user.name', $userQ])
-                ->andFilterWhere(['>=', 'tray_log.timestamp', $timestampPost])
-                ->andFilterWhere(['<', 'tray_log.timestamp', $timestampAnte])
-                ->orderBy(['tray_log.timestamp' => SORT_DESC])
-                ->limit(100)->all();
-            return $query;
+        if (!$tokenCheck) {
+            throw new \yii\web\ForbiddenHttpException('Invalid access token');
         }
-        else {
+        else if ($tokenCheck['level'] < 40) {
             throw new \yii\web\HttpException(403, 'You do not have permission to view logs');
         }
+
+        $json = file_get_contents('php://input');
+        $data = json_decode($json, true) ?? [];
+
+        $actionQ = $data['action'] ?? null;
+        $barcodeQ = $data['barcode'] ?? null;
+        $detailsQ = $data['details'] ?? null;
+        $userQ = $data['user'] ?? null;
+        $timestampPost = $data['timestampPost'] ?? null;
+        $timestampAnte = $data['timestampAnte'] ?? null;
+
+        $query = (new \yii\db\Query())
+            ->select([
+                'tray_log.id',
+                'tray.barcode',
+                'tray_log.action',
+                'user.name AS user',
+                'tray_log.details',
+                'tray_log.timestamp',
+            ])
+            ->from('tray_log')
+            ->leftJoin('tray', 'tray.id = tray_log.tray_id')
+            ->leftJoin('user', 'user.id = tray_log.user_id')
+            ->andFilterWhere(['tray_log.action' => $actionQ])
+            ->andFilterWhere(['tray.barcode' => $barcodeQ])
+            ->andFilterWhere(['like', 'user.name', $userQ])
+            ->andFilterWhere(['like', 'tray_log.details', $detailsQ])
+            ->andFilterWhere(['>=', 'tray_log.timestamp', $timestampPost])
+            ->andFilterWhere(['<', 'tray_log.timestamp', $timestampAnte])
+            ->orderBy(['tray_log.timestamp' => SORT_DESC]);
+
+        if ($download) {
+            $db = Yii::$app->db;
+            $db->pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
+
+            if (ob_get_level()) {
+                ob_end_clean(); // clear output buffers
+            }
+
+            $filename = 'sis-tray-log-' . date('Ymd_His') . '.csv';
+            header('Content-Type: text/csv');
+            header("Content-Disposition: attachment; filename=\"{$filename}\"");
+            header('Cache-Control: no-store');
+
+            $reader = $query->createCommand()->query();
+            $output = fopen('php://output', 'w');
+
+            // CSV header
+            fputcsv(
+                $output,
+                ['ID', 'Tray', 'Action', 'User', 'Details', 'Timestamp'],
+                ',', '"', '\\', "\n"
+            );
+
+            foreach ($reader as $row) {
+                fputcsv(
+                    $output,
+                    [
+                        $row['id'],
+                        $row['barcode'],
+                        $row['action'],
+                        $row['user'],
+                        $row['details'],
+                        $row['timestamp'],
+                    ],
+                    ',', '"', '\\', "\n"
+                );
+                flush(); // send buffer immediately
+            }
+
+            fclose($output);
+            $db->pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
+            exit();
+        }
+
+        // Normal JSON response
+        $rows = $query->limit($limit)->all();
+        return $this->asJson($rows);
     }
 
     public function actionActionsList()
