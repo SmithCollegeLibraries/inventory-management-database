@@ -65,6 +65,7 @@ class ItemLogApiController extends ActiveController
         $barcodeQ = $data['barcode'] ?? null;
         $detailsQ = $data['details'] ?? null;
         $userQ = $data['user'] ?? null;
+        $flagQ = $data['flag'] ?? null;
         $timestampPost = $data['timestampPost'] ?? null;
         $timestampAnte = $data['timestampAnte'] ?? null;
 
@@ -72,6 +73,7 @@ class ItemLogApiController extends ActiveController
             ->select([
                 'item_log.id',
                 'item.barcode',
+                'item.flag',
                 'item_log.action',
                 'user.name AS user',
                 'item_log.details',
@@ -85,8 +87,11 @@ class ItemLogApiController extends ActiveController
             ->andFilterWhere(['like', 'user.name', $userQ])
             ->andFilterWhere(['like', 'item_log.details', $detailsQ])
             ->andFilterWhere(['>=', 'item_log.timestamp', $timestampPost])
-            ->andFilterWhere(['<', 'item_log.timestamp', $timestampAnte])
-            ->orderBy(['item_log.timestamp' => SORT_DESC]);
+            ->andFilterWhere(['<', 'item_log.timestamp', $timestampAnte]);
+            if ($flagQ) {
+                $query->andWhere(['item.flag' => $flagQ]);
+            }
+            $query->orderBy(['item_log.timestamp' => SORT_DESC]);
 
         if ($download) {
             $db = Yii::$app->db;
@@ -107,7 +112,7 @@ class ItemLogApiController extends ActiveController
             // CSV header
             fputcsv(
                 $output,
-                ['ID', 'Item', 'Action', 'User', 'Details', 'Timestamp'],
+                ['ID', 'Item', 'Flag', 'Action', 'User', 'Details', 'Timestamp'],
                 ',', '"', '\\', "\n"
             );
 
@@ -117,6 +122,7 @@ class ItemLogApiController extends ActiveController
                     [
                         $row['id'],
                         $row['barcode'],
+                        $row['flag'],
                         $row['action'],
                         $row['user'],
                         $row['details'],

@@ -65,6 +65,7 @@ class ShelfLogApiController extends ActiveController
         $barcodeQ = $data['barcode'] ?? null;
         $detailsQ = $data['details'] ?? null;
         $userQ = $data['user'] ?? null;
+        $flagQ = $data['flag'] ?? null;
         $timestampPost = $data['timestampPost'] ?? null;
         $timestampAnte = $data['timestampAnte'] ?? null;
 
@@ -72,6 +73,7 @@ class ShelfLogApiController extends ActiveController
             ->select([
                 'shelf_log.id',
                 'shelf.barcode',
+                'shelf.flag',
                 'shelf_log.action',
                 'user.name AS user',
                 'shelf_log.details',
@@ -85,8 +87,11 @@ class ShelfLogApiController extends ActiveController
             ->andFilterWhere(['like', 'user.name', $userQ])
             ->andFilterWhere(['like', 'shelf_log.details', $detailsQ])
             ->andFilterWhere(['>=', 'shelf_log.timestamp', $timestampPost])
-            ->andFilterWhere(['<', 'shelf_log.timestamp', $timestampAnte])
-            ->orderBy(['shelf_log.timestamp' => SORT_DESC]);
+            ->andFilterWhere(['<', 'shelf_log.timestamp', $timestampAnte]);
+            if ($flagQ) {
+                $query->andWhere(['shelf.flag' => $flagQ]);
+            }
+            $query->orderBy(['shelf_log.timestamp' => SORT_DESC]);
 
         if ($download) {
             $db = Yii::$app->db;
@@ -107,7 +112,7 @@ class ShelfLogApiController extends ActiveController
             // CSV header
             fputcsv(
                 $output,
-                ['ID', 'Shelf', 'Action', 'User', 'Details', 'Timestamp'],
+                ['ID', 'Shelf', 'Flag', 'Action', 'User', 'Details', 'Timestamp'],
                 ',', '"', '\\', "\n"
             );
 
@@ -117,6 +122,7 @@ class ShelfLogApiController extends ActiveController
                     [
                         $row['id'],
                         $row['barcode'],
+                        $row['flag'],
                         $row['action'],
                         $row['user'],
                         $row['details'],
