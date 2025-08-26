@@ -669,6 +669,13 @@ class ShelfApiController extends ActiveController
 
     public function actionSpaceUsage()
     {
+        $LABEL_SHELVES = "Total shelves";
+        $LABEL_TRAYS = "Total trays";
+        $LABEL_CAPACITY = "Capacity";
+        $LABEL_EMPTY = "Empty";
+        $LABEL_PARTIAL = "Partial/full";
+        $LABEL_FULL = "Full";
+
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
@@ -700,27 +707,27 @@ class ShelfApiController extends ActiveController
                 }
                 if (!isset($results[$collectionCode][$sizeCode])) {
                     $results[$collectionCode][$sizeCode] = [
-                        'Total trays' => 0,
-                        'Capacity' => null,
-                        'Shelves' => 0,
-                        'Empty' => 0,
-                        'Partial/full' => 0,
-                        'Full' => 0,
+                        $LABEL_TRAYS => 0,
+                        $LABEL_CAPACITY => null,
+                        $LABEL_SHELVES => 0,
+                        $LABEL_EMPTY => 0,
+                        $LABEL_PARTIAL => 0,
+                        $LABEL_FULL => 0,
                     ];
                 }
-                $results[$collectionCode][$sizeCode]['Shelves']++;
-                $results[$collectionCode][$sizeCode]['Total trays'] += $row['shelf_count'];
+                $results[$collectionCode][$sizeCode][$LABEL_SHELVES]++;
+                $results[$collectionCode][$sizeCode][$LABEL_TRAYS] += $row['shelf_count'];
                 if ($row['capacity']) {
-                    $results[$collectionCode][$sizeCode]['Capacity'] += $row['capacity'];
+                    $results[$collectionCode][$sizeCode][$LABEL_CAPACITY] += $row['capacity'];
                 }
                 if ($row['shelf_count'] == 0 || $row['shelf_count'] === null) {
-                    $results[$collectionCode][$sizeCode]['Empty']++;
+                    $results[$collectionCode][$sizeCode][$LABEL_EMPTY]++;
                 }
                 elseif ($row['shelf_count'] && $row['capacity'] && $row['shelf_count'] >= $row['capacity']) {
-                    $results[$collectionCode][$sizeCode]['Full']++;
+                    $results[$collectionCode][$sizeCode][$LABEL_FULL]++;
                 }
                 else {
-                    $results[$collectionCode][$sizeCode]['Partial/full']++;
+                    $results[$collectionCode][$sizeCode][$LABEL_PARTIAL]++;
                 }
             }
 
