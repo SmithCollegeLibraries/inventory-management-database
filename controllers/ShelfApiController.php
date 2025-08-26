@@ -692,6 +692,8 @@ class ShelfApiController extends ActiveController
                 ->leftJoin('size', 'size.id = shelf.size_id')
                 ->leftJoin('collection', 'collection.id = shelf.collection_id')
                 ->where(['or', ['tray.active' => 1], ['tray.id' => null]])
+                ->andWhere(['shelf.active' => 1])
+                ->andWhere(['or', ['shelf.capacity' => null], ['>', 'shelf.capacity', 0]])
                 ->groupBy('shelf.id')
                 ->orderBy(['collection.id' => SORT_ASC, 'size.id' => SORT_ASC])
                 ->asArray()
@@ -707,9 +709,9 @@ class ShelfApiController extends ActiveController
                 }
                 if (!isset($results[$collectionCode][$sizeCode])) {
                     $results[$collectionCode][$sizeCode] = [
-                        $LABEL_TRAYS => 0,
-                        $LABEL_CAPACITY => null,
                         $LABEL_SHELVES => 0,
+                        $LABEL_CAPACITY => 0,
+                        $LABEL_TRAYS => 0,
                         $LABEL_EMPTY => 0,
                         $LABEL_PARTIAL => 0,
                         $LABEL_FULL => 0,
