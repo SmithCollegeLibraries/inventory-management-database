@@ -619,7 +619,10 @@ class ShelfApiController extends ActiveController
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
         if ($tokenCheck['level'] >= 20) {
-            $totalCount = $this->modelClass::find()->where(['active' => 1])->count();
+            $totalCount = $this->modelClass::find()
+                ->where(['active' => 1])
+                ->andWhere(['or', ['capacity' => null], ['>', 'capacity', 0]])
+                ->count();
             return $totalCount;
         }
         else {
