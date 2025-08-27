@@ -669,7 +669,7 @@ class ShelfApiController extends ActiveController
 
     public function actionSpaceUsage()
     {
-        $LABEL_SHELVES = "Total shelves";
+        $LABEL_SHELVES = "Shelves";
         $LABEL_TRAYS = "Total trays";
         $LABEL_CAPACITY = "Capacity";
         $LABEL_EMPTY = "Empty";
