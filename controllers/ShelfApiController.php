@@ -712,9 +712,9 @@ class ShelfApiController extends ActiveController
                         $LABEL_SHELVES => 0,
                         $LABEL_CAPACITY => 0,
                         $LABEL_TRAYS => 0,
-                        $LABEL_EMPTY => 0,
-                        $LABEL_PARTIAL => 0,
                         $LABEL_FULL => 0,
+                        $LABEL_PARTIAL => 0,
+                        $LABEL_EMPTY => 0,
                     ];
                 }
                 $results[$collectionCode][$sizeCode][$LABEL_SHELVES]++;
