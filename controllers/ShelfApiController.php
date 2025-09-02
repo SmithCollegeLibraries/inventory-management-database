@@ -10,6 +10,10 @@ use app\models\Size;
 use app\models\Collection;
 use app\models\User;
 
+const SHELF_FULL = 0;
+const SHELF_EMPTY = -1;
+const UNSHELVED = -2;
+
 class ShelfApiController extends ActiveController
 {
     public $modelClass = 'app\models\Shelf';
@@ -424,26 +428,54 @@ class ShelfApiController extends ActiveController
         $collectionId = $collection ? Collection::find()->where(['name' => $collection])->andWhere(['active' => true])->one()->id : null;
 
         if ($tokenCheck['level'] >= 20) {
-            // If a tray barcode is provided, search just by the tray barcode
-            // (the shelf query will be cleared); otherwise, 60 shelves
-            // will be returned
-            if ($trayBarcode != '') {
-                $query = $this->modelClass::find()
-                    ->rightJoin('tray', 'tray.shelf_id = shelf.id')
-                    ->where(['tray.barcode' => $trayBarcode])
-                    ->andWhere(['tray.active' => true]);
-                if ($flaggedOnly) {
-                    $query->andWhere(['shelf.flag' => 1]);
+            // If the user is searching for unshelved trays
+            if ($positionsFree == UNSHELVED) {
+                // Query unshelved trays directly, but format results as shelf API structure
+                $query = \app\models\Tray::find()
+                    ->where(['tray.active' => 1, 'tray.shelf_id' => null])
+                    ->andFilterWhere(['tray.size_id' => $sizeId])
+                    ->andFilterWhere(['tray.collection_id' => $collectionId]);
+                if ($trayBarcode != '') {
+                    $query->andWhere(['like', 'tray.barcode', $trayBarcode]);
                 }
-                $provider = new ActiveDataProvider([
-                    'query' => $query,
-                ]);
+                else {
+                    $query->andWhere(['or', ['tray.active' => 1], ['tray.id' => null]]);
+                }
+                if ($flaggedOnly) {
+                    $query->andWhere(['tray.flag' => 1]);
+                }
+                $trays = $query->all();
+
+                $results = [];
+                foreach ($trays as $tray) {
+                    $results[] = [
+                        "id" => null,
+                        "barcode" => "[Unshelved]",
+                        "row" => null,
+                        "side" => null,
+                        "ladder" => null,
+                        "rung" => null,
+                        "active" => true,
+                        "flag" => true,
+                        "size" => null,
+                        "collection" => null,
+                        "trays" => [$tray],
+                        "capacity" => null,
+                        "depths" => null,
+                        "positions" => null,
+                    ];
+                }
+                return [
+                    'unshelved' => true,
+                    'resultCount' => count($results),
+                    'results' => $results,
+                ];
             }
-            // If the user is looking for empty shelves specifically
-            else if ($positionsFree == -1) {
+            // If the user is searching for empty shelves
+            else if ($positionsFree == SHELF_EMPTY) {
                 $query = $this->modelClass::find()
                     ->leftJoin('tray', 'tray.shelf_id = shelf.id')
-                    ->where(['like', 'shelf.barcode', $shelfBarcode, false])
+                    ->where(['like', 'shelf.barcode', $shelfBarcode, false]) // false parameter because we are providing wildcards manually
                     ->andFilterWhere(['shelf.size_id' => $sizeId])
                     ->andFilterWhere(['shelf.collection_id' => $collectionId])
                     ->andFilterWhere(['shelf.height' => $height])
@@ -471,18 +503,25 @@ class ShelfApiController extends ActiveController
                     ],
                 ]);
             }
-            else if ($positionsFree === 0 || $positionsFree === "0") {
+            else if ($positionsFree == SHELF_FULL && $positionsFree !== null) {
                 $query = $this->modelClass::find()
                     ->leftJoin('tray', 'tray.shelf_id = shelf.id')
-                    ->where(['like', 'shelf.barcode', $shelfBarcode, false])
+                    ->where(['like', 'shelf.barcode', $shelfBarcode, false]) // false parameter because we are providing wildcards manually
                     ->andFilterWhere(['shelf.size_id' => $sizeId])
                     ->andFilterWhere(['shelf.collection_id' => $collectionId])
                     ->andFilterWhere(['shelf.height' => $height])
                     ->andFilterWhere(['shelf.width' => $width])
                     ->andWhere(['shelf.active' => true])
                     ->andWhere(['or', ['tray.active' => true], ['tray.id' => null]]);
+                if ($trayBarcode != '') {
+                    $query->andWhere(['like', 'tray.barcode', $trayBarcode]);
+                    $query->andWhere(['tray.active' => 1]);
+                }
+                else {
+                    $query->andWhere(['or', ['tray.active' => 1], ['tray.id' => null]]);
+                }
                 if ($flaggedOnly) {
-                    $query->andWhere(['shelf.flag' => 1]);
+                    $query->andWhere('or', ['shelf.flag' => 1], ['tray.flag' => 1]);
                 }
                 if ($heightNotSet) {
                     $query->andWhere(['or', ['shelf.height' => null], ['shelf.height' => '']]);
@@ -507,15 +546,22 @@ class ShelfApiController extends ActiveController
             else if ($positionsFree > 0) {
                 $query = $this->modelClass::find()
                     ->leftJoin('tray', 'tray.shelf_id = shelf.id')
-                    ->where(['like', 'shelf.barcode', $shelfBarcode, false])
+                    ->where(['like', 'shelf.barcode', $shelfBarcode, false]) // false parameter because we are providing wildcards manually
                     ->andFilterWhere(['shelf.size_id' => $sizeId])
                     ->andFilterWhere(['shelf.collection_id' => $collectionId])
                     ->andFilterWhere(['shelf.height' => $height])
                     ->andFilterWhere(['shelf.width' => $width])
                     ->andWhere(['shelf.active' => true])
-                    ->andWhere(['or', ['tray.active' => true], ['tray.id' => null]]);
+                    ->andWhere(['or', ['tray.active' => true]]); // need at least one tray
+                if ($trayBarcode != '') {
+                    $query->andWhere(['like', 'tray.barcode', $trayBarcode]);
+                    $query->andWhere(['tray.active' => 1]);
+                }
+                else {
+                    $query->andWhere(['or', ['tray.active' => 1], ['tray.id' => null]]);
+                }
                 if ($flaggedOnly) {
-                    $query->andWhere(['shelf.flag' => 1]);
+                    $query->andWhere(['or', ['shelf.flag' => 1], ['tray.flag' => 1]]);
                 }
                 if ($heightNotSet) {
                     $query->andWhere(['or', ['shelf.height' => null], ['shelf.height' => '']]);
@@ -538,15 +584,29 @@ class ShelfApiController extends ActiveController
                 ]);
             }
             else {
-                $query = $this->modelClass::find()
-                    ->where(['like', 'barcode', $shelfBarcode, false])
-                    ->andFilterWhere(['size_id' => $sizeId])
-                    ->andFilterWhere(['collection_id' => $collectionId])
-                    ->andFilterWhere(['height' => $height])
-                    ->andFilterWhere(['width' => $width])
-                    ->andWhere(['active' => true]);
+                $query = $this->modelClass::find();
+                if ($trayBarcode != '') {
+                    $query->rightJoin('tray', 'tray.shelf_id = shelf.id')
+                    ->filterWhere(['like', 'shelf.barcode', $shelfBarcode, false]) // false parameter because we are providing wildcards manually
+                    ->andFilterWhere(['tray.size_id' => $sizeId])
+                    ->andFilterWhere(['tray.collection_id' => $collectionId])
+                    ->andFilterWhere(['tray.height' => $height])
+                    ->andFilterWhere(['tray.width' => $width])
+                    ->andWhere(['like', 'tray.barcode', $trayBarcode])
+                    ->andWhere(['tray.active' => 1]);
+                }
+                else {
+                    $query->leftJoin('tray', 'tray.shelf_id = shelf.id')
+                    ->filterWhere(['like', 'shelf.barcode', $shelfBarcode, false]) // false parameter because we are providing wildcards manually
+                    ->andFilterWhere(['shelf.size_id' => $sizeId])
+                    ->andFilterWhere(['shelf.collection_id' => $collectionId])
+                    ->andFilterWhere(['shelf.height' => $height])
+                    ->andFilterWhere(['shelf.width' => $width])
+                    ->andWhere(['or', ['shelf.active' => 1], ['shelf.active' => null]])
+                    ->andWhere(['or', ['tray.active' => 1], ['tray.id' => null]]);
+                }
                 if ($flaggedOnly) {
-                    $query->andWhere(['flag' => 1]);
+                    $query->andWhere(['or', ['shelf.flag' => 1], ['tray.flag' => 1]]);
                 }
                 if ($heightNotSet) {
                     $query->andWhere(['or', ['height' => null], ['height' => '']]);
@@ -565,43 +625,6 @@ class ShelfApiController extends ActiveController
                         'pageSize' => 60,
                     ],
                 ]);
-            }
-            // If there was a tray result for an unshelved tray, return
-            // just that tray, with placeholder null/unshelved information.
-            // TODO: replace this exception with reworking shelf search
-            // to allow searching for "NONE" as its own shelf, and including
-            // all unshelved trays in that virtual shelf
-            if ($provider->getModels() && $provider->getModels()[0]['id'] === null) {
-                $tray = \app\models\Tray::find()
-                    ->where(['barcode' => $trayBarcode, 'active' => true, 'shelf_id' => null])
-                    ->one();
-                if ($tray) {
-                    return [
-                        'resultCount' => 1,
-                        'results' => [[
-                            "id" => null,
-                            "barcode" => "[Unshelved]",
-                            "row" => null,
-                            "side" => null,
-                            "ladder" => null,
-                            "rung" => null,
-                            "active" => true,
-                            "flag" => true,
-                            "size" => null,
-                            "collection" => null,
-                            "trays" => [$tray],
-                            "capacity" => null,
-                            "depths" => null,
-                            "positions" => null,
-                        ]],
-                    ];
-                }
-                else {
-                    return [
-                        'resultCount' => 0,
-                        'results' => [],
-                    ];
-                }
             }
             return [
                 'resultCount' => $provider->getTotalCount(),
