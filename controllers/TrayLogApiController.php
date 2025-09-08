@@ -140,17 +140,15 @@ class TrayLogApiController extends ActiveController
 
         // Normal JSON response
         $rows = $query->limit($limit)->all();
-        // Cast 'id' and 'flag' as int, and ensure numeric types for all numeric columns
+        // Cast 'id' and 'flag' as int
         foreach ($rows as &$row) {
             if (isset($row['id'])) {
                 $row['id'] = (int)$row['id'];
             }
             if (isset($row['flag'])) {
-                $row['flag'] = is_null($row['flag']) ? 0 : (int)$row['flag'];
+                $row['flag'] = (int)$row['flag'];
             }
         }
-        unset($row); // break reference
-        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
         return $rows;
     }
 
