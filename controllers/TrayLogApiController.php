@@ -142,13 +142,14 @@ class TrayLogApiController extends ActiveController
         $rows = $query->limit($limit)->all();
         // Cast 'id' and 'flag' as int
         foreach ($rows as &$row) {
-            if (isset($row['id'])) {
-                $row['id'] = (int)$row['id'];
+            if (array_key_exists('id', $row)) {
+                $row['id'] = intval($row['id']);
             }
-            if (isset($row['flag'])) {
-                $row['flag'] = (int)$row['flag'];
+            if (array_key_exists('flag', $row)) {
+                $row['flag'] = intval($row['flag']);
             }
         }
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
         return $rows;
     }
 
