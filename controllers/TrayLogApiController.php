@@ -140,6 +140,15 @@ class TrayLogApiController extends ActiveController
 
         // Normal JSON response
         $rows = $query->limit($limit)->all();
+        // Cast 'id' and 'flag' as int
+        foreach ($rows as &$row) {
+            if (isset($row['id'])) {
+                $row['id'] = (int)$row['id'];
+            }
+            if (isset($row['flag'])) {
+                $row['flag'] = (int)$row['flag'];
+            }
+        }
         return $rows;
     }
 
