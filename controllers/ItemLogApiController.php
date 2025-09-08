@@ -113,7 +113,7 @@ class ItemLogApiController extends ActiveController
             fputcsv(
                 $output,
                 ['ID', 'Item', 'Flag', 'Action', 'User', 'Details', 'Timestamp'],
-                ',', '"', '\\', "\n"
+                ',', '"', '\\',
             );
 
             foreach ($reader as $row) {
@@ -128,7 +128,7 @@ class ItemLogApiController extends ActiveController
                         $row['details'],
                         $row['timestamp'],
                     ],
-                    ',', '"', '\\', "\n"
+                    ',', '"', '\\'
                 );
                 flush(); // send buffer immediately
             }

@@ -107,7 +107,7 @@ class CollectionLogApiController extends ActiveController
             fputcsv(
                 $output,
                 ['ID', 'Collection', 'Action', 'User', 'Details', 'Timestamp'],
-                ',', '"', '\\', "\n"
+                ',', '"', '\\'
             );
 
             foreach ($reader as $row) {
@@ -121,7 +121,7 @@ class CollectionLogApiController extends ActiveController
                         $row['details'],
                         $row['timestamp'],
                     ],
-                    ',', '"', '\\', "\n"
+                    ',', '"', '\\'
                 );
                 flush(); // send buffer immediately
             }

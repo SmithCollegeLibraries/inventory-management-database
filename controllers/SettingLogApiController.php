@@ -102,7 +102,7 @@ class SettingLogApiController extends ActiveController
             fputcsv(
                 $output,
                 ['ID', 'Setting', 'Value', 'User', 'Timestamp'],
-                ',', '"', '\\', "\n"
+                ',', '"', '\\'
             );
 
             foreach ($reader as $row) {
@@ -115,7 +115,7 @@ class SettingLogApiController extends ActiveController
                         $row['user'],
                         $row['timestamp'],
                     ],
-                    ',', '"', '\\', "\n"
+                    ',', '"', '\\'
                 );
                 flush(); // send buffer immediately
             }
