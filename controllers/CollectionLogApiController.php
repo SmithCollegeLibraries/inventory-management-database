@@ -69,7 +69,7 @@ class CollectionLogApiController extends ActiveController
 
         $query = (new \yii\db\Query())
             ->select([
-                'collection_log.id',
+                'CAST(collection_log.id AS UNSIGNED) AS id',
                 'collection.name',
                 'collection_log.action',
                 'user.name AS user',

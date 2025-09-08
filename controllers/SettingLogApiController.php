@@ -67,7 +67,7 @@ class SettingLogApiController extends ActiveController
 
         $query = (new \yii\db\Query())
             ->select([
-                'setting_log.id',
+                'CAST(setting_log.id AS UNSIGNED) AS id',
                 'setting.name',
                 'setting.value',
                 'user.name AS user',
