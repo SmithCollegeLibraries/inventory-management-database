@@ -71,9 +71,9 @@ class ShelfLogApiController extends ActiveController
 
         $query = (new \yii\db\Query())
             ->select([
-                'CAST(shelf_log.id AS UNSIGNED) AS id',
+                'shelf_log.id',
                 'shelf.barcode',
-                'CAST(shelf.flag AS UNSIGNED) AS flag',
+                'shelf.flag',
                 'shelf_log.action',
                 'user.name AS user',
                 'shelf_log.details',

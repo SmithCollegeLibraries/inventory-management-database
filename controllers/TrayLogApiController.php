@@ -71,9 +71,9 @@ class TrayLogApiController extends ActiveController
 
         $query = (new \yii\db\Query())
             ->select([
-                'CAST(tray_log.id AS UNSIGNED) AS id',
+                'tray_log.id',
                 'tray.barcode',
-                'CAST(tray.flag AS UNSIGNED) AS flag',
+                'tray.flag',
                 'tray_log.action',
                 'user.name AS user',
                 'tray_log.details',

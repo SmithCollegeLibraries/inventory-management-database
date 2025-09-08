@@ -71,9 +71,9 @@ class ItemLogApiController extends ActiveController
 
         $query = (new \yii\db\Query())
             ->select([
-                'CAST(item_log.id AS UNSIGNED) AS id',
+                'item_log.id',
                 'item.barcode',
-                'CAST(item.flag AS UNSIGNED) AS flag',
+                'item.flag',
                 'item_log.action',
                 'user.name AS user',
                 'item_log.details',
