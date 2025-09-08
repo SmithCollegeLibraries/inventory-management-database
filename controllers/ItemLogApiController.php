@@ -113,7 +113,7 @@ class ItemLogApiController extends ActiveController
             fputcsv(
                 $output,
                 ['ID', 'Item', 'Flag', 'Action', 'User', 'Details', 'Timestamp'],
-                ',', '"', '\\',
+                ',', '"', '\\'
             );
 
             foreach ($reader as $row) {
