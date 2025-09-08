@@ -133,7 +133,7 @@ class CollectionLogApiController extends ActiveController
 
         // Normal JSON response
         $rows = $query->limit($limit)->all();
-        return $this->asJson($rows);
+        return $rows;
     }
 
     public function actionActionsList()
