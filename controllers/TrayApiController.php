@@ -377,8 +377,10 @@ class TrayApiController extends ActiveController
                     if ($oldShelfBarcode && preg_match('/^(00|BR|99)/', $oldShelfBarcode)) {
                         // Do nothing: these are temporary shelves and don't need to be flagged
                     }
+                    // Currently we don't want to flag any trays shelved to a
+                    // different location. They can always be tracked in the logs.
                     else {
-                        $flagDetails[] = sprintf('Tray %s was already on shelf %s, depth %s, position %s', $trayBarcode, $oldShelfBarcode ?: "null", $oldDepth ?: "null", $oldPosition ?: "null");
+                        // $flagDetails[] = sprintf('Tray %s was already on shelf %s, depth %s, position %s', $trayBarcode, $oldShelfBarcode ?: "null", $oldDepth ?: "null", $oldPosition ?: "null");
                     }
                 }
             }
