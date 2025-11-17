@@ -424,8 +424,17 @@ class ShelfApiController extends ActiveController
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
-        $sizeId = $size ? Size::find()->where(['code' => $size])->one()->id : null;
-        $collectionId = $collection ? Collection::find()->where(['name' => $collection])->andWhere(['active' => true])->one()->id : null;
+        // Be defensive: Size::find()->one() or Collection::find()->one() may return null on the server
+        $sizeId = null;
+        if ($size) {
+            $sizeObj = Size::find()->where(['code' => $size])->one();
+            $sizeId = $sizeObj ? $sizeObj->id : null;
+        }
+        $collectionId = null;
+        if ($collection) {
+            $collectionObj = Collection::find()->where(['name' => $collection])->andWhere(['active' => true])->one();
+            $collectionId = $collectionObj ? $collectionObj->id : null;
+        }
 
         if ($tokenCheck['level'] >= 20) {
             // If the user is searching for unshelved trays
