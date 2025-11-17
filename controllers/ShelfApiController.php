@@ -391,13 +391,13 @@ class ShelfApiController extends ActiveController
 
     public function actionSearch()
     {
-        $shelfBarcode = isset($_REQUEST["shelf"]) ? str_replace('-', '_', $_REQUEST["shelf"]) : "_______";
-        $trayBarcode = isset($_REQUEST["tray"]) ? $_REQUEST["tray"] : '';
-        $size = isset($_REQUEST["size"]) ? $_REQUEST["size"] : null;
-        $collection = isset($_REQUEST["collection"]) ? $_REQUEST["collection"] : null;
-        $positionsFree = isset($_REQUEST["positions_free"]) ? $_REQUEST["positions_free"] : null;
-        $flaggedOnly = isset($_REQUEST["flagged_only"]) ? $_REQUEST["flagged_only"] == 'true' || $_REQUEST["flagged_only"] == 1 : false;
-        if (isset($_REQUEST["height"])) {
+        $shelfBarcode = isset($_REQUEST["shelf"]) && $_REQUEST["shelf"] !== "" ? str_replace('-', '_', $_REQUEST["shelf"]) : "_______";
+        $trayBarcode = isset($_REQUEST["tray"]) && $_REQUEST["tray"] !== "" ? $_REQUEST["tray"] : '';
+        $size = isset($_REQUEST["size"]) && $_REQUEST["size"] !== "" ? $_REQUEST["size"] : null;
+        $collection = isset($_REQUEST["collection"]) && $_REQUEST["collection"] !== "" ? $_REQUEST["collection"] : null;
+        $positionsFree = isset($_REQUEST["positions_free"]) && $_REQUEST["positions_free"] !== "" ? $_REQUEST["positions_free"] : null;
+        $flaggedOnly = isset($_REQUEST["flagged_only"]) && $_REQUEST["flagged_only"] !== "" ? $_REQUEST["flagged_only"] == 'true' || $_REQUEST["flagged_only"] == 1 : false;
+        if (isset($_REQUEST["height"]) && $_REQUEST["height"] !== "") {
             if ($_REQUEST["height"] === "-") {
                 $height = null;
                 $heightNotSet = true;
@@ -409,7 +409,7 @@ class ShelfApiController extends ActiveController
             $height = null;
             $heightNotSet = false;
         }
-        if (isset($_REQUEST["width"])) {
+        if (isset($_REQUEST["width"]) && $_REQUEST["width"] !== "") {
             if ($_REQUEST["width"] === "-") {
                 $width = null;
                 $widthNotSet = true;
