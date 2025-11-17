@@ -521,7 +521,8 @@ class ShelfApiController extends ActiveController
                     $query->andWhere(['or', ['tray.active' => 1], ['tray.id' => null]]);
                 }
                 if ($flaggedOnly) {
-                    $query->andWhere('or', ['shelf.flag' => 1], ['tray.flag' => 1]);
+                    // Use array-form condition so Yii builds a valid SQL expression
+                    $query->andWhere(['or', ['shelf.flag' => 1], ['tray.flag' => 1]]);
                 }
                 if ($heightNotSet) {
                     $query->andWhere(['or', ['shelf.height' => null], ['shelf.height' => '']]);
