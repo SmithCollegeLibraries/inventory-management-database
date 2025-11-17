@@ -500,17 +500,14 @@ class ShelfApiController extends ActiveController
                 if ($widthNotSet) {
                     $query->andWhere(['or', ['shelf.width' => null], ['shelf.width' => '']]);
                 }
-                $provider = new ActiveDataProvider([
-                    'query' => $query->groupBy(['shelf.id']),
-                    'sort' => [
-                        'defaultOrder' => [
-                            'barcode' => SORT_ASC,
-                        ]
-                    ],
-                    'pagination' => [
-                        'pageSize' => 60,
-                    ],
-                ]);
+
+                $query->groupBy(['shelf.id'])->orderBy(['shelf.barcode' => SORT_ASC]);
+
+                // Wrap for stable limiting
+                $wrapped = $this->modelClass::find()->from(['t' => $query]);
+
+                $rows = (clone $wrapped)->limit(60)->all();
+                $count = (clone $wrapped)->count();
             }
             else if ($positionsFree == SHELF_FULL && $positionsFree !== null) {
                 $query = $this->modelClass::find()
@@ -539,19 +536,16 @@ class ShelfApiController extends ActiveController
                 if ($widthNotSet) {
                     $query->andWhere(['or', ['shelf.width' => null], ['shelf.width' => '']]);
                 }
-                $provider = new ActiveDataProvider([
-                    'query' => $query
-                        ->groupBy(['capacity', 'shelf.id'])
-                        ->having('cast(shelf.capacity as signed) - count(tray.id) <= 0'),
-                    'sort' => [
-                        'defaultOrder' => [
-                            'barcode' => SORT_ASC,
-                        ]
-                    ],
-                    'pagination' => [
-                        'pageSize' => 60,
-                    ],
-                ]);
+
+                $query->groupBy(['capacity', 'shelf.id'])
+                    ->having('cast(shelf.capacity as signed) - count(tray.id) <= 0')
+                    ->orderBy(['shelf.barcode' => SORT_ASC]);
+
+                // Wrap for stable limiting
+                $wrapped = $this->modelClass::find()->from(['t' => $query]);
+
+                $rows = (clone $wrapped)->limit(60)->all();
+                $count = (clone $wrapped)->count();
             }
             else if ($positionsFree > 0) {
                 $query = $this->modelClass::find()
@@ -579,19 +573,16 @@ class ShelfApiController extends ActiveController
                 if ($widthNotSet) {
                     $query->andWhere(['or', ['shelf.width' => null], ['shelf.width' => '']]);
                 }
-                $provider = new ActiveDataProvider([
-                    'query' => $query
-                        ->groupBy(['capacity', 'shelf.id'])
-                        ->having('cast(shelf.capacity as signed) - count(tray.id) >= :positionsFree', [':positionsFree' => $positionsFree]),
-                    'sort' => [
-                        'defaultOrder' => [
-                            'barcode' => SORT_ASC,
-                        ]
-                    ],
-                    'pagination' => [
-                        'pageSize' => 60,
-                    ],
-                ]);
+
+                $query->groupBy(['capacity', 'shelf.id'])
+                    ->having('cast(shelf.capacity as signed) - count(tray.id) >= :positionsFree', [':positionsFree' => $positionsFree])
+                    ->orderBy(['shelf.barcode' => SORT_ASC]);
+
+                // Wrap for stable limiting
+                $wrapped = $this->modelClass::find()->from(['t' => $query]);
+
+                $rows = (clone $wrapped)->limit(60)->all();
+                $count = (clone $wrapped)->count();
             }
             else {
                 $query = $this->modelClass::find();
@@ -624,21 +615,18 @@ class ShelfApiController extends ActiveController
                 if ($widthNotSet) {
                     $query->andWhere(['or', ['width' => null], ['width' => '']]);
                 }
-                $provider = new ActiveDataProvider([
-                    'query' => $query,
-                    'sort' => [
-                        'defaultOrder' => [
-                            'barcode' => SORT_ASC,
-                        ]
-                    ],
-                    'pagination' => [
-                        'pageSize' => 60,
-                    ],
-                ]);
+
+                $query->groupBy(['shelf.id'])->orderBy(['shelf.barcode' => SORT_ASC]);
+
+                // Wrap for stable limiting
+                $wrapped = $this->modelClass::find()->from(['t' => $query]);
+
+                $rows = (clone $wrapped)->limit(60)->all();
+                $count = (clone $wrapped)->count();
             }
             return [
-                'resultCount' => $provider->getTotalCount(),
-                'results' => $provider->getModels()
+                'resultCount' => $count,
+                'results' => $rows
             ];
         }
         else {
