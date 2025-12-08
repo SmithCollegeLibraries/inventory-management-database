@@ -9,11 +9,11 @@ $config = [
     'bootstrap' => ['log'],
     'components' => [
         'request' => [
-            // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
             'parsers' => [
                 'application/json' => 'yii\web\JsonParser',
             ],
-            'cookieValidationKey' => 'SgUw4G9P_bzc9ix5BvUEWSWwYFn9SwJm',
+            // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
+            'cookieValidationKey' => '',
         ],
         'cache' => [
             'class' => 'yii\caching\FileCache',
