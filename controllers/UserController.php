@@ -179,11 +179,16 @@ class UserController extends Controller
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
         if ($tokenCheck and $tokenCheck['level'] >= 100) {
             $user = User::findOne($data["id"]);
-            if (isset($data["password"])) {
+            if (isset($data["password"]) && $data["password"] !== "") {
                 $user->passwordhash = Yii::$app->getSecurity()->generatePasswordHash($data["password"]);
             }
-            $user->level = $data["level"];
-            $user->save();
+            if (isset($data["name"]) && $data["name"] !== "") {
+                $user->name = $data["name"];
+            }
+            if (isset($data["level"]) && $data["level"] !== "") {
+                $user->level = $data["level"];
+            }
+
             if ($user->save()) {
                 return true;
             }
