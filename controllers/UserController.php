@@ -215,7 +215,7 @@ class UserController extends Controller
                 ->all();
             // Use map/reduce to create just a list of names, no IDs or other info
             $nameList = array_map(function($item) {
-                return $item->name;
+                return $item->email;
             }, $query);
             return $nameList;
         }
