@@ -145,7 +145,7 @@ class UserController extends Controller
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
         if ($tokenCheck['level'] >= 35) {
             $result = User::find()->where(['id' => $user_id])->andWhere(['>', 'level', 0])->one();
-            return array('id'=>$user_id, 'name'=>$result ? $result['name'] : null);
+            return array('id'=>$user_id, 'name'=>$result ? $result['email'] : null);
         } else {
             throw new \yii\web\ForbiddenHttpException('You are not authorized to see users');
         }
