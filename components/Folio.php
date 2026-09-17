@@ -135,20 +135,11 @@ class Folio
 
     // TODO: If performance is slow, modify this to get titles and volumes
     // in this report, instead of separately
-    public static function getPicklist($location)
+    public static function getPicklist($institution)
     {
-        static $locationList = [
-            "FC_ANNEX" => "c0250137-9c4a-4c4c-be9b-61f5bb8f645c",
-            "SC_ANNEX" => "9e4b06c8-0cb0-4011-ab1d-a23af57d190c",
-            "HILLYER" => "25d98f21-ef4d-4846-955e-17840062b1f0",
-            "JOSTEN" => "602aba21-73ae-4e43-a92e-91f2dee34c8f",
-            "NEILSON" => "2c0764b7-63b3-4254-9950-0c730b7e438b",
-            "SELF_CHECK" => "6b6b9f00-aac7-4e20-a819-fb24386e48bb",
-            "SPECIAL_COLLECTIONS" => "83f25b2e-49d8-44ae-956b-91060d819b07",
-            "WEST_STREET" => "b13c7bb4-278e-4592-9a0d-3dcb600f8a1e",
-        ];
-        $locationId = $locationList[$location];
-        $client = new Client(['baseUrl' => "https://libtools2.smith.edu/folio/web/search/search-circulation?id=" . $locationId]);
+        static $servicePoints = json_decode(\app\models\Setting::findOne(['name' => 'servicePoints'])->value, true);
+        $servicePoint = $servicePoints[$institution];
+        $client = new Client(['baseUrl' => "https://libtools2.smith.edu/folio/web/search/search-circulation?id=" . $servicePoint]);
         $response = $client->createRequest()
             ->setMethod('get')
             ->setFormat(Client::FORMAT_JSON)
