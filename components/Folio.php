@@ -62,18 +62,16 @@ class Folio
                 $correctItem = reset($items);
                 $callNumber = $correctItem["effectiveCallNumberComponents"]["callNumber"];
                 $status = isset($correctItem["status"]) ? $correctItem["status"]["name"] : null;
-                $ANNEX_LOCATION_IDS = [
-                    "5eb79fcc-af08-4ae1-9ab3-dde11e330a01",
-                    "ed12a1d9-33e7-4c62-8daf-485e7d2369c3",
-                    "0bd310b3-17b0-41cd-8ebb-09715ca36958",
-                    "95f387cc-ce27-4243-9c9c-b9bc26412c13",
-                ];
+                // Get annexLocation from settings: this will be in JSON.
+                // It is the value associated with the annexLocation field in the Settings table in the db.
+                $annexLocationsJson = \app\models\Setting::find()->where(['name' => 'annexLocation'])->one();
+                $annexLocations = json_decode($annexLocationsJson->value, true);
                 return [
                     "barcode" => $barcode,
                     "title" => $title,
                     "callNumber" => $callNumber,
                     "status" => $status,
-                    "annex" => in_array($correctItem["effectiveLocationId"], $ANNEX_LOCATION_IDS),
+                    "annex" => in_array($correctItem["effectiveLocationId"], $annexLocations),
                 ];
             } catch (\Exception $e) {
                 return [];
