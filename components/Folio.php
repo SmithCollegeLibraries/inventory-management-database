@@ -135,7 +135,7 @@ class Folio
     // in this report, instead of separately
     public static function getPicklist($institution)
     {
-        static $servicePoints = json_decode(\app\models\Setting::findOne(['name' => 'servicePoints'])->value, true);
+        $servicePoints = json_decode(\app\models\Setting::findOne(['name' => 'servicePoints'])->value, true);
         $servicePoint = $servicePoints[$institution];
         $client = new Client(['baseUrl' => "https://libtools2.smith.edu/folio/web/search/search-circulation?id=" . $servicePoint]);
         $response = $client->createRequest()
