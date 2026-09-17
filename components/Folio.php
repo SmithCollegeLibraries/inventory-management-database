@@ -64,7 +64,7 @@ class Folio
                 $status = isset($correctItem["status"]) ? $correctItem["status"]["name"] : null;
                 // Get annexLocation from settings: this will be in JSON.
                 // It is the value associated with the annexLocation field in the Settings table in the db.
-                $annexLocationsJson = \app\models\Setting::find()->where(['name' => 'annexLocation'])->one();
+                $annexLocationsJson = \app\models\Setting::find()->where(['name' => 'annexLocations'])->one();
                 $annexLocations = json_decode($annexLocationsJson->value, true);
                 return [
                     "barcode" => $barcode,
