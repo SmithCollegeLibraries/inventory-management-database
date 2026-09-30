@@ -205,17 +205,90 @@ class UserController extends Controller
         $token = $_REQUEST["access-token"];
         $tokenCheck = User::find()->where(['access_token' => $token])->one();
 
-        $json = file_get_contents('php://input');
-        $data = json_decode($json, true);
+        $objectType = $_GET['objectType'] ?? null;
 
         if ($tokenCheck['level'] >= 40) {
+            // If objectType is provided, filter by the logs of the
+            // object specified: item, tray, shelf, collection, setting.
+            // This is so that when we are getting the name list in
+            // a log filter, we're only showing names that actually
+            // have log entries.
+
+            // If objectType = 'item', then the list of users returned should
+            // only include those for whom there are itemLog rows where
+            // user.id = item_log.user_id.
+            // Same for 'tray' (tray_log), 'shelf' (shelf_log),
+            // 'collection' (collection_log), and 'setting' (setting_log).
+            if ($objectType === 'item') {
+                            return User::find()
+                                ->select('name')
+                                ->where([
+                                    'id' => (new \yii\db\Query())
+                                        ->select('user_id')
+                                        ->distinct()
+                                        ->from('item_log')
+                                ])
+                                ->orderBy('name')
+                                ->column();
+            }
+            if ($objectType === 'tray') {
+                return User::find()
+                    ->select('name')
+                    ->where([
+                        'id' => (new \yii\db\Query())
+                            ->select('user_id')
+                            ->distinct()
+                            ->from('tray_log')
+                    ])
+                    ->orderBy('name')
+                    ->column();
+            }
+            if ($objectType === 'shelf') {
+                return User::find()
+                    ->select('name')
+                    ->where([
+                        'id' => (new \yii\db\Query())
+                            ->select('user_id')
+                            ->distinct()
+                            ->from('shelf_log')
+                    ])
+                    ->orderBy('name')
+                    ->column();
+            }
+            if ($objectType === 'collection') {
+                return User::find()
+                    ->select('name')
+                    ->where([
+                        'id' => (new \yii\db\Query())
+                            ->select('user_id')
+                            ->distinct()
+                            ->from('collection_log')
+                    ])
+                    ->orderBy('name')
+                    ->column();
+            }
+            if ($objectType === 'setting') {
+                return User::find()
+                    ->select('name')
+                    ->where([
+                        'id' => (new \yii\db\Query())
+                            ->select('user_id')
+                            ->distinct()
+                            ->from('setting_log')
+                    ])
+                    ->orderBy('name')
+                    ->column();
+            }
+
+            // If no specific object type is provided, return all users,
+            // but only those that are currently active (level > 0).
             $query = User::find()
                 ->andFilterWhere(['>', 'level', 0])
                 ->orderBy('name')
                 ->all();
             // Use map/reduce to create just a list of names, no IDs or other info
             $nameList = array_map(function($item) {
-                return $item->email;
+                return $item->name;
             }, $query);
             return $nameList;
         }
